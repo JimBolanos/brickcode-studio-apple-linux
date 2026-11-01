@@ -31,6 +31,7 @@
 #include <glib/gstdio.h>
 #include <unistd.h>
 #include <libusb.h>
+#include <fontconfig/fontconfig.h>
 #include <gio/gio.h>
 #include <string.h>
 #include <stdio.h>
@@ -41,6 +42,11 @@
 #define APP_NAME     "BrickCode Studio"
 #define APP_VERSION  "2.2.0"
 #define BLOCKS_HTML  "brickcode-blocks.html"
+#define APP_FONT_FILE "Orbitron-ExtraBold.ttf"
+/* fontconfig exposes the typographic family, not the file name: the
+ * ExtraBold face reports family "Orbitron" with style "ExtraBold",
+ * so asking for "Orbitron ExtraBold" matches nothing. */
+#define APP_FONT      "Orbitron"
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
@@ -665,30 +671,50 @@ static void open_file_finish(GObject *source, GAsyncResult *res,
  * the app. We hand it to the system browser rather than embedding it: a web
  * view would pull in webkitgtk-6.0 on Linux and need a separate WKWebView
  * path on macOS, and this program is one portable .c file by design. */
-static char *blocks_html_path(void) {
+/* Look for a file the app ships with, in every place it might have been
+ * installed. Returns NULL when it is simply not there. */
+static char *find_data_file(const char *subdir, const char *name,
+                             const char *env_var) {
     GPtrArray *dirs = g_ptr_array_new_with_free_func(g_free);
 
-    const char *env = g_getenv("BRICKCODE_BLOCKS");    /* handy while hacking */
+    const char *env = env_var ? g_getenv(env_var) : NULL;  /* while hacking */
     if (env && *env) g_ptr_array_add(dirs, g_strdup(env));
 #ifdef BLOCKS_DIR
-    g_ptr_array_add(dirs, g_strdup(BLOCKS_DIR));       /* where make install put it */
+    /* BLOCKS_DIR is .../share/brickcode-studio/blocks; its parent holds the
+     * other data folders, so one -D covers them all. */
+    char *share = g_path_get_dirname(BLOCKS_DIR);
+    g_ptr_array_add(dirs, g_build_filename(share, subdir, NULL));
+    g_free(share);
 #endif
     g_ptr_array_add(dirs, g_build_filename(g_get_user_data_dir(),
-                                           "brickcode-studio", "blocks", NULL));
-    g_ptr_array_add(dirs, g_strdup("/usr/local/share/brickcode-studio/blocks"));
-    g_ptr_array_add(dirs, g_strdup("/usr/share/brickcode-studio/blocks"));
-    g_ptr_array_add(dirs, g_strdup("/opt/homebrew/share/brickcode-studio/blocks"));
-    g_ptr_array_add(dirs, g_strdup("blocks"));         /* running from the tree */
-    g_ptr_array_add(dirs, g_strdup("../blocks"));
+                                           "brickcode-studio", subdir, NULL));
+    g_ptr_array_add(dirs, g_build_filename("/usr/local/share/brickcode-studio", subdir, NULL));
+    g_ptr_array_add(dirs, g_build_filename("/usr/share/brickcode-studio", subdir, NULL));
+    g_ptr_array_add(dirs, g_build_filename("/opt/homebrew/share/brickcode-studio", subdir, NULL));
+    g_ptr_array_add(dirs, g_strdup(subdir));           /* running from the tree */
+    g_ptr_array_add(dirs, g_build_filename("..", subdir, NULL));
 
     char *found = NULL;
     for (guint i = 0; i < dirs->len && !found; i++) {
-        char *f = g_build_filename(dirs->pdata[i], BLOCKS_HTML, NULL);
+        char *f = g_build_filename(dirs->pdata[i], name, NULL);
         if (g_file_test(f, G_FILE_TEST_EXISTS)) found = f;
         else g_free(f);
     }
     g_ptr_array_free(dirs, TRUE);
     return found;
+}
+
+static char *blocks_html_path(void) {
+    return find_data_file("blocks", BLOCKS_HTML, "BRICKCODE_BLOCKS");
+}
+
+/* Orbitron, for the wordmark. Added to this process only, so it never
+ * shows up in the user's font list. Missing font, system font, no fuss. */
+static void load_app_font(void) {
+    char *p = find_data_file("fonts", APP_FONT_FILE, "BRICKCODE_FONTS");
+    if (!p) return;
+    FcConfigAppFontAddFile(NULL, (const FcChar8 *) p);
+    g_free(p);
 }
 
 static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
@@ -2308,7 +2334,8 @@ static void apply_omarchy_style(AppState *st) {
         "button.nav-btn.nav-on { color: %s; border: 2px solid #C10085; }"
 
         ".home-head { margin: 22px 0 2px 0; }"
-        ".home-word { font-size: 23px; font-weight: bold; color: %s; letter-spacing: 2px; }"
+        ".home-word { font-family: \"" APP_FONT "\", sans-serif; font-size: 21px; "
+"  font-weight: bold; color: %s; letter-spacing: 3px; }"
         ".home-sub { color: %s; font-size: 12.5px; margin-bottom: 16px; }"
         ".home-row { margin: 0 20px 6px 20px; }"
         ".tools-wrap { margin: 12px 20px 20px 20px; }"
@@ -2320,7 +2347,8 @@ static void apply_omarchy_style(AppState *st) {
         ".bcard-scout { background-image: linear-gradient(160deg, #5C355E, #671646); }"
         ".bcard-nxt   { background-image: linear-gradient(160deg, #0F9C93, #331528); }"
         ".bc-lang { color: alpha(#FFFFFF,0.80); font-size: 11px; font-weight: bold; letter-spacing: 2px; }"
-        ".bc-name { color: #FFFFFF; font-size: 30px; font-weight: bold; letter-spacing: 1px; }"
+        ".bc-name { font-family: \"" APP_FONT "\", sans-serif; color: #FFFFFF; "
+"  font-size: 26px; font-weight: bold; letter-spacing: 1px; }"
         ".bc-foot { color: alpha(#FFFFFF,0.88); font-size: 11.5px; font-weight: bold; }"
 
         ".ab-cols { margin: 12px 22px 16px 22px; }"
@@ -4589,6 +4617,10 @@ int main(int argc, char **argv) {
         g_getenv("PATH") ? g_getenv("PATH") : "/usr/bin:/bin");
     g_setenv("PATH", extra, TRUE);
     g_free(extra);
+
+    /* Before GTK starts: once Pango has built its font map, a font added
+     * later is not picked up, and the wordmark silently falls back. */
+    load_app_font();
 
     GtkApplication *app = gtk_application_new("org.brickcode.Studio",
                                                G_APPLICATION_DEFAULT_FLAGS);

@@ -3,3 +3,4 @@ brickcode-studio/brickcode-studio
 pkg/
 src/
 *.pkg.tar.*
+.prefix

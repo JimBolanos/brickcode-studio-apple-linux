@@ -49,9 +49,12 @@ echo "==> 4/4 BrickCode Studio"
 BLOCKS="$PREFIX/share/brickcode-studio/blocks"
 mkdir -p "$BLOCKS"
 cp "$(cd "$(dirname "$0")/.." && pwd)/blocks/brickcode-blocks.html" "$BLOCKS/"
+FONTS="$PREFIX/share/brickcode-studio/fonts"
+mkdir -p "$FONTS"
+cp "$SRC/Orbitron-ExtraBold.ttf" "$SRC/Orbitron-OFL.txt" "$FONTS/"
 cc -O2 -DBLOCKS_DIR="\"$BLOCKS\"" \
-   $(pkg-config --cflags gtk4 libusb-1.0) -o "$PREFIX/bin/brickcode-studio" \
-   "$SRC/brickcode-studio.c" $(pkg-config --libs gtk4 libusb-1.0)
+   $(pkg-config --cflags gtk4 libusb-1.0 fontconfig) -o "$PREFIX/bin/brickcode-studio" \
+   "$SRC/brickcode-studio.c" $(pkg-config --libs gtk4 libusb-1.0 fontconfig)
 
 # A small .app so it can be started from Finder / Spotlight
 APP="$HOME/Applications/BrickCode Studio.app"
