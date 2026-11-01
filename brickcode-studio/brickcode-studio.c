@@ -2038,20 +2038,20 @@ static void apply_omarchy_style(AppState *st) {
 
     /* Tokens del tema de Omarchy, con nuestra paleta original como respaldo
      * para cuando no se encuentra colors.toml (p. ej. fuera de Omarchy). */
-    const char *accent    = theme_get(st, "accent", "#4C8DFF");
-    const char *bg        = theme_get(st, "background", "#0E1014");
-    const char *dark_bg   = theme_get(st, "dark_background", "#13161C");
-    const char *darker_bg = theme_get(st, "darker_background", "#0B0D11");
-    const char *fg        = theme_get(st, "dark_foreground", "#E7EAF0");
-    const char *muted_fg  = theme_get(st, "muted", "#8B93A3");
-    const char *editor_fg = theme_get(st, "foreground", "#D8DEE9");
-    const char *border_c  = theme_get(st, "selection", "#2B313D");
-    const char *field_bg  = theme_get(st, "lighter_background", "#1A1E26");
-    const char *green     = theme_get(st, "green", "#22B573");
-    const char *yellow    = theme_get(st, "yellow", "#F5A623");
-    const char *magenta   = theme_get(st, "magenta", "#8C5CF0");
-    const char *red       = theme_get(st, "red", "#F0609C");
-    const char *blue      = theme_get(st, "blue", "#3B82F6");
+    const char *accent    = theme_get(st, "accent", "#0085F3");
+    const char *bg        = theme_get(st, "background", "#131313");
+    const char *dark_bg   = theme_get(st, "dark_background", "#1B1B1B");
+    const char *darker_bg = theme_get(st, "darker_background", "#0E0E0E");
+    const char *fg        = theme_get(st, "dark_foreground", "#F2F2F2");
+    const char *muted_fg  = theme_get(st, "muted", "#8A8A8A");
+    const char *editor_fg = theme_get(st, "foreground", "#E8E8E8");
+    const char *border_c  = theme_get(st, "selection", "#2C2C2C");
+    const char *field_bg  = theme_get(st, "lighter_background", "#262626");
+    const char *green     = theme_get(st, "green", "#00B044");
+    const char *yellow    = theme_get(st, "yellow", "#F3BC00");
+    const char *magenta   = theme_get(st, "magenta", "#8853F3");
+    const char *red       = theme_get(st, "red", "#FD4B52");
+    const char *blue      = theme_get(st, "blue", "#0085F3");
 
     /* Outside Omarchy the Dark / Light selector restyles the whole window,
      * macOS style. (With an Omarchy theme the system colors win.) */
@@ -2082,15 +2082,15 @@ static void apply_omarchy_style(AppState *st) {
     /* Header */
     g_string_append_printf(c,
         ".header-bar { background: linear-gradient(135deg, %s, %s); padding: 16px 20px; }"
-        ".header-icon { background-color: rgba(255,255,255,0.20); border-radius: 12px; padding: 10px 14px; }"
+        ".header-icon { background-color: rgba(255,255,255,0.20); border-radius: 14px; padding: 10px 14px; }"
         ".header-icon label { color: white; font-weight: bold; font-size: 18px; }"
         ".header-title { color: white; font-size: 18px; font-weight: bold; }"
         ".header-subtitle { color: rgba(255,255,255,0.85); font-size: 11px; }"
         "button.about-btn { background-color: rgba(255,255,255,0.20); background-image: none; "
-        "  color: white; border-radius: 8px; padding: 6px 14px; border: none; font-weight: bold; }"
+        "  color: white; border-radius: 999px; padding: 7px 16px; border: none; font-weight: bold; }"
         "button.about-btn:hover { background-color: rgba(255,255,255,0.32); }"
         "dropdown.mode-dd button { background-color: rgba(255,255,255,0.20); "
-        "  background-image: none; color: white; border-radius: 8px; border: none; "
+        "  background-image: none; color: white; border-radius: 999px; border: none; "
         "  font-weight: bold; padding: 4px 10px; }"
         "dropdown.mode-dd button:hover { background-color: rgba(255,255,255,0.32); }"
         "dropdown.mode-dd button label, dropdown.mode-dd button arrow { color: white; }",
@@ -2098,22 +2098,22 @@ static void apply_omarchy_style(AppState *st) {
 
     /* Tarjetas */
     g_string_append_printf(c,
-        ".card { background-color: %s; border-radius: 14px; padding: 14px; margin: 10px 14px 0 14px; }"
+        ".card { background-color: %s; border-radius: 20px; padding: 16px; margin: 10px 14px 0 14px; }"
         ".card-title { font-weight: bold; color: %s; font-size: 11px; }",
         field_bg, fg);
 
     /* Campos + botones tipo Browse */
     g_string_append_printf(c,
         "entry.path-field, entry.command-entry { background-color: %s; border: 1px solid %s; "
-        "  border-radius: 8px; padding: 8px; color: %s; }"
+        "  border-radius: 12px; padding: 9px; color: %s; }"
         "button.browse-btn { background-color: %s; background-image: none; color: %s; "
-        "  border-radius: 8px; padding: 8px 16px; border: none; font-weight: bold; }"
+        "  border-radius: 12px; padding: 8px 16px; border: none; font-weight: bold; }"
         "button.browse-btn:hover { background-color: %s; }",
         field_bg, border_c, fg, white_btn, fg, border_c);
 
     /* Botones de accion (colores del tema, con respaldo fijo) */
     g_string_append_printf(c,
-        "button.qa-btn, button.big-action { border-radius: 10px; padding: 10px 8px; "
+        "button.qa-btn, button.big-action { border-radius: 14px; padding: 11px 8px; "
         "  font-weight: bold; color: white; border: none; background-image: none; "
         "  box-shadow: 0 2px 0 rgba(0,0,0,0.15); }"
         "button.big-action { padding: 14px; font-size: 13px; }"
@@ -2146,7 +2146,7 @@ static void apply_omarchy_style(AppState *st) {
         ".about-icon-lg { background-color: %s; min-width: 64px; min-height: 64px; "
         "  border-radius: 18px; }"
         ".about-icon-lg label { color: white; font-weight: bold; font-size: 20px; }"
-        ".about-card { background-color: %s; border-radius: 10px; padding: 10px 14px; }"
+        ".about-card { background-color: %s; border-radius: 14px; padding: 10px 14px; }"
         ".about-row-label { color: %s; font-size: 10px; }"
         ".about-row-value { color: %s; font-size: 10px; font-weight: bold; }"
         ".about-license, .about-copyright { color: %s; font-size: 9.5px; }",
@@ -2160,7 +2160,7 @@ static void apply_omarchy_style(AppState *st) {
 
     /* Paneles oscuros: editor / numeros de linea / consola */
     g_string_append_printf(c,
-        ".panel { background-color: %s; border-radius: 10px; margin: 10px 14px; }"
+        ".panel { background-color: %s; border-radius: 18px; margin: 10px 14px; }"
         "textview.code-editor, textview.code-editor text "
         "{ background-color: %s; color: %s; }"
         "textview.console-editor, textview.console-editor text "
@@ -2173,7 +2173,7 @@ static void apply_omarchy_style(AppState *st) {
     g_string_append_printf(c,
         ".settings-row { background-color: %s; padding: 10px 14px; border-top: 1px solid %s; }"
         ".settings-label { font-size: 10px; color: %s; font-weight: bold; }"
-        "dropdown.settings-dd { border-radius: 8px; background-color: %s; border: 1px solid %s; }",
+        "dropdown.settings-dd { border-radius: 13px; background-color: %s; border: 1px solid %s; }",
         field_bg, border_c, muted_fg, field_bg, border_c);
 
     /* Utilidades del NXT */
@@ -2205,7 +2205,7 @@ static void apply_omarchy_style(AppState *st) {
         ".topbar { background-color: %s; padding: 10px 14px; border-bottom: 1px solid %s; }"
         "button.home-btn { background: none; border: none; box-shadow: none; padding: 0; min-width: 0; }"
         "button.home-btn:hover { opacity: 0.85; }"
-        ".tab-chip { background-color: %s; border-radius: 12px; padding: 4px 6px 4px 10px; }"
+        ".tab-chip { background-color: %s; border-radius: 999px; padding: 5px 7px 5px 12px; }"
         ".lang-pill { background-color: %s; color: white; font-weight: bold; font-size: 10px; "
         "  border-radius: 6px; padding: 2px 7px; }"
         "button.kebab-btn, button.kebab-btn:hover { background: none; color: %s; border: none; font-weight: bold; "
@@ -2230,9 +2230,9 @@ static void apply_omarchy_style(AppState *st) {
         green, green_d, blue, blue_d);
 
     g_string_append_printf(c,
-        "popover.snippet-pop contents { background-color: %s; border: 1px solid %s; border-radius: 12px; padding: 6px; }"
+        "popover.snippet-pop contents { background-color: %s; border: 1px solid %s; border-radius: 16px; padding: 7px; }"
         "button.snippet-btn { background: none; border: none; box-shadow: none; color: %s; "
-        "  border-radius: 8px; padding: 6px 12px 6px 16px; }"
+        "  border-radius: 11px; padding: 7px 12px 7px 16px; }"
         "button.snippet-btn:hover { background-color: %s; }"
         ".edge { background-color: %s; padding: 12px 8px; }"
         "button.edge-btn { background-color: %s; background-image: none; color: %s; border: none; "
@@ -2259,7 +2259,7 @@ static void apply_omarchy_style(AppState *st) {
 
     /* workspace panels: dark canvas with soft corners */
     g_string_append_printf(c,
-        ".panel { margin: 8px 6px 8px 10px; border-radius: 14px; }"
+        ".panel { margin: 8px 6px 8px 10px; border-radius: 18px; }"
         "button.browse-btn { background-color: %s; color: %s; }"
         "button.browse-btn:hover { background-color: %s; }"
         ".statusbar { background-color: %s; border-top: 1px solid %s; }"
@@ -2274,18 +2274,22 @@ static void apply_omarchy_style(AppState *st) {
         "button.side-btn { background: none; background-image: none; border: none; box-shadow: none; "
         "  border-radius: 7px; padding: 5px 8px; color: %s; min-height: 0; }"
         "button.side-btn:hover { background-color: %s; }"
-        ".side-sq { min-width: 16px; min-height: 16px; border-radius: 4px; }"
+        ".side-sq { min-width: 16px; min-height: 16px; border-radius: 999px; }"
         ".sq-blue { background-color: %s; } .sq-green { background-color: %s; }"
         ".sq-orange { background-color: %s; } .sq-pink { background-color: %s; }"
         ".sq-gray { background-color: %s; }"
-        ".seg { background-color: %s; border-radius: 9px; padding: 2px; }"
+        ".seg { background-color: %s; border-radius: 999px; padding: 3px; }"
         ".seg button { background: none; background-image: none; border: none; box-shadow: none; "
-        "  border-radius: 7px; padding: 4px 14px; min-height: 0; color: %s; font-size: 12px; }"
-        ".seg button:checked { background-color: %s; font-weight: bold; "
+        "  border-radius: 999px; padding: 5px 16px; min-height: 0; color: %s; font-size: 12px; }"
+        /* The chosen language fills with the accent, the way the Robot
+         * Inventor segmented control does. It used to take dark_bg,
+         * which is darker than the track it sits in, so the selection
+         * read as a hole instead of a highlight. */
+        ".seg button:checked { background-color: %s; color: #FFFFFF; font-weight: bold; "
         "  box-shadow: 0 1px 2px rgba(0,0,0,0.25); }",
         field_bg, border_c, muted_fg, fg, fg, border_c,
         blue, green, yellow, red, muted_fg,
-        border_c, fg, dark_bg);
+        border_c, fg, accent);
 
     g_string_append_printf(c,
         "window.fw-win { background: none; }"
@@ -4064,8 +4068,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
         g_free(s);
     }
     g_key_file_free(kf);
+    /* First run opens dark: the palette is MINDSTORMS Robot Inventor's, and
+     * it is a dark interface. Light is still one click away in Settings. */
     if (!have_settings && !st->theme_colors)
-        gtk_drop_down_set_selected(GTK_DROP_DOWN(st->theme_dropdown), 1);   /* Light */
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(st->theme_dropdown), 0);   /* Dark */
     gtk_label_set_text(GTK_LABEL(st->target_note),
         NQC_TARGETS[gtk_drop_down_get_selected(GTK_DROP_DOWN(st->target_dropdown))].desc);
     gtk_revealer_set_reveal_child(GTK_REVEALER(st->bt_revealer),
