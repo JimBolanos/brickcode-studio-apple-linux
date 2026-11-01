@@ -110,6 +110,7 @@
   }
 
   /* the NQC / NXC switch */
+  .seg[hidden] { display: none; }
   .seg {
     display: flex; border: 1px solid var(--border); border-radius: 10px;
     overflow: hidden; background: var(--field);
@@ -1692,13 +1693,25 @@
   // BrickCode Studio uses this so the editor matches the switch in its toolbar.
   function wanted() {
     var h = String(location.hash || "").replace(/^#/, "").toLowerCase();
+    h = h.replace(/-only$/, "");
     return (h === "nxc" || h === "nxt") ? "nxc"
          : (h === "nqc" || h === "rcx") ? "nqc" : null;
+  }
+  // "-only" also takes the switch away. A host that can compile just one
+  // of the two languages should not offer the other: the program would be
+  // unbuildable by the app that opened this page.
+  function locked() {
+    return /-only$/.test(String(location.hash || "").toLowerCase());
   }
   loadExample();
   (function () {
     var w = wanted();
     if (w) setMode(w);            // setMode returns at once if it matches
+    if (w && locked()) {
+      document.getElementById("seg").hidden = true;
+      document.getElementById("tag").textContent =
+        "mock-up \u00b7 " + (w === "nqc" ? "RCX / Scout" : "NXT");
+    }
   })();
   window.addEventListener("hashchange", function () {
     var w = wanted();
@@ -1714,6 +1727,7 @@
   window.__saveAs = saveAs;
   window.__fullName = fullName;
   window.__setName = function (n) { fileName = baseOf(n); };
+  window.__locked = locked;
   window.__viewing = function () { return viewing; };
   window.__menu = { open: toggleMenu, close: closeMenu, newProject: newProject };
   window.__ws = ws;
