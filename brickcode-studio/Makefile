@@ -5,7 +5,7 @@ CFLAGS  ?= -O2
 PKGS     = gtk4 libusb-1.0
 
 # BLOCKS_DIR tells the binary where "make install" put the block editor.
-brickcode-studio: brickcode-studio.c nqc_tables.inc i18n_es.inc
+brickcode-studio: brickcode-studio.c nqc_tables.inc i18n_es.inc bricks.inc
 	$(CC) $(CFLAGS) -DBLOCKS_DIR='"$(PREFIX)/share/brickcode-studio/blocks"' \
 	    $$(pkg-config --cflags $(PKGS)) -o $@ brickcode-studio.c \
 	    $$(pkg-config --libs $(PKGS)) -lm

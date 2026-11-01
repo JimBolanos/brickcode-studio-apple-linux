@@ -65,9 +65,13 @@ static void bk_text(cairo_t *cr, const char *hex, double x, double y,
     cairo_show_text(cr, s);
 }
 
+/* How much of the card a brick takes up. Below 1.0 it sits in its own
+ * breathing room instead of touching the edges. */
+#define BK_SCALE 0.85
+
 /* Fit a design-space box of dw x dh into the widget, centred. */
 static void bk_begin(cairo_t *cr, int w, int h, double dw, double dh) {
-    double s = MIN(w / dw, h / dh);
+    double s = MIN(w / dw, h / dh) * BK_SCALE;
     cairo_translate(cr, (w - dw * s) / 2, (h - dh * s) / 2);
     cairo_scale(cr, s, s);
 }

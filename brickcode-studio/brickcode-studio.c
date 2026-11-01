@@ -2322,7 +2322,23 @@ static void apply_omarchy_style(AppState *st) {
         ".bc-name { color: #FFFFFF; font-size: 30px; font-weight: bold; letter-spacing: 1px; }"
         ".bc-foot { color: alpha(#FFFFFF,0.88); font-size: 11.5px; font-weight: bold; }"
 
+        ".ab-cols { margin: 12px 22px 16px 22px; }"
         ".ab-card { background-color: %s; border-radius: 18px; padding: 20px 22px; }"
+        ".ab-sec { color: #5E5E5E; font-size: 10px; font-weight: bold; }"
+        ".ab-ver { color: #C10085; font-size: 12px; font-weight: bold; }"
+        ".ab-h1 { color: #F2F2F2; font-size: 19px; font-weight: bold; }"
+        ".ab-chip { background-color: #202020; border-radius: 11px; padding: 5px 11px; "
+        "  color: #BEBEBE; font-size: 10.5px; font-weight: bold; }"
+        ".doc-row { background-color: #202020; border-radius: 15px; padding: 12px 15px; }"
+        ".doc-dot { border-radius: 999px; }"
+        ".dot-blue { background-color: #0085F3; } .dot-pink { background-color: #FA4FC7; }"
+        ".dot-yellow { background-color: #F3BC00; } .dot-cyan { background-color: #1BC5EE; }"
+        ".dot-green { background-color: #00B044; } .dot-red { background-color: #FD4B52; }"
+        ".doc-title { color: #F2F2F2; font-size: 12.5px; font-weight: bold; }"
+        ".doc-desc { color: #8A8A8A; font-size: 11px; }"
+        ".doc-go { color: #6A6A6A; font-size: 17px; }"
+        ".link-row { padding: 7px 0; }"
+        ".link-url { color: #6E8FBF; font-size: 11px; }"
         ".ab-k { color: %s; font-size: 12px; }"
         ".ab-v { color: %s; font-size: 12px; font-weight: bold; }"
         ".ab-name { color: %s; font-size: 17px; font-weight: bold; }"
@@ -3725,56 +3741,218 @@ static GtkWidget *about_row(const char *k, const char *v) {
     return r;
 }
 
+/* A coloured dot, a title, a line of explanation and a chevron. */
+static GtkWidget *doc_row(const char *colour, const char *title, const char *desc) {
+    GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+    gtk_widget_add_css_class(r, "doc-row");
+
+    GtkWidget *dot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_css_class(dot, "doc-dot");
+    gtk_widget_add_css_class(dot, colour);
+    gtk_widget_set_valign(dot, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(dot, 13, 13);
+    gtk_box_append(GTK_BOX(r), dot);
+
+    GtkWidget *col = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+    gtk_widget_set_hexpand(col, TRUE);
+    GtkWidget *t = gtk_label_new(title);
+    gtk_widget_add_css_class(t, "doc-title");
+    gtk_label_set_xalign(GTK_LABEL(t), 0.0);
+    GtkWidget *d = gtk_label_new(desc);
+    gtk_widget_add_css_class(d, "doc-desc");
+    gtk_label_set_xalign(GTK_LABEL(d), 0.0);
+    gtk_box_append(GTK_BOX(col), t);
+    gtk_box_append(GTK_BOX(col), d);
+    gtk_box_append(GTK_BOX(r), col);
+
+    GtkWidget *go = gtk_label_new("›");
+    gtk_widget_add_css_class(go, "doc-go");
+    gtk_box_append(GTK_BOX(r), go);
+    return r;
+}
+
+static GtkWidget *link_row(const char *name, const char *url) {
+    GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_add_css_class(r, "link-row");
+    GtkWidget *n = gtk_label_new(name);
+    gtk_widget_add_css_class(n, "ab-v");
+    gtk_label_set_xalign(GTK_LABEL(n), 0.0);
+    gtk_widget_set_size_request(n, 112, -1);
+    GtkWidget *u = gtk_label_new(url);
+    gtk_widget_add_css_class(u, "link-url");
+    gtk_label_set_xalign(GTK_LABEL(u), 0.0);
+    gtk_label_set_wrap(GTK_LABEL(u), TRUE);
+    gtk_widget_set_hexpand(u, TRUE);
+    gtk_box_append(GTK_BOX(r), n);
+    gtk_box_append(GTK_BOX(r), u);
+    return r;
+}
+
+static GtkWidget *section(const char *label) {
+    GtkWidget *l = gtk_label_new(label);
+    gtk_widget_add_css_class(l, "ab-sec");
+    gtk_label_set_xalign(GTK_LABEL(l), 0.0);
+    return l;
+}
+
+/* The monogram, drawn rather than shipped as an image. */
+static void avatar_draw_cb(GtkDrawingArea *a, cairo_t *cr,
+                            int w, int h, gpointer data) {
+    (void) a; (void) data;
+    cairo_pattern_t *g = cairo_pattern_create_linear(0, 0, w, h);
+    cairo_pattern_add_color_stop_rgb(g, 0, 0x7C / 255.0, 0x36 / 255.0, 0x9A / 255.0);
+    cairo_pattern_add_color_stop_rgb(g, 1, 0xC1 / 255.0, 0x00 / 255.0, 0x85 / 255.0);
+    cairo_arc(cr, w / 2.0, h / 2.0, MIN(w, h) / 2.0, 0, 2 * G_PI);
+    cairo_set_source(cr, g);
+    cairo_fill(cr);
+    cairo_pattern_destroy(g);
+
+    cairo_text_extents_t e;
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
+                           CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, h * 0.34);
+    cairo_text_extents(cr, "JB", &e);
+    cairo_move_to(cr, w / 2.0 - e.width / 2 - e.x_bearing,
+                      h / 2.0 - e.height / 2 - e.y_bearing);
+    cairo_show_text(cr, "JB");
+}
+
 static GtkWidget *about_screen(AppState *st) {
     (void) st;
     GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
     GtkWidget *title = gtk_label_new("BrickCode Studio");
     gtk_widget_add_css_class(title, "home-word");
-    gtk_widget_set_margin_top(title, 26);
+    gtk_widget_set_margin_top(title, 22);
     gtk_box_append(GTK_BOX(page), title);
-    GtkWidget *sub = gtk_label_new("Version " APP_VERSION
-                                   "   ·   NQC + NXC editor   ·   Linux and macOS");
-    gtk_widget_add_css_class(sub, "home-sub");
-    gtk_box_append(GTK_BOX(page), sub);
 
     GtkWidget *cols = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
-    gtk_widget_add_css_class(cols, "tools-wrap");
-    gtk_widget_set_halign(cols, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(cols, GTK_ALIGN_START);
+    gtk_widget_add_css_class(cols, "ab-cols");
+    gtk_widget_set_vexpand(cols, TRUE);
 
-    GtkWidget *spec = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
-    gtk_widget_add_css_class(spec, "ab-card");
-    gtk_box_append(GTK_BOX(spec), about_row("Compilers", "nqc (RCX / Scout)  ·  nbc (NXT)"));
-    gtk_box_append(GTK_BOX(spec), about_row("NQC targets", "RCX2 · RCX · CM · Scout · Spy"));
-    gtk_box_append(GTK_BOX(spec), about_row("NQC link", "IR tower (USB / serial)"));
-    gtk_box_append(GTK_BOX(spec), about_row("NXC link", "USB (libusb) · Bluetooth on Linux"));
-    gtk_box_append(GTK_BOX(spec), about_row("Block editor", "File → Block editor…"));
-    gtk_box_append(GTK_BOX(cols), spec);
+    /* ---- left: what it is, and what it runs on ---- */
+    GtkWidget *left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+    gtk_widget_set_size_request(left, 360, -1);
 
-    GtkWidget *who = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
+    GtkWidget *hero = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(hero, "ab-card");
+    GtkWidget *ver = gtk_label_new("VERSION " APP_VERSION);
+    gtk_widget_add_css_class(ver, "ab-ver");
+    gtk_label_set_xalign(GTK_LABEL(ver), 0.0);
+    gtk_box_append(GTK_BOX(hero), ver);
+    GtkWidget *h1 = gtk_label_new("NQC + NXC editor");
+    gtk_widget_add_css_class(h1, "ab-h1");
+    gtk_label_set_xalign(GTK_LABEL(h1), 0.0);
+    gtk_box_append(GTK_BOX(hero), h1);
+    GtkWidget *p = gtk_label_new(
+        "Write NQC for the RCX and Scout, or NXC for the NXT, press F5,\n"
+        "and the program compiles, downloads and runs on the brick.");
+    gtk_widget_add_css_class(p, "ab-k");
+    gtk_label_set_xalign(GTK_LABEL(p), 0.0);
+    gtk_box_append(GTK_BOX(hero), p);
+    gtk_box_append(GTK_BOX(left), hero);
+
+    GtkWidget *uses = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(uses, "ab-card");
+    gtk_box_append(GTK_BOX(uses), section("What it uses"));
+    gtk_box_append(GTK_BOX(uses), about_row("Compilers", "nqc (RCX / Scout)  ·  nbc (NXT)"));
+    gtk_box_append(GTK_BOX(uses), about_row("NQC targets", "RCX2 · RCX · CM · Scout · Spy"));
+    gtk_box_append(GTK_BOX(uses), about_row("NQC link", "IR tower (USB / serial)"));
+    gtk_box_append(GTK_BOX(uses), about_row("NXC link", "USB (libusb) · Bluetooth on Linux"));
+    gtk_box_append(GTK_BOX(uses), about_row("Highlighting", "Custom (GRegex)"));
+    gtk_box_append(GTK_BOX(uses), about_row("Platforms", "Linux and macOS · GTK4"));
+    gtk_box_append(GTK_BOX(left), uses);
+    gtk_box_append(GTK_BOX(cols), left);
+
+    /* ---- middle: documentation, and who made it ---- */
+    GtkWidget *mid = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+    gtk_widget_set_hexpand(mid, TRUE);
+
+    GtkWidget *docs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
+    gtk_widget_add_css_class(docs, "ab-card");
+    gtk_box_append(GTK_BOX(docs), section("Documentation"));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-blue", "Getting started",
+        "Write a program, press F5, watch it run on the brick."));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-pink", "Install",
+        "Homebrew on macOS · apt, dnf or AUR on Linux."));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-yellow", "Firmware",
+        "Sending firm0328.lgo to an RCX, and when you need to."));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-cyan", "The USB tower",
+        "How the RCX and Scout are reached, and the Windows caveat."));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-green", "Examples",
+        "Six programs that ship with the app, NQC and NXC."));
+    gtk_box_append(GTK_BOX(docs), doc_row("dot-red", "Block editor",
+        "Drag blocks instead of typing. Programs keep their blocks."));
+    gtk_box_append(GTK_BOX(mid), docs);
+
+    GtkWidget *who = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
     gtk_widget_add_css_class(who, "ab-card");
+    GtkWidget *av = gtk_drawing_area_new();
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(av), 62);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(av), 62);
+    gtk_widget_set_valign(av, GTK_ALIGN_CENTER);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(av), avatar_draw_cb, NULL, NULL);
+    gtk_box_append(GTK_BOX(who), av);
+    GtkWidget *wcol = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget *nm = gtk_label_new("Jim Bolaños");
     gtk_widget_add_css_class(nm, "ab-name");
     gtk_label_set_xalign(GTK_LABEL(nm), 0.0);
-    gtk_box_append(GTK_BOX(who), nm);
+    gtk_box_append(GTK_BOX(wcol), nm);
     GtkWidget *bio = gtk_label_new(
-        "Builds and programs LEGO robots as a hobby — RCX, Scout, NXT and\n"
-        "Powered Up hubs. Made BrickCode Studio so these classic bricks keep\n"
-        "running on modern computers: one editor, no old drivers.");
+        "Builds and programs LEGO robots as a hobby — RCX, Scout, NXT and Powered Up\n"
+        "hubs. Made BrickCode Studio so these classic bricks keep running on modern\n"
+        "computers: one editor, no old drivers, on Linux and macOS.");
     gtk_widget_add_css_class(bio, "ab-k");
     gtk_label_set_xalign(GTK_LABEL(bio), 0.0);
-    gtk_box_append(GTK_BOX(who), bio);
-    GtkWidget *lk = gtk_label_new("github.com/JimBolanos   ·   MIT License   ·   © 2026 Jim Bolaños");
-    gtk_widget_add_css_class(lk, "ab-v");
-    gtk_label_set_xalign(GTK_LABEL(lk), 0.0);
-    gtk_box_append(GTK_BOX(who), lk);
+    gtk_box_append(GTK_BOX(wcol), bio);
+    GtkWidget *chips = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 9);
+    GtkWidget *c1 = gtk_label_new("github.com/JimBolanos");
+    gtk_widget_add_css_class(c1, "ab-chip");
+    GtkWidget *c2 = gtk_label_new("rebrickable.com/users/jimmy.bolanos");
+    gtk_widget_add_css_class(c2, "ab-chip");
+    gtk_box_append(GTK_BOX(chips), c1);
+    gtk_box_append(GTK_BOX(chips), c2);
+    gtk_box_append(GTK_BOX(wcol), chips);
+    gtk_box_append(GTK_BOX(who), wcol);
+    gtk_box_append(GTK_BOX(mid), who);
+    gtk_box_append(GTK_BOX(cols), mid);
+
+    /* ---- right: links and the small print ---- */
+    GtkWidget *right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+    gtk_widget_set_size_request(right, 340, -1);
+
+    GtkWidget *links = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_add_css_class(links, "ab-card");
+    gtk_box_append(GTK_BOX(links), section("Links"));
+    gtk_box_append(GTK_BOX(links), link_row("Repository",
+        "github.com/JimBolanos/brickcode-studio"));
+    gtk_box_append(GTK_BOX(links), link_row("Issues & ideas",
+        "github.com/JimBolanos/brickcode-studio/issues"));
+    gtk_box_append(GTK_BOX(links), link_row("NQC reference", "bricxcc.sourceforge.net/nqc"));
+    gtk_box_append(GTK_BOX(links), link_row("NXC guide", "bricxcc.sourceforge.net/nbc"));
+    gtk_box_append(GTK_BOX(right), links);
+
+    GtkWidget *legal = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
+    gtk_widget_add_css_class(legal, "ab-card");
+    gtk_box_append(GTK_BOX(legal), section("Legal"));
+    GtkWidget *lic = gtk_label_new("MIT License\n© 2026 Jim Bolaños");
+    gtk_widget_add_css_class(lic, "ab-v");
+    gtk_label_set_xalign(GTK_LABEL(lic), 0.0);
+    gtk_box_append(GTK_BOX(legal), lic);
+    GtkWidget *cred = gtk_label_new(
+        "Blockly 13.4.0, Apache 2.0.\nnqc by Dave Baum · nbc by John Hansen.");
+    gtk_widget_add_css_class(cred, "ab-k");
+    gtk_label_set_xalign(GTK_LABEL(cred), 0.0);
+    gtk_box_append(GTK_BOX(legal), cred);
     GtkWidget *tm = gtk_label_new(
-        "Not affiliated with or endorsed by the LEGO Group. LEGO, MINDSTORMS,\n"
-        "RCX, Scout and NXT are trademarks of the LEGO Group.");
+        "Not affiliated with or endorsed by the LEGO Group.\n"
+        "LEGO, MINDSTORMS, RCX, Scout and NXT are trademarks\nof the LEGO Group.");
     gtk_widget_add_css_class(tm, "ab-fine");
     gtk_label_set_xalign(GTK_LABEL(tm), 0.0);
-    gtk_box_append(GTK_BOX(who), tm);
-    gtk_box_append(GTK_BOX(cols), who);
+    gtk_box_append(GTK_BOX(legal), tm);
+    gtk_box_append(GTK_BOX(right), legal);
+    gtk_box_append(GTK_BOX(cols), right);
 
     gtk_box_append(GTK_BOX(page), cols);
     return page;
