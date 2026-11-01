@@ -305,7 +305,7 @@ typedef struct {
     GtkWidget *dev_dot, *dev_label;   /* connected-brick indicator */
     GtkWidget *topbar;
     GtkWidget *stack;        /* HOME / CODE / TOOLS / ABOUT */
-    GtkWidget *nav_btn[4];
+    GtkWidget *nav_btn[3];
     GtkWidget *drawer;       /* right settings drawer (GtkRevealer) */
     GtkWidget *console_box;
     char *post_rxe;          /* NXT: file to upload after nbc succeeds */
@@ -3606,7 +3606,7 @@ static GtkWidget *side_brick_row(const char *label, GtkWidget **dot_out) {
  * ===================================================================== */
 
 static const struct { const char *id; const char *label; } SCREENS[] = {
-    { "home", "HOME" }, { "tools", "TOOLS" }, { "about", "ABOUT" }, { "code", "CODE" }
+    { "home", "HOME" }, { "about", "ABOUT" }, { "code", "CODE" }
 };
 
 static void show_screen(AppState *st, const char *id) {
@@ -3714,36 +3714,6 @@ static GtkWidget *home_screen(AppState *st) {
     gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-nxt", "NXC", "NXT",
         "USB or Bluetooth  ·  encoders", bk_draw_nxt, MODE_NXC, -1));
     gtk_box_append(GTK_BOX(page), row);
-    return page;
-}
-
-/* ---- TOOLS ----------------------------------------------------------- */
-
-static GtkWidget *tools_screen(AppState *st) {
-    GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-    GtkWidget *title = gtk_label_new("Tools");
-    gtk_widget_add_css_class(title, "home-word");
-    gtk_widget_set_margin_top(title, 22);
-    gtk_box_append(GTK_BOX(page), title);
-    GtkWidget *sub = gtk_label_new(
-        "Everything you do to the brick itself. What you set for the program "
-        "stays in the editor's Settings drawer.");
-    gtk_widget_add_css_class(sub, "home-sub");
-    gtk_box_append(GTK_BOX(page), sub);
-
-    /* The real utilities, moved out of the drawer rather than copied, so
-     * there is one of each. apply_mode() still shows the NQC or the NXC
-     * set depending on the language, wherever they are parented. */
-    GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_add_css_class(card, "ab-card");
-    gtk_widget_set_halign(card, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(card, GTK_ALIGN_START);
-    gtk_widget_set_margin_start(card, 22);
-    gtk_widget_set_margin_end(card, 22);
-    gtk_widget_set_margin_top(card, 10);
-    if (st->utils_row) gtk_box_append(GTK_BOX(card), st->utils_row);
-    gtk_box_append(GTK_BOX(page), card);
     return page;
 }
 
@@ -4394,8 +4364,24 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_expander_set_child(GTK_EXPANDER(st->utils_expander), utils_content);
     gtk_box_append(GTK_BOX(utils_row), st->utils_expander);
-    /* utils_row is not appended here: it belongs to the TOOLS screen now,
-     * so the utilities live in exactly one place. */
+    gtk_box_append(GTK_BOX(drawer_box), utils_row);
+
+    /* The block editor, where you can see it. It was only in the File menu,
+     * which is the last place you look for a different way to write the
+     * program you are staring at. */
+    GtkWidget *blocks_row = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_widget_add_css_class(blocks_row, "utils-row");
+    GtkWidget *blocks_btn = gtk_button_new_with_label("\u2b1a  Block editor");
+    gtk_widget_add_css_class(blocks_btn, "qa-btn");
+    gtk_widget_add_css_class(blocks_btn, "qa-pink");
+    g_signal_connect(blocks_btn, "clicked", G_CALLBACK(open_blocks_cb), st);
+    GtkWidget *blocks_hint = gtk_label_new(
+        "Drag blocks instead of typing  \u00b7  NQC and NXC");
+    gtk_widget_add_css_class(blocks_hint, "settings-label");
+    gtk_label_set_xalign(GTK_LABEL(blocks_hint), 0.0);
+    gtk_box_append(GTK_BOX(blocks_row), blocks_btn);
+    gtk_box_append(GTK_BOX(blocks_row), blocks_hint);
+    gtk_box_append(GTK_BOX(drawer_box), blocks_row);
 
     /* ---- Raw command row ---- */
     GtkWidget *command_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -4498,7 +4484,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
                                    GTK_STACK_TRANSITION_TYPE_CROSSFADE);
     gtk_stack_set_transition_duration(GTK_STACK(st->stack), 140);
     gtk_stack_add_named(GTK_STACK(st->stack), home_screen(st), "home");
-    gtk_stack_add_named(GTK_STACK(st->stack), tools_screen(st), "tools");
     gtk_stack_add_named(GTK_STACK(st->stack), about_screen(st), "about");
     gtk_stack_add_named(GTK_STACK(st->stack), body, "code");
     gtk_box_append(GTK_BOX(root), st->stack);

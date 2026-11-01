@@ -48,6 +48,26 @@
   }
   button:hover { filter: brightness(1.25); }
   body[data-theme="light"] button:hover { filter: brightness(0.96); }
+  /* the Save as sheet, for browsers without a file picker */
+  /* A class selector beats the browser's own [hidden] rule. */
+  .modal[hidden] { display: none; }
+  .modal {
+    position: fixed; inset: 0; z-index: 90; display: grid; place-items: center;
+    background: rgba(0,0,0,.55);
+  }
+  .sheet {
+    width: 330px; padding: 18px; border-radius: 16px;
+    background: var(--panel); border: 1px solid var(--border);
+    box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  }
+  .sheet h3 { font-size: 13px; margin: 0 0 12px 0; }
+  .sheet input {
+    width: 100%; padding: 9px 11px; border-radius: 10px; font-size: 13px;
+    background: var(--field); border: 1px solid var(--border); color: var(--fg);
+  }
+  .sheet .ext { font-size: 11px; color: var(--muted); margin: 8px 2px 0; }
+  .sheet .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
   /* app identity and the File menu */
   .brand { display: flex; align-items: center; gap: 9px; }
   .appicon { display: block; border-radius: 7px; flex: 0 0 auto; }
@@ -184,6 +204,18 @@
   <div class="title" id="title">NQC Blocks</div>
   <div class="tag" id="tag">mock-up &middot; RCX / Scout</div>
 
+  <div class="modal" id="nameModal" hidden>
+    <div class="sheet">
+      <h3>Save as</h3>
+      <input id="nameIn" type="text" spellcheck="false">
+      <div class="ext" id="nameExt"></div>
+      <div class="row">
+        <button id="nameCancel">Cancel</button>
+        <button id="nameOk" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div class="menuwrap">
     <button id="btnMenu" aria-haspopup="true" aria-expanded="false">File &#9662;</button>
     <div class="menu" id="menu" hidden>
@@ -192,6 +224,7 @@
       <hr>
       <button id="miOpen">Open&hellip;<span class="key">.nqc .nxc</span></button>
       <button id="miSave">Save<span class="key" id="miSaveExt">.nqc</span></button>
+      <button id="miSaveAs">Save as&hellip;</button>
       <hr>
       <button id="miClear">Clear canvas</button>
     </div>
@@ -1404,6 +1437,10 @@
   }
 
   function openText(text, name) {
+    // Opening a file adopts its name, but not its handle: the picker is the
+    // only thing that can grant write access back to it.
+    fileName = baseOf(name);
+    fileHandle = null;
     var ext = (name.match(/\.(nqc|nxc)$/i) || [0, ""])[1].toLowerCase();
     if (ext === "nqc" || ext === "nxc") setMode(ext);
 
@@ -1484,6 +1521,8 @@
   // A new project is the empty canvas plus the hat block every program
   // needs, so there is somewhere to drop the first block.
   function newProject() {
+    fileName = "program";
+    fileHandle = null;
     dropViewed();
     ws.clear();
     Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(
@@ -1521,15 +1560,104 @@
   item("miExample", loadExample);
   item("miOpen", pickFile);
   item("miSave", function () { saveProgram(); });
+  item("miSaveAs", function () { saveAs(); });
   item("miClear", function () { dropViewed(); ws.clear(); regenerate(); });
-  function saveProgram() {
-    var blob = new Blob([lastCode + blocksComment()],
-                        { type: "text/plain;charset=utf-8" });
+  // ---- saving -------------------------------------------------------------
+  // nqc and nbc choose what to do by the extension, so the language decides
+  // it, not the typing. "robot", "robot.txt" and "robot.nxc" all become
+  // robot.nqc while the editor is on NQC.
+  var fileHandle = null;          // set once Save as has used a real picker
+  var fileName = "program";       // without the extension
+
+  function baseOf(name) {
+    return String(name || "program").trim()
+             .replace(/\.(nqc|nxc|txt)$/i, "") || "program";
+  }
+  function fullName() { return baseOf(fileName) + "." + MODES[mode].ext; }
+
+  function contents() { return lastCode + blocksComment(); }
+
+  function download(name) {
+    var blob = new Blob([contents()], { type: "text/plain;charset=utf-8" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "program." + MODES[mode].ext;
+    a.download = name;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // The in-page sheet, used when the browser has no file picker.
+  var nameModal = document.getElementById("nameModal");
+  var nameIn = document.getElementById("nameIn");
+  var nameExt = document.getElementById("nameExt");
+  var namePending = null;
+
+  function closeName(answer) {
+    nameModal.hidden = true;
+    var fn = namePending; namePending = null;
+    if (fn) fn(answer);
+  }
+  function askName(suggested) {
+    return new Promise(function (resolve) {
+      namePending = resolve;
+      nameIn.value = suggested;
+      nameExt.textContent = "Saved as ." + MODES[mode].ext +
+                            " \u2014 the " + MODES[mode].lang + " compiler needs it.";
+      nameModal.hidden = false;
+      nameIn.focus();
+      nameIn.select();
+    });
+  }
+  document.getElementById("nameCancel").onclick = function () { closeName(null); };
+  document.getElementById("nameOk").onclick = function () { closeName(nameIn.value); };
+  nameIn.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); closeName(nameIn.value); }
+    else if (e.key === "Escape") { e.preventDefault(); closeName(null); }
+  });
+
+  function writeHandle() {
+    return fileHandle.createWritable().then(function (w) {
+      return w.write(contents()).then(function () { return w.close(); });
+    });
+  }
+
+  function saveAs() {
+    var suggested = fullName();
+    if (window.showSaveFilePicker) {
+      var ext = "." + MODES[mode].ext;
+      var types = [{}];
+      types[0].description = MODES[mode].lang + " program";
+      types[0].accept = { "text/plain": [ext] };
+      // excludeAcceptAllOption keeps "All files" out of the dialog: with it
+      // there, someone could still save robot.txt and hand nqc a file it
+      // will not compile.
+      return window.showSaveFilePicker({ suggestedName: suggested, types: types,
+                                         excludeAcceptAllOption: true })
+        .then(function (h) {
+          fileHandle = h;
+          fileName = baseOf(h.name);
+          return writeHandle();
+        })
+        .catch(function (e) {
+          // Cancelling is not a failure; anything else falls back to a download.
+          if (e && e.name === "AbortError") return;
+          fileHandle = null;
+          download(suggested);
+        });
+    }
+    return askName(suggested).then(function (typed) {
+      if (typed === null) return;
+      fileName = baseOf(typed);
+      download(fullName());
+    });
+  }
+
+  function saveProgram() {
+    // Save after a Save as goes back to the same file, no questions asked.
+    if (fileHandle) {
+      return writeHandle().catch(function () { fileHandle = null; return saveAs(); });
+    }
+    return saveAs();
   }
   document.getElementById("btnCopy").onclick = function () {
     var b = this;
@@ -1553,7 +1681,7 @@
   document.addEventListener("keydown", function (ev) {
     if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
     var k = String(ev.key || "").toLowerCase();
-    if (k === "s")      { ev.preventDefault(); saveProgram(); }
+    if (k === "s")      { ev.preventDefault(); ev.shiftKey ? saveAs() : saveProgram(); }
     else if (k === "o") { ev.preventDefault(); pickFile(); }
     else if (k === "n") { ev.preventDefault(); newProject(); }
   });
@@ -1583,6 +1711,9 @@
   window.__setMode = setMode;
   window.__open = openText;
   window.__saved = function () { return lastCode + blocksComment(); };
+  window.__saveAs = saveAs;
+  window.__fullName = fullName;
+  window.__setName = function (n) { fileName = baseOf(n); };
   window.__viewing = function () { return viewing; };
   window.__menu = { open: toggleMenu, close: closeMenu, newProject: newProject };
   window.__ws = ws;
