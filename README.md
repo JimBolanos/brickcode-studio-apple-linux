@@ -28,6 +28,7 @@ Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md
 - Device chip: shows whether an NXT or an RCX tower is connected
 - RCX tools: tower port detection, firmware sheet with a real progress bar, datalog, IR range, auto-shutoff
 - NXT Explorer: files, battery and firmware over USB
+- Visual block editor (**File → Block editor…**): drag blocks instead of typing, in NQC or NXC. It opens in your browser already set to the language the toolbar is on. Saved programs carry their blocks inside, so you can open them again and keep building — see [`blocks`](blocks).
 - Remote (RCX): the buttons of the LEGO IR remote (messages, motors A/B/C, programs P1-P5, stop, sound), sent with `nqc`. The motor buttons run the motor while held, like the real remote. The installers patch nqc at build time so it does not wait for a reply the RCX never sends to remote commands (needed for the motor to keep running). Tested on a Mac mini M4 with an RCX 2.0.
 
 ## Install
@@ -129,6 +130,18 @@ If it keeps failing, load the firmware once with another tool or computer; Brick
 
 On Linux the RCX tower port must be `usb` (not `/dev/usb/legousbtower0`); the **Detect** button sets it for you.
 If you get a permission error, add your user to the group that owns the tower (`dialout` or `plugdev`, depending on the distro) and log in again.
+
+## Block editor
+
+Prefer dragging blocks to typing? **File → Block editor…** opens
+[`blocks/brickcode-blocks.html`](blocks) in your browser. It is one offline
+file with the MINDSTORMS palette, and it writes NQC for the RCX and Scout or
+NXC for the NXT.
+
+Press **Save** there and open the file here with **File → Open…**. The
+program carries its own blocks in a trailing comment, so opening it back in
+the block editor restores exactly what you built. Both compilers ignore that
+comment — the compiled program is byte for byte the same with or without it.
 
 ## Examples
 

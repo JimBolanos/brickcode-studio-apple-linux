@@ -4,8 +4,10 @@ PREFIX  ?= /usr/local
 CFLAGS  ?= -O2
 PKGS     = gtk4 libusb-1.0
 
+# BLOCKS_DIR tells the binary where "make install" put the block editor.
 brickcode-studio: brickcode-studio.c nqc_tables.inc i18n_es.inc
-	$(CC) $(CFLAGS) $$(pkg-config --cflags $(PKGS)) -o $@ brickcode-studio.c \
+	$(CC) $(CFLAGS) -DBLOCKS_DIR='"$(PREFIX)/share/brickcode-studio/blocks"' \
+	    $$(pkg-config --cflags $(PKGS)) -o $@ brickcode-studio.c \
 	    $$(pkg-config --libs $(PKGS)) -lm
 
 install: brickcode-studio
@@ -14,6 +16,7 @@ install: brickcode-studio
 	install -Dm644 brickcode-studio.desktop $(DESTDIR)$(PREFIX)/share/applications/brickcode-studio.desktop
 	install -Dm644 brickcode-studio.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/brickcode-studio.svg
 	for f in ../firmware/*.lgo; do install -Dm644 $$f $(DESTDIR)$(PREFIX)/share/brickcode-studio/firmware/$$(basename $$f); done
+	install -Dm644 ../blocks/brickcode-blocks.html $(DESTDIR)$(PREFIX)/share/brickcode-studio/blocks/brickcode-blocks.html
 
 clean:
 	rm -f brickcode-studio

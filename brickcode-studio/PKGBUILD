@@ -1,6 +1,6 @@
 # Maintainer: Jim Bolaños
 pkgname=brickcode-studio
-pkgver=2.1.1
+pkgver=2.2.0
 pkgrel=1
 pkgdesc="Native GTK4 editor for NQC (RCX/Scout) and NXC (NXT) programming"
 arch=('x86_64')
@@ -12,13 +12,17 @@ optdepends=('nqc: needed for NQC mode (RCX, Scout, CyberMaster, Spybotics)')
 conflicts=('lego-brick-ide' 'nxc-ide' 'classicbrick-studio')
 replaces=('lego-brick-ide' 'nxc-ide' 'classicbrick-studio')
 source=("brickcode-studio.c" "nqc_tables.inc" "i18n_es.inc"
+        "../blocks/brickcode-blocks.html"
         "brickcode-studio.desktop" "brickcode-studio.svg"
         icon-48.png icon-64.png icon-128.png icon-256.png icon-512.png)
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP')
 
 build() {
     cd "$srcdir"
-    gcc $(pkg-config --cflags gtk4 libusb-1.0) -O2 -o brickcode-studio \
+    gcc $(pkg-config --cflags gtk4 libusb-1.0) -O2 \
+        -DBLOCKS_DIR='"/usr/share/brickcode-studio/blocks"' \
+        -o brickcode-studio \
         brickcode-studio.c $(pkg-config --libs gtk4 libusb-1.0)
 }
 
@@ -34,4 +38,6 @@ package() {
             "$pkgdir/usr/share/icons/hicolor/${s}x${s}/apps/brickcode-studio.png"
     done
     install -Dm644 icon-128.png "$pkgdir/usr/share/pixmaps/brickcode-studio.png"
+    install -Dm644 brickcode-blocks.html \
+        "$pkgdir/usr/share/brickcode-studio/blocks/brickcode-blocks.html"
 }

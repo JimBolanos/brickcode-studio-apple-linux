@@ -45,7 +45,12 @@ echo "==> 3/4 nbc (NXT compiler, compile-only: the app uploads over USB itself)"
   cp NBCCommon.h NXCDefs.h NXTDefs.h "$PREFIX/share/brickcode/nbc/" )
 
 echo "==> 4/4 BrickCode Studio"
-cc -O2 $(pkg-config --cflags gtk4 libusb-1.0) -o "$PREFIX/bin/brickcode-studio" \
+# -DBLOCKS_DIR tells the binary where the visual block editor landed.
+BLOCKS="$PREFIX/share/brickcode-studio/blocks"
+mkdir -p "$BLOCKS"
+cp "$(cd "$(dirname "$0")/.." && pwd)/blocks/brickcode-blocks.html" "$BLOCKS/"
+cc -O2 -DBLOCKS_DIR="\"$BLOCKS\"" \
+   $(pkg-config --cflags gtk4 libusb-1.0) -o "$PREFIX/bin/brickcode-studio" \
    "$SRC/brickcode-studio.c" $(pkg-config --libs gtk4 libusb-1.0)
 
 # A small .app so it can be started from Finder / Spotlight
@@ -82,3 +87,4 @@ echo
 echo "Done. Start it from: $APP"
 echo "or in a terminal:    $PREFIX/bin/brickcode-studio"
 echo "RCX firmware files:  $PREFIX/share/firmware  (e.g. firm0328.lgo)"
+echo "Block editor:        $BLOCKS/brickcode-blocks.html"

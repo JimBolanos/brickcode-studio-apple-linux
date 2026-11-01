@@ -39,7 +39,8 @@
 #include <stdlib.h>
 
 #define APP_NAME     "BrickCode Studio"
-#define APP_VERSION  "2.1.1"
+#define APP_VERSION  "2.2.0"
+#define BLOCKS_HTML  "brickcode-blocks.html"
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
@@ -651,6 +652,81 @@ static void open_file_finish(GObject *source, GAsyncResult *res,
     }
     g_free(path);
     g_object_unref(file);
+}
+
+/* The visual editor is a single self-contained HTML page that ships beside
+ * the app. We hand it to the system browser rather than embedding it: a web
+ * view would pull in webkitgtk-6.0 on Linux and need a separate WKWebView
+ * path on macOS, and this program is one portable .c file by design. */
+static char *blocks_html_path(void) {
+    GPtrArray *dirs = g_ptr_array_new_with_free_func(g_free);
+
+    const char *env = g_getenv("BRICKCODE_BLOCKS");    /* handy while hacking */
+    if (env && *env) g_ptr_array_add(dirs, g_strdup(env));
+#ifdef BLOCKS_DIR
+    g_ptr_array_add(dirs, g_strdup(BLOCKS_DIR));       /* where make install put it */
+#endif
+    g_ptr_array_add(dirs, g_build_filename(g_get_user_data_dir(),
+                                           "brickcode-studio", "blocks", NULL));
+    g_ptr_array_add(dirs, g_strdup("/usr/local/share/brickcode-studio/blocks"));
+    g_ptr_array_add(dirs, g_strdup("/usr/share/brickcode-studio/blocks"));
+    g_ptr_array_add(dirs, g_strdup("/opt/homebrew/share/brickcode-studio/blocks"));
+    g_ptr_array_add(dirs, g_strdup("blocks"));         /* running from the tree */
+    g_ptr_array_add(dirs, g_strdup("../blocks"));
+
+    char *found = NULL;
+    for (guint i = 0; i < dirs->len && !found; i++) {
+        char *f = g_build_filename(dirs->pdata[i], BLOCKS_HTML, NULL);
+        if (g_file_test(f, G_FILE_TEST_EXISTS)) found = f;
+        else g_free(f);
+    }
+    g_ptr_array_free(dirs, TRUE);
+    return found;
+}
+
+static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    char *path = blocks_html_path();
+    if (!path) {
+        log_output(st, "Block editor not found. It installs next to the app, "
+                       "as share/brickcode-studio/blocks/" BLOCKS_HTML
+                       " - or point BRICKCODE_BLOCKS at the folder holding it.",
+                   "err");
+        return;
+    }
+
+    GError *error = NULL;
+    char *uri = g_filename_to_uri(path, NULL, &error);   /* escapes spaces */
+    if (!uri) {
+        log_output(st, error ? error->message : "Cannot build a URI for the "
+                                                "block editor.", "err");
+        g_clear_error(&error);
+        g_free(path);
+        return;
+    }
+    /* The page reads this and comes up on the same language as the toolbar.
+     * If an opener ever drops the fragment the editor simply starts on NQC
+     * and its own switch still works, so this can only ever be a nicety. */
+    char *full = g_strconcat(uri, st->mode == MODE_NQC ? "#nqc" : "#nxc", NULL);
+
+#ifdef __APPLE__
+    char *argv[] = { "open", full, NULL };
+#else
+    char *argv[] = { "xdg-open", full, NULL };
+#endif
+    if (g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
+                      NULL, NULL, NULL, &error)) {
+        log_output(st, "Block editor opened in your browser. Build the program "
+                       "there, press Save, then open the file here.", "info");
+    } else {
+        log_output(st, error ? error->message
+                             : "Could not launch a browser for the block editor.",
+                   "err");
+        g_clear_error(&error);
+    }
+    g_free(full);
+    g_free(uri);
+    g_free(path);
 }
 
 static void open_file_cb(GtkButton *btn, gpointer user_data) {
@@ -3502,6 +3578,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(file_list), menu_item("Open…", G_CALLBACK(open_file_cb), st, file_pop));
     gtk_box_append(GTK_BOX(file_list), menu_item("Save", G_CALLBACK(save_file_cb), st, file_pop));
     gtk_box_append(GTK_BOX(file_list), menu_item("Save as…", G_CALLBACK(save_as_cb), st, file_pop));
+    gtk_box_append(GTK_BOX(file_list), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    gtk_box_append(GTK_BOX(file_list), menu_item("Block editor…",
+                                                 G_CALLBACK(open_blocks_cb), st, file_pop));
     gtk_popover_set_child(GTK_POPOVER(file_pop), file_list);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(kebab), file_pop);
     gtk_box_append(GTK_BOX(tab), st->badge_label);

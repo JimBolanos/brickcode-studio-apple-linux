@@ -38,7 +38,12 @@ echo "==> 3/5 nbc (NXT compiler, compile-only: the app uploads over USB itself)"
   cp NBCCommon.h NXCDefs.h NXTDefs.h "$PREFIX/share/brickcode/nbc/" )
 
 echo "==> 4/5 BrickCode Studio"
-cc -O2 $(pkg-config --cflags gtk4 libusb-1.0) -o "$PREFIX/bin/brickcode-studio" \
+# -DBLOCKS_DIR tells the binary where the visual block editor landed.
+BLOCKS="$PREFIX/share/brickcode-studio/blocks"
+mkdir -p "$BLOCKS"
+cp "$(cd "$(dirname "$0")/.." && pwd)/blocks/brickcode-blocks.html" "$BLOCKS/"
+cc -O2 -DBLOCKS_DIR="\"$BLOCKS\"" \
+   $(pkg-config --cflags gtk4 libusb-1.0) -o "$PREFIX/bin/brickcode-studio" \
    "$SRC/brickcode-studio.c" $(pkg-config --libs gtk4 libusb-1.0) -lm
 mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/256x256/apps"
 cp "$SRC/icon-256.png" "$HOME/.local/share/icons/hicolor/256x256/apps/brickcode-studio.png"
@@ -56,4 +61,5 @@ fi
 echo
 echo "Done. Start it from the app menu (BrickCode Studio) or run:"
 echo "  $PREFIX/bin/brickcode-studio"
+echo "Block editor:        $BLOCKS/brickcode-blocks.html"
 echo "Unplug and plug the NXT again so the USB rule applies."

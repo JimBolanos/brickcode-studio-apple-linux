@@ -4,6 +4,7 @@
 { "Open…", "Abrir…" },
 { "Save", "Guardar" },
 { "Save as…", "Guardar como…" },
+{ "Block editor…", "Editor de bloques…" },
 { "New program", "Nuevo programa" },
 { "Language", "Idioma" },
 { "No brick connected", "Ningún ladrillo conectado" },

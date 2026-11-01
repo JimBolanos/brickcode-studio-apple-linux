@@ -1,0 +1,1592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NQC Blocks</title>
+<style>
+  :root {
+    --bg: #131313; --panel: #1B1B1B; --field: #262626;
+    --fg: #E8E8E8; --muted: #8A8A8A; --border: #2E2E2E; --accent: #0085F3;
+    --green: #068E3A; --code-bg: #131313; --code-fg: #D8DEE9;
+    --kw: #569cd6; --bi: #4ec9b0; --num: #b5cea8; --com: #6a9955;
+  }
+  body[data-theme="light"] {
+    --bg: #F5F5F7; --panel: #FFFFFF; --field: #ECECF0;
+    --fg: #1D1D1F; --muted: #6E6E73; --border: #D9D9DE; --accent: #0085F3;
+    --code-bg: #FFFFFF; --code-fg: #1A1D2B; --num: #2E7D32;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    display: flex; flex-direction: column;
+  }
+
+  header {
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap; flex: 0 0 auto;
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+    background: linear-gradient(#1c2a4a, #121a30);
+    display: grid; place-items: center;
+  }
+  .logo span { width: 17px; height: 12px; border-radius: 2px; background: #96b08c; }
+  .title { font-weight: 700; margin-right: 4px; }
+  .tag {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 2px 9px;
+  }
+  .spacer { flex: 1 1 auto; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--field); color: var(--fg);
+    border-radius: 9px; padding: 7px 13px;
+  }
+  button:hover { filter: brightness(1.25); }
+  body[data-theme="light"] button:hover { filter: brightness(0.96); }
+  /* app identity and the File menu */
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .appicon { display: block; border-radius: 7px; flex: 0 0 auto; }
+  .brandname { font-weight: 700; font-size: 13px; letter-spacing: .1px; }
+
+  .menuwrap { position: relative; }
+  .menu {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+    min-width: 212px; padding: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 11px; box-shadow: 0 14px 38px rgba(0,0,0,.45);
+  }
+  body[data-theme="light"] .menu { box-shadow: 0 14px 38px rgba(0,0,0,.16); }
+  .menu[hidden] { display: none; }
+  .menu button {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 8px 10px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--fg); font-size: 12.5px; text-align: left;
+  }
+  .menu button:hover { background: var(--field); }
+  .menu .key { margin-left: auto; color: var(--muted); font-size: 11px; }
+  .menu hr { border: 0; border-top: 1px solid var(--border); margin: 5px 2px; }
+
+  /* banner shown while looking at a file we did not generate */
+  /* A class selector beats the browser's own [hidden] rule, so the attribute
+     has to be honoured here or the empty banner shows on load. */
+  .banner[hidden] { display: none; }
+  .banner {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 8px 0; padding: 9px 11px; border-radius: 9px;
+    background: #3A2A12; border: 1px solid #6B4E1C; color: #F0D9A8;
+    font-size: 12px; line-height: 1.45;
+  }
+  body[data-theme="light"] .banner {
+    background: #FFF6E0; border-color: #E6CF9A; color: #6B4E1C;
+  }
+  .banner b { color: inherit; }
+  .banner button {
+    margin-left: auto; flex: 0 0 auto; padding: 4px 9px; font-size: 11px;
+  }
+
+  /* the NQC / NXC switch */
+  .seg {
+    display: flex; border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; background: var(--field);
+  }
+  .seg button {
+    border: 0; border-radius: 0; background: transparent; color: var(--muted);
+    padding: 7px 13px; font-size: 12px; font-weight: 700; letter-spacing: .2px;
+  }
+  .seg button:hover { color: var(--fg); }
+  .seg button.on { background: var(--accent); color: #fff; }
+
+  button.icon {
+    padding: 0; width: 36px; height: 36px; display: grid; place-items: center;
+    border-radius: 10px; color: var(--fg);
+  }
+  button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  button.go { background: var(--green); border-color: transparent; color: #fff; }
+
+  main { flex: 1 1 auto; display: flex; min-height: 0; }
+  #blocklyDiv { flex: 1 1 auto; min-width: 0; }
+  .side {
+    width: 400px; flex: 0 0 400px; border-left: 1px solid var(--border);
+    background: var(--bg); display: flex; flex-direction: column; min-height: 0;
+  }
+  .side h2 {
+    margin: 0; padding: 11px 14px; font-size: 13px; font-weight: 700;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+  }
+  .side h2 .spacer { flex: 1 1 auto; }
+  pre {
+    margin: 0; flex: 1 1 auto; overflow: auto; padding: 14px;
+    background: var(--code-bg); color: var(--code-fg);
+    font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre; tab-size: 4;
+  }
+  .kw { color: var(--kw); } .bi { color: var(--bi); }
+  .num { color: var(--num); } .com { color: var(--com); font-style: italic; }
+  .note {
+    flex: 0 0 auto; border-top: 1px solid var(--border); padding: 10px 14px;
+    font-size: 12px; color: var(--muted); background: var(--bg);
+  }
+  footer {
+    flex: 0 0 auto; background: var(--panel); border-top: 1px solid var(--border);
+    padding: 7px 16px; font-size: 12px; color: var(--muted);
+    display: flex; gap: 10px; align-items: center;
+  }
+
+  /* Flyout buttons: Create variable, Make a Block */
+  .blocklyFlyoutButtonBackground {
+    fill: var(--field) !important; stroke: var(--border) !important;
+  }
+  .blocklyFlyoutButtonShadow { fill: var(--border) !important; }
+  .blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground {
+    fill: var(--border) !important;
+  }
+  .blocklyFlyoutButton .blocklyText { fill: var(--fg) !important; }
+
+  /* Categories with a colour dot on top, the way MINDSTORMS does it */
+  .blocklyToolboxCategoryContainer { height: auto !important; }
+  .blocklyToolboxCategory {
+    border-left: 0 !important; padding: 9px 4px !important; text-align: center;
+    height: auto !important; min-height: 0 !important; line-height: 1.2 !important;
+  }
+  .blocklyTreeRowContentContainer {
+    display: flex !important; flex-direction: column; align-items: center; gap: 5px;
+    height: auto !important; min-height: 0 !important;
+  }
+  .blocklyToolboxCategoryIcon {
+    width: 19px !important; height: 19px !important; border-radius: 50% !important;
+    flex: 0 0 auto; display: inline-block !important; background-image: none !important;
+    visibility: visible !important; opacity: 1 !important;
+  }
+  .blocklyToolboxCategoryLabel {
+    font-size: 10.5px !important; font-weight: 600 !important; line-height: 1.25;
+    max-width: 66px; display: block;
+    white-space: normal !important; overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    .side { width: auto; flex: 0 0 45%; border-left: 0; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="brand">
+    <svg class="appicon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="26" height="26"><defs><linearGradient id="bcsIcon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C2A4A"/><stop offset="1" stop-color="#121A30"/></linearGradient></defs><rect width="512" height="512" rx="112.64" fill="url(#bcsIcon)"/><rect x="66" y="92" width="380" height="340" rx="44" fill="#787E88"/><rect x="66" y="84" width="380" height="336" rx="44" fill="#DEE2E8"/><rect x="80" y="92" width="352" height="20" rx="10" fill="#F4F6FA"/><rect x="112" y="128" width="288" height="138" rx="16" fill="#3C4048"/><rect x="122" y="138" width="268" height="118" rx="10" fill="#96B08C"/><g fill="#223422"><rect x="196" y="170" width="22" height="22" rx="3"/><rect x="296" y="170" width="22" height="22" rx="3"/><rect x="196" y="214" width="108" height="12" rx="5"/><rect x="184" y="200" width="16" height="14" rx="5"/><rect x="300" y="200" width="16" height="14" rx="5"/></g><g fill="#464C58"><rect x="112" y="292" width="64" height="48" rx="12"/><rect x="336" y="292" width="64" height="48" rx="12"/><rect x="180" y="362" width="152" height="30" rx="12"/></g><ellipse cx="256" cy="316" rx="46" ry="34" fill="#FA8C14"/><ellipse cx="256" cy="310" rx="32" ry="18" fill="#FFB046"/><g fill="#282C34"><rect x="112" y="404" width="52" height="20" rx="6"/><rect x="176" y="404" width="52" height="20" rx="6"/><rect x="240" y="404" width="52" height="20" rx="6"/><rect x="304" y="404" width="52" height="20" rx="6"/></g></svg>
+    <span class="brandname">BrickCode Studio</span>
+  </div>
+  <div class="title" id="title">NQC Blocks</div>
+  <div class="tag" id="tag">mock-up &middot; RCX / Scout</div>
+
+  <div class="menuwrap">
+    <button id="btnMenu" aria-haspopup="true" aria-expanded="false">File &#9662;</button>
+    <div class="menu" id="menu" hidden>
+      <button id="miNew">New project<span class="key">empty</span></button>
+      <button id="miExample">Load example</button>
+      <hr>
+      <button id="miOpen">Open&hellip;<span class="key">.nqc .nxc</span></button>
+      <button id="miSave">Save<span class="key" id="miSaveExt">.nqc</span></button>
+      <hr>
+      <button id="miClear">Clear canvas</button>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="seg" id="seg">
+    <button id="mNqc" class="on" title="RCX and Scout, programmed in NQC over the USB tower">NQC &middot; RCX</button>
+    <button id="mNxc" title="NXT, programmed in NXC and compiled with nbc">NXC &middot; NXT</button>
+  </div>
+  <input id="fileIn" type="file" accept=".nqc,.nxc,text/plain" hidden>
+  <button id="btnTheme">Light</button>
+  <button id="btnCopy" class="primary">Copy NQC</button>
+</header>
+
+<main>
+  <div id="blocklyDiv"></div>
+  <aside class="side">
+    <h2><span id="head">Generated NQC</span> <div class="spacer"></div><span id="stat" style="font-weight:400;color:var(--muted)"></span></h2>
+    <div id="banner" class="banner" hidden>
+      <span id="bannerText"></span>
+      <button id="btnDrop">Back to my blocks</button>
+    </div>
+    <pre id="out"></pre>
+    <div class="note">
+      <span id="note-nqc">The blocks only write NQC. Compiling it and sending it to the
+      brick stays the app's job: <code>nqc.exe</code> and then the USB tower.</span>
+      <span id="note-nxc" hidden>The blocks only write NXC. Compiling it and sending it
+      to the brick stays the app's job: <code>nbc.exe</code> and then USB or Bluetooth.</span>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span>Blockly 13.4.0 (Apache 2.0)</span>
+  <span>&middot;</span>
+  <span id="count">0 blocks</span>
+</footer>
+
+<script src="blockly.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // Colours sampled pixel by pixel from LEGO MINDSTORMS Robot Inventor
+  var C_EVENT = "#F3BC00",   // Events
+      C_MOTOR = "#0085F3",   // Motors
+      C_MOVE  = "#FA4FC7",   // Movement
+      C_SOUND = "#B765E3",   // Sound
+      C_CTRL  = "#FFAC15",   // Control
+      C_SENSE = "#1BC5EE",   // Sensors
+      C_OPS   = "#00B044",   // Operators
+      C_VAR   = "#FF8D2F",   // Variables
+      C_MYB   = "#FD4B52",   // My Blocks
+      C_DISP  = "#8B49FC";   // Display (the Light purple, pushed for contrast)
+
+  var MOTORS = [
+    ["A", "OUT_A"], ["B", "OUT_B"], ["C", "OUT_C"],
+    ["A + C", "OUT_A + OUT_C"], ["A + B + C", "OUT_A + OUT_B + OUT_C"]
+  ];
+  var SOUNDS = [
+    ["click", "SOUND_CLICK"], ["double beep", "SOUND_DOUBLE_BEEP"],
+    ["descending", "SOUND_DOWN"], ["ascending", "SOUND_UP"],
+    ["low beep", "SOUND_LOW_BEEP"], ["fast sweep", "SOUND_FAST_UP"]
+  ];
+  var SENSORS = [["1", "SENSOR_1"], ["2", "SENSOR_2"], ["3", "SENSOR_3"]];
+  var TYPES = [
+    ["touch", "SENSOR_TOUCH"],                 // 0 or 1
+    ["light", "SENSOR_LIGHT"],                 // 0 to 100
+    ["rotation", "SENSOR_ROTATION"],           // 16 ticks per turn, signed
+    ["temperature \u00b0C", "SENSOR_CELSIUS"],
+    ["temperature \u00b0F", "SENSOR_FAHRENHEIT"],
+    ["press counter", "SENSOR_PULSE"],         // counts presses
+    ["edge counter", "SENSOR_EDGE"]            // counts press and release
+  ];
+
+  // ---- NXT ---------------------------------------------------------------
+  // Careful: NXC output constants are an enumeration, not a bit mask.
+  // OUT_A is 0 and OUT_C is 2, so "OUT_A + OUT_C" would mean OUT_C. The pair
+  // has to be written as one token, which is why PAIRS carries OUT_AB/AC/BC.
+  var NXT_MOTORS = [["A", "OUT_A"], ["B", "OUT_B"], ["C", "OUT_C"]];
+  var NXT_PAIRS  = [["B+C", "BC"], ["A+C", "AC"], ["A+B", "AB"]];
+  var NXT_PORTS  = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]];
+  var NXT_TYPES  = [
+    ["touch", "TOUCH"],
+    ["light, reflected", "LIGHT"],       // the sensor's own lamp is on
+    ["light, ambient", "LIGHT_AMB"],     // lamp off, reads the room
+    ["sound", "SOUND"],
+    ["ultrasonic", "US"]                 // the only digital sensor in the NXT set
+  ];
+  var NXT_UNITS = [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]];
+  var NXT_LINES = (function () {
+    var a = [];
+    for (var i = 1; i <= 8; i++) a.push([String(i), "LCD_LINE" + i]);
+    return a;
+  })();
+  var NXT_BUTTONS = [
+    ["centre", "BTNCENTER"], ["left", "BTNLEFT"], ["right", "BTNRIGHT"]
+  ];
+  // C4 up to C6, chromatic, straight onto the TONE_ constants nbc already has.
+  var NXT_NOTES = (function () {
+    var show = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+        id   = ["C", "CS", "D", "DS", "E", "F", "FS", "G", "GS", "A", "AS", "B"],
+        out = [], oct, i;
+    for (oct = 4; oct <= 5; oct++)
+      for (i = 0; i < 12; i++) out.push([show[i] + oct, "TONE_" + id[i] + oct]);
+    out.push(["C6", "TONE_C6"]);
+    return out;
+  })();
+
+  var defineBlocks = Blockly.defineBlocksWithJsonArray ||
+                     (Blockly.common && Blockly.common.defineBlocksWithJsonArray);
+
+  defineBlocks([
+    // ---- Events ----
+    { type: "rcx_task_main", message0: "when the program starts", message1: "%1",
+      args1: [{ type: "input_statement", name: "DO" }],
+      colour: C_EVENT, tooltip: "Every program starts here" },
+
+    // ---- Motors ----
+    { type: "rcx_onfwd", message0: "run %1 forward",
+      args0: [{ type: "field_dropdown", name: "MOTOR", options: MOTORS }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    { type: "rcx_onrev", message0: "run %1 backward",
+      args0: [{ type: "field_dropdown", name: "MOTOR", options: MOTORS }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    { type: "rcx_off", message0: "stop %1",
+      args0: [{ type: "field_dropdown", name: "MOTOR", options: MOTORS }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    { type: "rcx_setpower", message0: "set %1 power to %2",
+      args0: [{ type: "field_dropdown", name: "MOTOR", options: MOTORS },
+              { type: "field_number", name: "POWER", value: 7, min: 0, max: 7, precision: 1 }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    // ---- Movement: A and C drive the robot, A on the left, C on the right ----
+    { type: "rcx_move_for", message0: "move %1 for %2 seconds",
+      args0: [{ type: "field_dropdown", name: "DIR",
+                options: [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "field_number", name: "SECS", value: 2, min: 0, max: 600 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Both motors, A and C, run together for that long and then stop" },
+
+    { type: "rcx_move_start", message0: "start moving %1",
+      args0: [{ type: "field_dropdown", name: "DIR",
+                options: [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Starts motors A and C and leaves them running" },
+
+    { type: "rcx_move_stop", message0: "stop moving",
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Stops motors A and C" },
+
+    { type: "rcx_turn", message0: "turn %1 for %2 seconds",
+      args0: [{ type: "field_dropdown", name: "SIDE",
+                options: [["right \u21b7", "R"], ["left \u21b6", "L"]] },
+              { type: "field_number", name: "SECS", value: 1, min: 0, max: 600 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "A forward and C backward (or the other way round), so it spins on the spot" },
+
+    { type: "rcx_move_motors", message0: "set movement motors to %1",
+      args0: [{ type: "field_dropdown", name: "PAIR",
+                options: [["A+B", "AB"], ["A+C", "AC"], ["B+C", "BC"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "The first letter is the left wheel. Put this at the top of your program." },
+
+    { type: "rcx_move_speed", message0: "set movement speed to %1 %%",
+      args0: [{ type: "field_number", name: "PCT", value: 50, min: 0, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Power for motors A and C. The RCX has 8 steps (0-7), so the percentage is scaled onto them" },
+
+    // ---- Sound ----
+    { type: "rcx_playsound", message0: "play sound %1",
+      args0: [{ type: "field_dropdown", name: "SND", options: SOUNDS }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    // ---- Control ----
+    { type: "rcx_wait", message0: "wait %1 seconds",
+      args0: [{ type: "field_number", name: "SECS", value: 1, min: 0, max: 600 }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_wait_until", message0: "wait until %1",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_repeat", message0: "repeat %1", message1: "%1",
+      args0: [{ type: "field_number", name: "N", value: 10, min: 1, max: 255 }],
+      args1: [{ type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_forever", message0: "forever", message1: "%1",
+      args1: [{ type: "input_statement", name: "DO" }],
+      previousStatement: null, colour: C_CTRL },
+
+    { type: "rcx_repeat_until", message0: "repeat until %1", message1: "%1",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_if", message0: "if %1 then", message1: "%1",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_if_else", message0: "if %1 then", message1: "%1",
+      message2: "else", message3: "%1",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "DO" }],
+      args3: [{ type: "input_statement", name: "ELSE" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "rcx_parallel", message0: "do this", message1: "%1",
+      message2: "and this", message3: "%1",
+      args1: [{ type: "input_statement", name: "A" }],
+      args3: [{ type: "input_statement", name: "B" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL,
+      tooltip: "Runs both stacks at the same time, as two RCX tasks" },
+
+    { type: "rcx_stop", message0: "stop %1",
+      args0: [{ type: "field_dropdown", name: "WHAT",
+                options: [["all", "ALL"], ["this stack", "THIS"]] }],
+      previousStatement: null, colour: C_CTRL },
+
+    // ---- Sensors ----
+    { type: "rcx_setsensor", message0: "set sensor %1 as %2",
+      args0: [{ type: "field_dropdown", name: "S", options: SENSORS },
+              { type: "field_dropdown", name: "T", options: TYPES }],
+      previousStatement: null, nextStatement: null, colour: C_SENSE },
+
+    { type: "rcx_touched", message0: "sensor %1 pressed",
+      args0: [{ type: "field_dropdown", name: "S", options: SENSORS }],
+      output: "Boolean", colour: C_SENSE },
+
+    { type: "rcx_clearsensor", message0: "reset sensor %1",
+      args0: [{ type: "field_dropdown", name: "S", options: SENSORS }],
+      previousStatement: null, nextStatement: null, colour: C_SENSE,
+      tooltip: "Back to zero. Rotation and the counters need this; touch, light and temperature do not." },
+
+    { type: "rcx_sensor_raw", message0: "sensor %1 raw value",
+      args0: [{ type: "field_dropdown", name: "S", options: SENSORS }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 to 1023, straight off the port, ignoring the mode" },
+
+    { type: "rcx_sensor_value", message0: "sensor %1 value",
+      args0: [{ type: "field_dropdown", name: "S", options: SENSORS }],
+      output: "Number", colour: C_SENSE },
+
+    // ---- Operators ----
+    { type: "rcx_random", message0: "pick random %1 to %2",
+      args0: [{ type: "input_value", name: "FROM", check: "Number" },
+              { type: "input_value", name: "TO", check: "Number" }],
+      inputsInline: true, output: "Number", colour: C_OPS },
+
+    { type: "rcx_arith", message0: "%1 %2 %3",
+      args0: [{ type: "input_value", name: "A" },
+              { type: "field_dropdown", name: "OP",
+                options: [["+", "+"], ["\u2212", "-"], ["\u00d7", "*"], ["\u00f7", "/"]] },
+              { type: "input_value", name: "B" }],
+      inputsInline: true, output: "Number", colour: C_OPS },
+
+    { type: "rcx_and", message0: "%1 and %2",
+      args0: [{ type: "input_value", name: "A", check: "Boolean" },
+              { type: "input_value", name: "B", check: "Boolean" }],
+      inputsInline: true, output: "Boolean", colour: C_OPS },
+
+    { type: "rcx_or", message0: "%1 or %2",
+      args0: [{ type: "input_value", name: "A", check: "Boolean" },
+              { type: "input_value", name: "B", check: "Boolean" }],
+      inputsInline: true, output: "Boolean", colour: C_OPS },
+
+    { type: "rcx_not", message0: "not %1",
+      args0: [{ type: "input_value", name: "A", check: "Boolean" }],
+      inputsInline: true, output: "Boolean", colour: C_OPS },
+
+    { type: "rcx_between", message0: "is %1 in between %2 and %3 ?",
+      args0: [{ type: "input_value", name: "X", check: "Number" },
+              { type: "input_value", name: "LO", check: "Number" },
+              { type: "input_value", name: "HI", check: "Number" }],
+      inputsInline: true, output: "Boolean", colour: C_OPS },
+
+    { type: "rcx_compare", message0: "%1 %2 %3",
+      args0: [{ type: "input_value", name: "A" },
+              { type: "field_dropdown", name: "OP",
+                options: [["<", "<"], [">", ">"], ["=", "=="], ["≠", "!="]] },
+              { type: "input_value", name: "B" }],
+      inputsInline: true, output: "Boolean", colour: C_OPS },
+
+    // ===================== NXT, in NXC =====================================
+    // ---- Motors ----
+    { type: "nxt_motor_on", message0: "start motor %1 at %2 %% speed",
+      args0: [{ type: "field_dropdown", name: "M", options: NXT_MOTORS },
+              { type: "field_number", name: "PCT", value: 75, min: -100, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Keeps running. A negative speed turns the other way." },
+
+    { type: "nxt_motor_for", message0: "motor %1 run for %2 %3 at %4 %% speed",
+      args0: [{ type: "field_dropdown", name: "M", options: NXT_MOTORS },
+              { type: "field_number", name: "AMT", value: 1, min: 0, max: 10000 },
+              { type: "field_dropdown", name: "UNIT", options: NXT_UNITS },
+              { type: "field_number", name: "PCT", value: 75, min: -100, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Degrees and rotations use the NXT's built-in encoder, so they are exact" },
+
+    { type: "nxt_motor_off", message0: "stop motor %1",
+      args0: [{ type: "field_dropdown", name: "M", options: NXT_MOTORS }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    { type: "nxt_motor_reset", message0: "reset motor %1 degrees counted",
+      args0: [{ type: "field_dropdown", name: "M", options: NXT_MOTORS }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR },
+
+    { type: "nxt_motor_degrees", message0: "motor %1 degrees counted",
+      args0: [{ type: "field_dropdown", name: "M", options: NXT_MOTORS }],
+      output: "Number", colour: C_MOTOR,
+      tooltip: "The encoder count since the last reset. The RCX cannot do this." },
+
+    // ---- Movement ----
+    { type: "nxt_move_motors", message0: "set movement motors to %1",
+      args0: [{ type: "field_dropdown", name: "PAIR", options: NXT_PAIRS }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "The first letter is the left wheel. Put this at the top of your program." },
+
+    { type: "nxt_move_for", message0: "move %1 for %2 %3 at %4 %% speed",
+      args0: [{ type: "field_dropdown", name: "DIR",
+                options: [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "field_number", name: "AMT", value: 1, min: 0, max: 10000 },
+              { type: "field_dropdown", name: "UNIT", options: NXT_UNITS },
+              { type: "field_number", name: "PCT", value: 75, min: 0, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE },
+
+    { type: "nxt_move_start", message0: "start moving %1 at %2 %% speed",
+      args0: [{ type: "field_dropdown", name: "DIR",
+                options: [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "field_number", name: "PCT", value: 75, min: 0, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE },
+
+    { type: "nxt_move_stop", message0: "stop moving",
+      previousStatement: null, nextStatement: null, colour: C_MOVE },
+
+    { type: "nxt_turn", message0: "turn %1 for %2 seconds at %3 %% speed",
+      args0: [{ type: "field_dropdown", name: "SIDE",
+                options: [["right \u21b7", "R"], ["left \u21b6", "L"]] },
+              { type: "field_number", name: "SECS", value: 1, min: 0, max: 600 },
+              { type: "field_number", name: "PCT", value: 75, min: 0, max: 100 }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "One wheel forward and the other back, so it spins on the spot" },
+
+    // ---- Display: the NXT has a screen, the RCX only has its LCD digits ----
+    { type: "nxt_disp_text", message0: "write %1 on line %2",
+      args0: [{ type: "field_input", name: "TXT", text: "hello" },
+              { type: "field_dropdown", name: "LINE", options: NXT_LINES }],
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+
+    { type: "nxt_disp_num", message0: "write number %1 on line %2",
+      args0: [{ type: "input_value", name: "VAL", check: "Number" },
+              { type: "field_dropdown", name: "LINE", options: NXT_LINES }],
+      inputsInline: true,
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+
+    { type: "nxt_disp_clear", message0: "clear display",
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+
+    // ---- Sound ----
+    { type: "nxt_tone", message0: "play beep %1 Hz for %2 seconds",
+      args0: [{ type: "field_number", name: "HZ", value: 440, min: 31, max: 14000 },
+              { type: "field_number", name: "SECS", value: 0.5, min: 0, max: 60 }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    { type: "nxt_note", message0: "play note %1 for %2 seconds",
+      args0: [{ type: "field_dropdown", name: "NOTE", options: NXT_NOTES },
+              { type: "field_number", name: "SECS", value: 0.5, min: 0, max: 60 }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    { type: "nxt_sound_stop", message0: "stop all sounds",
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    // ---- Sensors: only what came in the NXT set ----
+    { type: "nxt_setsensor", message0: "set sensor %1 as %2",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS },
+              { type: "field_dropdown", name: "T", options: NXT_TYPES }],
+      previousStatement: null, nextStatement: null, colour: C_SENSE,
+      tooltip: "Run this once at the start, before reading the sensor" },
+
+    { type: "nxt_touched", message0: "sensor %1 is pressed?",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
+      output: "Boolean", colour: C_SENSE },
+
+    { type: "nxt_sensor_value", message0: "sensor %1 value",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "Light and sound read 0 to 100, touch reads 0 or 1" },
+
+    { type: "nxt_distance", message0: "sensor %1 distance in cm",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "Needs that port set as ultrasonic first. 255 means nothing in range." },
+
+    { type: "nxt_button", message0: "is the %1 button pressed?",
+      args0: [{ type: "field_dropdown", name: "B", options: NXT_BUTTONS }],
+      output: "Boolean", colour: C_SENSE,
+      tooltip: "The buttons on the brick itself" },
+
+    { type: "nxt_timer", message0: "timer in seconds",
+      output: "Number", colour: C_SENSE },
+
+    { type: "nxt_timer_reset", message0: "reset timer",
+      previousStatement: null, nextStatement: null, colour: C_SENSE }
+  ]);
+
+  // ---- NQC generator ------------------------------------------------------
+  var ATOMIC = 0, NONE = 99;
+  var nqc = new Blockly.Generator("NQC");
+  nqc.INDENT = "    ";
+
+  var extraTasks = [], taskSeq = 0, theWs = null;
+
+  nqc.init = function (ws) {
+    theWs = ws; extraTasks = []; taskSeq = 0; noted = false; pair = "AC";
+  };
+  nqc.finish = function (code) {
+    var names = [], i;
+    try {
+      var models = (Blockly.Variables && Blockly.Variables.allUsedVarModels)
+        ? Blockly.Variables.allUsedVarModels(theWs) : theWs.getAllVariables();
+      for (i = 0; i < models.length; i++) names.push(ident(models[i].name));
+    } catch (e) { names = []; }
+
+    var head = "";
+    if (names.length) {
+      // Measured against the real compiler: variable 33 fails to allocate.
+      if (names.length > 32) {
+        head += "// WARNING: the RCX holds 32 variables and this program wants " +
+                names.length + "\n";
+      }
+      for (i = 0; i < names.length; i++) head += "int " + names[i] + ";\n";
+      head += "\n";
+    }
+    return head + code + (extraTasks.length ? "\n" + extraTasks.join("\n") : "");
+  };
+  nqc.scrub_ = function (block, code, thisOnly) {
+    var next = block.nextConnection && block.nextConnection.targetBlock();
+    if (next && !thisOnly) return code + nqc.blockToCode(next);
+    return code;
+  };
+
+  function motor(b) { return b.getFieldValue("MOTOR"); }
+  function cond(b, g) { return g.valueToCode(b, "COND", NONE) || "true"; }
+
+  nqc.forBlock["rcx_task_main"] = function (b, g) {
+    return "task main()\n{\n" + g.statementToCode(b, "DO") + "}\n";
+  };
+  nqc.forBlock["rcx_onfwd"] = function (b) { return "OnFwd(" + motor(b) + ");\n"; };
+  nqc.forBlock["rcx_onrev"] = function (b) { return "OnRev(" + motor(b) + ");\n"; };
+  nqc.forBlock["rcx_off"]   = function (b) { return "Off(" + motor(b) + ");\n"; };
+  nqc.forBlock["rcx_setpower"] = function (b) {
+    return "SetPower(" + motor(b) + ", " + b.getFieldValue("POWER") + ");\n";
+  };
+  // Which two motors drive the robot. The first letter is the left wheel.
+  // "set movement motors to" changes this for every block below it.
+  var pair = "AC";
+  function driveOut() { return "OUT_" + pair[0] + " + OUT_" + pair[1]; }
+  function leftOut()  { return "OUT_" + pair[0]; }
+  function rightOut() { return "OUT_" + pair[1]; }
+  var noted = false;
+  // Written once, the first time a Movement block appears.
+  function note() {
+    if (noted) return "";
+    noted = true;
+    return "// movement: " + pair[0] + " = left wheel, " +
+           pair[1] + " = right wheel\n";
+  }
+
+  // The RCX has 8 power steps. 100% is 7, and anything above zero keeps at
+  // least step 1, so a small percentage still moves instead of standing still.
+  function power(pct) {
+    var n = Number(pct);
+    if (n <= 0) return 0;
+    var p = Math.round(n * 7 / 100);
+    return p < 1 ? 1 : (p > 7 ? 7 : p);
+  }
+  function ticks(secs) { return Math.round(Number(secs) * 100); }
+
+  nqc.forBlock["rcx_move_for"] = function (b) {
+    var go = b.getFieldValue("DIR") === "FWD" ? "OnFwd" : "OnRev";
+    return note() + go + "(" + driveOut() + ");\n" +
+           "Wait(" + ticks(b.getFieldValue("SECS")) + ");\n" +
+           "Off(" + driveOut() + ");\n";
+  };
+  nqc.forBlock["rcx_move_start"] = function (b) {
+    var go = b.getFieldValue("DIR") === "FWD" ? "OnFwd" : "OnRev";
+    return note() + go + "(" + driveOut() + ");\n";
+  };
+  nqc.forBlock["rcx_move_stop"] = function () {
+    return note() + "Off(" + driveOut() + ");\n";
+  };
+  nqc.forBlock["rcx_turn"] = function (b) {
+    // One wheel forward, the other back: the robot spins on the spot.
+    var right = b.getFieldValue("SIDE") === "R";
+    return note() +
+           (right ? "OnFwd(" + leftOut() + ");\nOnRev(" + rightOut() + ");\n"
+                  : "OnRev(" + leftOut() + ");\nOnFwd(" + rightOut() + ");\n") +
+           "Wait(" + ticks(b.getFieldValue("SECS")) + ");\n" +
+           "Off(" + driveOut() + ");\n";
+  };
+  nqc.forBlock["rcx_move_motors"] = function (b) {
+    pair = b.getFieldValue("PAIR");
+    noted = true;   // this block says it better than the automatic note
+    return "// movement motors: " + pair[0] + " = left wheel, " +
+           pair[1] + " = right wheel\n";
+  };
+  nqc.forBlock["rcx_move_speed"] = function (b) {
+    var pct = b.getFieldValue("PCT");
+    return note() + "SetPower(" + driveOut() + ", " + power(pct) +
+           ");   // " + pct + "% of 7\n";
+  };
+
+  nqc.forBlock["rcx_playsound"] = function (b) {
+    return "PlaySound(" + b.getFieldValue("SND") + ");\n";
+  };
+
+  nqc.forBlock["rcx_wait"] = function (b) {
+    return "Wait(" + Math.round(Number(b.getFieldValue("SECS")) * 100) + ");\n";
+  };
+  // until(c) is  while(!(c))  in the NQC API, so an empty body waits.
+  nqc.forBlock["rcx_wait_until"] = function (b, g) {
+    return "until (" + cond(b, g) + ");\n";
+  };
+  nqc.forBlock["rcx_repeat"] = function (b, g) {
+    return "repeat(" + b.getFieldValue("N") + ")\n{\n" + g.statementToCode(b, "DO") + "}\n";
+  };
+  nqc.forBlock["rcx_forever"] = function (b, g) {
+    return "while(true)\n{\n" + g.statementToCode(b, "DO") + "}\n";
+  };
+  nqc.forBlock["rcx_repeat_until"] = function (b, g) {
+    return "until (" + cond(b, g) + ")\n{\n" + g.statementToCode(b, "DO") + "}\n";
+  };
+  nqc.forBlock["rcx_if"] = function (b, g) {
+    return "if (" + cond(b, g) + ")\n{\n" + g.statementToCode(b, "DO") + "}\n";
+  };
+  nqc.forBlock["rcx_if_else"] = function (b, g) {
+    return "if (" + cond(b, g) + ")\n{\n" + g.statementToCode(b, "DO") +
+           "}\nelse\n{\n" + g.statementToCode(b, "ELSE") + "}\n";
+  };
+  // The RCX really does run several tasks at once, so each branch becomes one.
+  nqc.forBlock["rcx_parallel"] = function (b, g) {
+    taskSeq++;
+    var n1 = "side" + taskSeq + "a", n2 = "side" + taskSeq + "b";
+    extraTasks.push("task " + n1 + "()\n{\n" + g.statementToCode(b, "A") + "}\n");
+    extraTasks.push("task " + n2 + "()\n{\n" + g.statementToCode(b, "B") + "}\n");
+    return "start " + n1 + ";\nstart " + n2 + ";\n";
+  };
+  nqc.forBlock["rcx_stop"] = function (b) {
+    return b.getFieldValue("WHAT") === "ALL" ? "StopAllTasks();\n" : "return;\n";
+  };
+
+  nqc.forBlock["rcx_setsensor"] = function (b) {
+    return "SetSensor(" + b.getFieldValue("S") + ", " + b.getFieldValue("T") + ");\n";
+  };
+  nqc.forBlock["rcx_touched"] = function (b) {
+    return [b.getFieldValue("S") + " == 1", NONE];
+  };
+  nqc.forBlock["rcx_clearsensor"] = function (b) {
+    return "ClearSensor(" + b.getFieldValue("S") + ");\n";
+  };
+  nqc.forBlock["rcx_sensor_raw"] = function (b) {
+    return ["SensorValueRaw(" + b.getFieldValue("S") + ")", ATOMIC];
+  };
+  nqc.forBlock["rcx_sensor_value"] = function (b) {
+    return [b.getFieldValue("S"), ATOMIC];
+  };
+  nqc.forBlock["rcx_random"] = function (b, g) {
+    var lo = g.valueToCode(b, "FROM", NONE) || "0";
+    var hi = g.valueToCode(b, "TO", NONE) || "10";
+    return ["(" + lo + " + Random(" + hi + " - " + lo + "))", NONE];
+  };
+  nqc.forBlock["rcx_arith"] = function (b, g) {
+    var a = g.valueToCode(b, "A", NONE) || "0";
+    var c = g.valueToCode(b, "B", NONE) || "0";
+    return ["(" + a + " " + b.getFieldValue("OP") + " " + c + ")", NONE];
+  };
+  nqc.forBlock["rcx_and"] = function (b, g) {
+    return ["(" + (g.valueToCode(b, "A", NONE) || "true") + " && " +
+                  (g.valueToCode(b, "B", NONE) || "true") + ")", NONE];
+  };
+  nqc.forBlock["rcx_or"] = function (b, g) {
+    return ["(" + (g.valueToCode(b, "A", NONE) || "true") + " || " +
+                  (g.valueToCode(b, "B", NONE) || "true") + ")", NONE];
+  };
+  nqc.forBlock["rcx_not"] = function (b, g) {
+    return ["(!(" + (g.valueToCode(b, "A", NONE) || "true") + "))", NONE];
+  };
+  nqc.forBlock["rcx_between"] = function (b, g) {
+    var x = g.valueToCode(b, "X", NONE) || "0";
+    var lo = g.valueToCode(b, "LO", NONE) || "0";
+    var hi = g.valueToCode(b, "HI", NONE) || "0";
+    return ["(" + x + " >= " + lo + " && " + x + " <= " + hi + ")", NONE];
+  };
+  nqc.forBlock["rcx_compare"] = function (b, g) {
+    var a = g.valueToCode(b, "A", NONE) || "0";
+    var c = g.valueToCode(b, "B", NONE) || "0";
+    return [a + " " + b.getFieldValue("OP") + " " + c, NONE];
+  };
+  nqc.forBlock["math_number"] = function (b) {
+    return [String(b.getFieldValue("NUM")), ATOMIC];
+  };
+
+  // ---- variables and my blocks -------------------------------------------
+  // NQC needs plain C identifiers, so "my score" becomes "my_score".
+  function ident(name) {
+    var t = String(name || "").trim().replace(/[^A-Za-z0-9_]/g, "_");
+    if (!/^[A-Za-z_]/.test(t)) t = "v_" + t;
+    return t || "v";
+  }
+  function varName(b) {
+    var f = b.getField("VAR");
+    return ident(f && f.getText ? f.getText() : b.getFieldValue("VAR"));
+  }
+
+  nqc.forBlock["variables_get"] = function (b) { return [varName(b), ATOMIC]; };
+  nqc.forBlock["variables_set"] = function (b, g) {
+    return varName(b) + " = " + (g.valueToCode(b, "VALUE", NONE) || "0") + ";\n";
+  };
+  nqc.forBlock["math_change"] = function (b, g) {
+    var v = varName(b);
+    return v + " = " + v + " + " + (g.valueToCode(b, "DELTA", NONE) || "1") + ";\n";
+  };
+
+  function callArgs(b, g) {
+    var vals = [], i = 0;
+    while (b.getInput("ARG" + i)) {
+      vals.push(g.valueToCode(b, "ARG" + i, NONE) || "0");
+      i++;
+    }
+    return vals;
+  }
+
+  nqc.forBlock["procedures_defnoreturn"] = function (b, g) {
+    var name = ident(b.getFieldValue("NAME"));
+    var args = [];
+    try { args = (b.getVars() || []).map(ident); } catch (e) { args = []; }
+    var sig = args.map(function (a) { return "int " + a; }).join(", ");
+    extraTasks.push("void " + name + "(" + sig + ")\n{\n" +
+                    g.statementToCode(b, "STACK") + "}\n");
+    return "";
+  };
+  nqc.forBlock["procedures_callnoreturn"] = function (b, g) {
+    return ident(b.getFieldValue("NAME")) + "(" + callArgs(b, g).join(", ") + ");\n";
+  };
+  // NQC functions are void only: "int f() { return ...; }" is a syntax error.
+  nqc.forBlock["procedures_defreturn"] = function (b) {
+    var name = ident(b.getFieldValue("NAME"));
+    extraTasks.push("// \"" + name + "\" gives back a value, and NQC functions cannot.\n" +
+                    "// Set a variable inside the block and read it afterwards instead.\n");
+    return "";
+  };
+  nqc.forBlock["procedures_callreturn"] = function (b) {
+    return ["0 /* " + ident(b.getFieldValue("NAME")) +
+            ": NQC cannot give back a value */", ATOMIC];
+  };
+
+  // ===================== the NXC generator, for the NXT ====================
+  var nxc = new Blockly.Generator("NXC");
+  nxc.INDENT = "    ";
+
+  // Everything structural is identical in both languages, so these come
+  // straight off the NQC generator instead of being written twice.
+  var SHARED = ["rcx_task_main", "rcx_wait_until", "rcx_repeat", "rcx_forever",
+    "rcx_repeat_until", "rcx_if", "rcx_if_else", "rcx_parallel", "rcx_stop",
+    "rcx_random", "rcx_arith", "rcx_and", "rcx_or", "rcx_not", "rcx_between",
+    "rcx_compare", "math_number", "variables_get", "variables_set",
+    "math_change", "procedures_defnoreturn", "procedures_callnoreturn"];
+  for (var si = 0; si < SHARED.length; si++) {
+    nxc.forBlock[SHARED[si]] = nqc.forBlock[SHARED[si]];
+  }
+  nxc.scrub_ = function (block, code, thisOnly) {
+    var next = block.nextConnection && block.nextConnection.targetBlock();
+    if (next && !thisOnly) return code + nxc.blockToCode(next);
+    return code;
+  };
+
+  var usedTimer = false;
+  nxc.init = function (w) {
+    theWs = w; extraTasks = []; taskSeq = 0; nxtPair = "BC"; usedTimer = false;
+  };
+  nxc.finish = function (code) {
+    var names = [], i;
+    try {
+      var models = (Blockly.Variables && Blockly.Variables.allUsedVarModels)
+        ? Blockly.Variables.allUsedVarModels(theWs) : theWs.getAllVariables();
+      for (i = 0; i < models.length; i++) names.push(ident(models[i].name));
+    } catch (e) { names = []; }
+
+    var head = "";
+    // The NXT has room for far more than the RCX's 32, so no warning here.
+    if (usedTimer) head += "long __t0;   // the timer block measures from here\n";
+    for (i = 0; i < names.length; i++) head += "int " + names[i] + ";\n";
+    if (head) head += "\n";
+    // Measured against nbc: NXC wants a function defined before it is called
+    // ("Undefined Identifier"), where NQC is happy either way. So the My Blocks
+    // definitions go above task main here, not below it like on the RCX side.
+    return head + (extraTasks.length ? extraTasks.join("\n") + "\n" : "") + code;
+  };
+
+  // NXC counts in milliseconds; NQC counts in hundredths of a second.
+  function ms(secs) { return Math.round(Number(secs) * 1000); }
+  // And NXC takes the percentage as it is, so there is no rule of three here.
+  function speed(v) {
+    var n = Math.round(Number(v));
+    return n > 100 ? 100 : (n < -100 ? -100 : n);
+  }
+  function runCall(out, s) {
+    if (s === 0) return "Off(" + out + ");\n";
+    return (s > 0 ? "OnFwd(" : "OnRev(") + out + ", " + Math.abs(s) + ");\n";
+  }
+  function degreesOf(amt, unit) {
+    return Math.round(unit === "ROT" ? Number(amt) * 360 : Number(amt));
+  }
+
+  nxc.forBlock["rcx_wait"] = function (b) {
+    return "Wait(" + ms(b.getFieldValue("SECS")) + ");\n";
+  };
+
+  // ---- Motors ----
+  nxc.forBlock["nxt_motor_on"] = function (b) {
+    return runCall(b.getFieldValue("M"), speed(b.getFieldValue("PCT")));
+  };
+  nxc.forBlock["nxt_motor_for"] = function (b) {
+    var m = b.getFieldValue("M"), s = speed(b.getFieldValue("PCT"));
+    var amt = b.getFieldValue("AMT"), u = b.getFieldValue("UNIT");
+    if (u === "SEC") {
+      if (s === 0) return "Off(" + m + ");\n";
+      return runCall(m, s) + "Wait(" + ms(amt) + ");\n" + "Off(" + m + ");\n";
+    }
+    // RotateMotor turns the encoder count itself, so this one is exact.
+    return "RotateMotor(" + m + ", " + s + ", " + degreesOf(amt, u) + ");\n";
+  };
+  nxc.forBlock["nxt_motor_off"] = function (b) {
+    return "Off(" + b.getFieldValue("M") + ");\n";
+  };
+  nxc.forBlock["nxt_motor_reset"] = function (b) {
+    return "ResetTachoCount(" + b.getFieldValue("M") + ");\n";
+  };
+  nxc.forBlock["nxt_motor_degrees"] = function (b) {
+    return ["MotorTachoCount(" + b.getFieldValue("M") + ")", ATOMIC];
+  };
+
+  // ---- Movement ----
+  // One token, never an addition: see the note next to NXT_PAIRS.
+  var nxtPair = "BC";
+  function pairOut()  { return "OUT_" + nxtPair; }
+  function pairLeft() { return "OUT_" + nxtPair[0]; }
+  function pairRight(){ return "OUT_" + nxtPair[1]; }
+
+  nxc.forBlock["nxt_move_motors"] = function (b) {
+    nxtPair = b.getFieldValue("PAIR");
+    return "// movement motors: " + nxtPair[0] + " = left wheel, " +
+           nxtPair[1] + " = right wheel\n";
+  };
+  nxc.forBlock["nxt_move_for"] = function (b) {
+    var s = speed(b.getFieldValue("PCT"));
+    if (b.getFieldValue("DIR") === "REV") s = -s;
+    var amt = b.getFieldValue("AMT"), u = b.getFieldValue("UNIT");
+    if (u === "SEC") {
+      if (s === 0) return "Off(" + pairOut() + ");\n";
+      return runCall(pairOut(), s) + "Wait(" + ms(amt) + ");\n" +
+             "Off(" + pairOut() + ");\n";
+    }
+    return "RotateMotor(" + pairOut() + ", " + s + ", " +
+           degreesOf(amt, u) + ");\n";
+  };
+  nxc.forBlock["nxt_move_start"] = function (b) {
+    var s = speed(b.getFieldValue("PCT"));
+    if (b.getFieldValue("DIR") === "REV") s = -s;
+    return runCall(pairOut(), s);
+  };
+  nxc.forBlock["nxt_move_stop"] = function () {
+    return "Off(" + pairOut() + ");\n";
+  };
+  nxc.forBlock["nxt_turn"] = function (b) {
+    var s = speed(b.getFieldValue("PCT"));
+    var right = b.getFieldValue("SIDE") === "R";
+    return runCall(right ? pairLeft() : pairRight(), s) +
+           runCall(right ? pairRight() : pairLeft(), -s) +
+           "Wait(" + ms(b.getFieldValue("SECS")) + ");\n" +
+           "Off(" + pairOut() + ");\n";
+  };
+
+  // ---- Display ----
+  function cstring(t) {
+    return '"' + String(t).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+  }
+  nxc.forBlock["nxt_disp_text"] = function (b) {
+    return "TextOut(0, " + b.getFieldValue("LINE") + ", " +
+           cstring(b.getFieldValue("TXT")) + ");\n";
+  };
+  nxc.forBlock["nxt_disp_num"] = function (b, g) {
+    return "NumOut(0, " + b.getFieldValue("LINE") + ", " +
+           (g.valueToCode(b, "VAL", NONE) || "0") + ");\n";
+  };
+  nxc.forBlock["nxt_disp_clear"] = function () { return "ClearScreen();\n"; };
+
+  // ---- Sound ----
+  nxc.forBlock["nxt_tone"] = function (b) {
+    return "PlayTone(" + b.getFieldValue("HZ") + ", " +
+           ms(b.getFieldValue("SECS")) + ");\n";
+  };
+  nxc.forBlock["nxt_note"] = function (b) {
+    return "PlayTone(" + b.getFieldValue("NOTE") + ", " +
+           ms(b.getFieldValue("SECS")) + ");\n";
+  };
+  nxc.forBlock["nxt_sound_stop"] = function () { return "StopSound();\n"; };
+
+  // ---- Sensors ----
+  nxc.forBlock["nxt_setsensor"] = function (b) {
+    var n = b.getFieldValue("S"), t = b.getFieldValue("T");
+    var port = "IN_" + n;
+    if (t === "TOUCH") return "SetSensorTouch(" + port + ");\n";
+    if (t === "LIGHT") return "SetSensorLight(" + port + ");\n";
+    if (t === "SOUND") return "SetSensorSound(" + port + ");\n";
+    if (t === "US")    return "SetSensorLowspeed(" + port + ");\n";
+    // Ambient light is the lamp switched off, which is a type plus a mode.
+    return "SetSensorType(" + port + ", SENSOR_TYPE_LIGHT_INACTIVE);\n" +
+           "SetSensorMode(" + port + ", SENSOR_MODE_PERCENT);\n";
+  };
+  nxc.forBlock["nxt_touched"] = function (b) {
+    return ["SENSOR_" + b.getFieldValue("S") + " == 1", NONE];
+  };
+  nxc.forBlock["nxt_sensor_value"] = function (b) {
+    return ["Sensor(IN_" + b.getFieldValue("S") + ")", ATOMIC];
+  };
+  nxc.forBlock["nxt_distance"] = function (b) {
+    return ["SensorUS(IN_" + b.getFieldValue("S") + ")", ATOMIC];
+  };
+  nxc.forBlock["nxt_button"] = function (b) {
+    return ["ButtonPressed(" + b.getFieldValue("B") + ", false)", ATOMIC];
+  };
+  nxc.forBlock["nxt_timer"] = function () {
+    usedTimer = true;
+    return ["((CurrentTick() - __t0) / 1000)", NONE];
+  };
+  nxc.forBlock["nxt_timer_reset"] = function () {
+    usedTimer = true;
+    return "__t0 = CurrentTick();\n";
+  };
+
+  // ---- My Blocks: NXC really can give a value back, unlike NQC ----
+  nxc.forBlock["procedures_defreturn"] = function (b, g) {
+    var name = ident(b.getFieldValue("NAME")), args = [];
+    try { args = (b.getVars() || []).map(ident); } catch (e) { args = []; }
+    var sig = args.map(function (a) { return "int " + a; }).join(", ");
+    extraTasks.push("int " + name + "(" + sig + ")\n{\n" +
+                    g.statementToCode(b, "STACK") +
+                    g.INDENT + "return " +
+                    (g.valueToCode(b, "RETURN", NONE) || "0") + ";\n}\n");
+    return "";
+  };
+  nxc.forBlock["procedures_callreturn"] = function (b, g) {
+    return [ident(b.getFieldValue("NAME")) +
+            "(" + callArgs(b, g).join(", ") + ")", ATOMIC];
+  };
+  nxc.forBlock["procedures_ifreturn"] = function (b, g) {
+    return "if (" + (g.valueToCode(b, "CONDITION", NONE) || "false") +
+           ") { return " + (g.valueToCode(b, "VALUE", NONE) || "0") + "; }\n";
+  };
+
+  // ---- themes -------------------------------------------------------------
+  var BASE = (Blockly.Themes && Blockly.Themes.Zelos) || Blockly.Themes.Classic;
+  function theme(name, s) {
+    return Blockly.Theme.defineTheme(name, {
+      base: BASE, startHats: true, componentStyles: s,
+      fontStyle: {
+        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+        weight: "600", size: 12
+      }
+    });
+  }
+  var themeDark = theme("rcxDark", {
+    workspaceBackgroundColour: "#131313", toolboxBackgroundColour: "#1B1B1B",
+    toolboxForegroundColour: "#E8E8E8", flyoutBackgroundColour: "#1C1C1C",
+    flyoutForegroundColour: "#E8E8E8", flyoutOpacity: 1,
+    scrollbarColour: "#3A3A3A", insertionMarkerColour: "#FFFFFF",
+    insertionMarkerOpacity: 0.3, cursorColour: "#FFFFFF"
+  });
+  var themeLight = theme("rcxLight", {
+    workspaceBackgroundColour: "#FFFFFF", toolboxBackgroundColour: "#F5F5F7",
+    toolboxForegroundColour: "#1D1D1F", flyoutBackgroundColour: "#ECECF0",
+    flyoutForegroundColour: "#1D1D1F", flyoutOpacity: 1,
+    scrollbarColour: "#C9C9CE", insertionMarkerColour: "#0085F3",
+    insertionMarkerOpacity: 0.4, cursorColour: "#0085F3"
+  });
+
+  var SEP = { kind: "sep", gap: "18" };
+  var CATS = [
+    { name: "Events", colour: C_EVENT, contents: [
+      { kind: "block", type: "rcx_task_main" } ] },
+    { name: "Motors", colour: C_MOTOR, contents: [
+      { kind: "block", type: "rcx_onfwd" }, { kind: "block", type: "rcx_onrev" },
+      { kind: "block", type: "rcx_off" }, SEP, { kind: "block", type: "rcx_setpower" } ] },
+    { name: "Movement", colour: C_MOVE, contents: [
+      { kind: "label", text: "the first motor is the left wheel" },
+      { kind: "block", type: "rcx_move_for" }, { kind: "block", type: "rcx_turn" }, SEP,
+      { kind: "block", type: "rcx_move_start" }, { kind: "block", type: "rcx_move_stop" }, SEP,
+      { kind: "block", type: "rcx_move_speed" },
+      { kind: "block", type: "rcx_move_motors" } ] },
+    { name: "Sound", colour: C_SOUND, contents: [
+      { kind: "block", type: "rcx_playsound" } ] },
+    { name: "Control", colour: C_CTRL, contents: [
+      { kind: "block", type: "rcx_wait" }, { kind: "block", type: "rcx_wait_until" }, SEP,
+      { kind: "block", type: "rcx_repeat" }, { kind: "block", type: "rcx_forever" },
+      { kind: "block", type: "rcx_repeat_until" }, SEP,
+      { kind: "block", type: "rcx_if" }, { kind: "block", type: "rcx_if_else" }, SEP,
+      { kind: "block", type: "rcx_parallel" }, SEP,
+      { kind: "block", type: "rcx_stop" } ] },
+    { name: "Sensors", colour: C_SENSE, contents: [
+      { kind: "block", type: "rcx_setsensor" }, { kind: "block", type: "rcx_clearsensor" }, SEP,
+      { kind: "block", type: "rcx_touched" }, SEP,
+      { kind: "block", type: "rcx_sensor_value" }, { kind: "block", type: "rcx_sensor_raw" } ] },
+    { name: "Operators", colour: C_OPS, contents: [
+      { kind: "block", type: "math_number" }, { kind: "block", type: "rcx_random" }, SEP,
+      { kind: "block", type: "rcx_arith" }, SEP,
+      { kind: "block", type: "rcx_compare" }, { kind: "block", type: "rcx_between" }, SEP,
+      { kind: "block", type: "rcx_and" }, { kind: "block", type: "rcx_or" },
+      { kind: "block", type: "rcx_not" } ] },
+    { name: "Variables", colour: C_VAR, custom: "VARIABLE" },
+    { name: "My Blocks", colour: C_MYB, custom: "NQC_PROCEDURES" }
+  ];
+
+  // The NXT palette. Control, Operators and Variables are the same blocks:
+  // only the hardware differs, so only the hardware categories are new.
+  var CATS_NXC = [
+    { name: "Events", colour: C_EVENT, contents: [
+      { kind: "block", type: "rcx_task_main" } ] },
+    { name: "Motors", colour: C_MOTOR, contents: [
+      { kind: "block", type: "nxt_motor_for" }, SEP,
+      { kind: "block", type: "nxt_motor_on" }, { kind: "block", type: "nxt_motor_off" }, SEP,
+      { kind: "block", type: "nxt_motor_reset" },
+      { kind: "block", type: "nxt_motor_degrees" } ] },
+    { name: "Movement", colour: C_MOVE, contents: [
+      { kind: "label", text: "the first motor is the left wheel" },
+      { kind: "block", type: "nxt_move_for" }, { kind: "block", type: "nxt_turn" }, SEP,
+      { kind: "block", type: "nxt_move_start" }, { kind: "block", type: "nxt_move_stop" }, SEP,
+      { kind: "block", type: "nxt_move_motors" } ] },
+    { name: "Display", colour: C_DISP, contents: [
+      { kind: "block", type: "nxt_disp_text" }, { kind: "block", type: "nxt_disp_num" }, SEP,
+      { kind: "block", type: "nxt_disp_clear" } ] },
+    { name: "Sound", colour: C_SOUND, contents: [
+      { kind: "block", type: "nxt_note" }, { kind: "block", type: "nxt_tone" }, SEP,
+      { kind: "block", type: "nxt_sound_stop" } ] },
+    { name: "Control", colour: C_CTRL, contents: [
+      { kind: "block", type: "rcx_wait" }, { kind: "block", type: "rcx_wait_until" }, SEP,
+      { kind: "block", type: "rcx_repeat" }, { kind: "block", type: "rcx_forever" },
+      { kind: "block", type: "rcx_repeat_until" }, SEP,
+      { kind: "block", type: "rcx_if" }, { kind: "block", type: "rcx_if_else" }, SEP,
+      { kind: "block", type: "rcx_parallel" }, SEP,
+      { kind: "block", type: "rcx_stop" } ] },
+    { name: "Sensors", colour: C_SENSE, contents: [
+      { kind: "block", type: "nxt_setsensor" }, SEP,
+      { kind: "block", type: "nxt_touched" }, { kind: "block", type: "nxt_sensor_value" },
+      { kind: "block", type: "nxt_distance" }, SEP,
+      { kind: "block", type: "nxt_button" }, SEP,
+      { kind: "block", type: "nxt_timer" }, { kind: "block", type: "nxt_timer_reset" } ] },
+    { name: "Operators", colour: C_OPS, contents: [
+      { kind: "block", type: "math_number" }, { kind: "block", type: "rcx_random" }, SEP,
+      { kind: "block", type: "rcx_arith" }, SEP,
+      { kind: "block", type: "rcx_compare" }, { kind: "block", type: "rcx_between" }, SEP,
+      { kind: "block", type: "rcx_and" }, { kind: "block", type: "rcx_or" },
+      { kind: "block", type: "rcx_not" } ] },
+    { name: "Variables", colour: C_VAR, custom: "VARIABLE" },
+    { name: "My Blocks", colour: C_MYB, custom: "NXC_PROCEDURES" }
+  ];
+
+  // The order Robot Inventor lists them in: the hardware first, Events in
+  // the middle, then the programming blocks. Any category not named here keeps
+  // its place at the end, so adding one later cannot silently drop it.
+  var ORDER = ["Motors", "Movement", "Display", "Sound", "Events", "Control",
+               "Sensors", "Operators", "Variables", "My Blocks"];
+  function inOrder(cats) {
+    var out = [], i, j;
+    for (i = 0; i < ORDER.length; i++)
+      for (j = 0; j < cats.length; j++)
+        if (cats[j].name === ORDER[i]) { out.push(cats[j]); break; }
+    for (j = 0; j < cats.length; j++)
+      if (out.indexOf(cats[j]) < 0) out.push(cats[j]);
+    return out;
+  }
+  CATS = inOrder(CATS);
+  CATS_NXC = inOrder(CATS_NXC);
+
+  function toolboxOf(cats) {
+    return { kind: "categoryToolbox", contents: cats.map(function (c) {
+      var cat = { kind: "category", name: c.name, colour: c.colour };
+      if (c.custom) cat.custom = c.custom;      // Blockly fills these itself
+      else cat.contents = c.contents;
+      return cat;
+    }) };
+  }
+  var toolbox = toolboxOf(CATS);
+
+  // ---- the two modes ------------------------------------------------------
+  var EXAMPLE =
+    '<xml xmlns="https://developers.google.com/blockly/xml">' +
+    '<block type="rcx_task_main" x="40" y="40"><statement name="DO">' +
+    '<block type="rcx_move_speed"><field name="PCT">70</field><next>' +
+    '<block type="rcx_move_for"><field name="DIR">FWD</field><field name="SECS">2</field><next>' +
+    '<block type="rcx_turn"><field name="SIDE">R</field><field name="SECS">1</field><next>' +
+    '<block type="rcx_move_for"><field name="DIR">REV</field><field name="SECS">2</field><next>' +
+    '<block type="rcx_playsound"><field name="SND">SOUND_UP</field>' +
+    '</block></next></block></next></block></next></block></next></block>' +
+    '</statement></block></xml>';
+
+  // The NXT example shows off what the RCX cannot do: exact rotations,
+  // the screen, and the ultrasonic sensor.
+  var EXAMPLE_NXC =
+    '<xml xmlns="https://developers.google.com/blockly/xml">' +
+    '<block type="rcx_task_main" x="40" y="40"><statement name="DO">' +
+    '<block type="nxt_move_motors"><field name="PAIR">BC</field><next>' +
+    '<block type="nxt_setsensor"><field name="S">4</field><field name="T">US</field><next>' +
+    '<block type="nxt_disp_text"><field name="TXT">hello NXT</field>' +
+    '<field name="LINE">LCD_LINE1</field><next>' +
+    '<block type="nxt_move_for"><field name="DIR">FWD</field><field name="AMT">2</field>' +
+    '<field name="UNIT">ROT</field><field name="PCT">75</field><next>' +
+    '<block type="nxt_turn"><field name="SIDE">R</field><field name="SECS">1</field>' +
+    '<field name="PCT">60</field><next>' +
+    '<block type="nxt_note"><field name="NOTE">TONE_C5</field><field name="SECS">0.5</field>' +
+    '</block></next></block></next></block></next></block></next></block></next></block>' +
+    '</statement></block></xml>';
+
+  var MODES = {
+    nqc: { gen: nqc, cats: CATS, lang: "NQC", ext: "nqc", example: EXAMPLE,
+           title: "NQC Blocks", tag: "mock-up \u00b7 RCX / Scout" },
+    nxc: { gen: nxc, cats: CATS_NXC, lang: "NXC", ext: "nxc", example: EXAMPLE_NXC,
+           title: "NXC Blocks", tag: "mock-up \u00b7 NXT" }
+  };
+  var mode = "nqc";
+
+  // Blockly fetches its icons and sounds from static.blockly.com. Everything
+  // lives inside this file instead, so the page works with no network.
+  var SPRITES = "__SPRITES_DATA_URI__";
+
+  var ws = Blockly.inject("blocklyDiv", {
+    toolbox: toolbox, theme: themeDark, renderer: "zelos",
+    zoom: { controls: true, wheel: true, startScale: 0.85, minScale: 0.3, maxScale: 2 },
+    trashcan: true, sounds: false, media: "./"
+  });
+
+  // NQC functions are void: "int f() { return ...; }" does not compile.
+  // So the flyout offers the plain definition and the call, nothing that returns.
+  try {
+    ws.registerButtonCallback("NQC_MAKE_PROC", function () {
+      var nb = ws.newBlock("procedures_defnoreturn");
+      nb.initSvg();
+      try { nb.setFieldValue("do something", "NAME"); } catch (e) {}
+      nb.moveBy(60, 60);
+      nb.render();
+      nb.select();
+    });
+    ws.registerToolboxCategoryCallback("NQC_PROCEDURES", function (workspace) {
+      var list = [{ kind: "button", text: "Make a Block",
+                    callbackkey: "NQC_MAKE_PROC", callbackKey: "NQC_MAKE_PROC" }];
+      var all = [];
+      try { all = Blockly.Procedures.flyoutCategory(workspace) || []; } catch (e) { all = []; }
+      for (var i = 0; i < all.length; i++) {
+        var it = all[i];
+        // Blockly 13 hands back JSON items; older ones hand back XML
+        var t = it && (it.type || (it.getAttribute && it.getAttribute("type")));
+        // careful: "procedures_defnoreturn" also contains "return"
+        if (t === "procedures_defreturn" || t === "procedures_ifreturn" ||
+            t === "procedures_callreturn") continue;   // the RCX cannot
+        list.push(it);
+      }
+      return list;
+    });
+    // The NXT side keeps the blocks that give a value back, because NXC has them.
+    ws.registerButtonCallback("NXC_MAKE_PROC", function () {
+      var nb = ws.newBlock("procedures_defnoreturn");
+      nb.initSvg();
+      try { nb.setFieldValue("do something", "NAME"); } catch (e) {}
+      nb.moveBy(60, 60);
+      nb.render();
+      nb.select();
+    });
+    ws.registerToolboxCategoryCallback("NXC_PROCEDURES", function (workspace) {
+      var list = [{ kind: "button", text: "Make a Block",
+                    callbackkey: "NXC_MAKE_PROC", callbackKey: "NXC_MAKE_PROC" }];
+      var all = [];
+      try { all = Blockly.Procedures.flyoutCategory(workspace) || []; } catch (e) { all = []; }
+      for (var j = 0; j < all.length; j++) list.push(all[j]);
+      return list;
+    });
+  } catch (e) { /* older Blockly: the default category still works */ }
+
+  function patchMedia() {
+    var imgs = document.querySelectorAll("image");
+    for (var i = 0; i < imgs.length; i++) {
+      var el = imgs[i];
+      var href = el.getAttribute("xlink:href") || el.getAttribute("href") || "";
+      if (href.indexOf("sprites.svg") >= 0) {
+        el.setAttribute("xlink:href", SPRITES);
+        el.setAttribute("href", SPRITES);
+      }
+    }
+  }
+  function dots() {
+    var cats = MODES[mode].cats;
+    var rows = document.querySelectorAll(".blocklyToolboxCategory");
+    for (var i = 0; i < rows.length && i < cats.length; i++) {
+      rows[i].style.borderLeft = "0";
+      var icon = rows[i].querySelector(".blocklyToolboxCategoryIcon");
+      if (icon) icon.style.backgroundColor = cats[i].colour;
+    }
+    Blockly.svgResize(ws);
+  }
+  patchMedia(); dots();
+  setTimeout(function () { patchMedia(); dots(); }, 400);
+
+  // ---- output -------------------------------------------------------------
+  var KEYWORDS = /\b(task|repeat|while|until|if|else|true|int|void|sub|start|stop|return)\b/g;
+  var BUILTINS = /\b(OnFwd|OnRev|Off|Coast|SetPower|Wait|PlaySound|PlayTone|StopSound|SetSensor|SetSensorTouch|SetSensorLight|SetSensorSound|SetSensorLowspeed|SetSensorType|SetSensorMode|ClearSensor|Sensor|SensorUS|Random|SensorValueRaw|StopAllTasks|RotateMotor|ResetTachoCount|MotorTachoCount|TextOut|NumOut|ClearScreen|ButtonPressed|CurrentTick|Float|On)\b/g;
+  var CONSTS = /\b(OUT_[A-Z]+|IN_[0-9]|SOUND_[A-Z_]+|SENSOR_[A-Z0-9_]+|LCD_LINE[0-9]|TONE_[A-Z]+[0-9]|BTN[A-Z]+)\b/g;
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function paint(code) {
+    var h = esc(code);
+    h = h.replace(/\/\/[^\n]*/g, function (m) { return "\u0001" + m + "\u0002"; });
+    h = h.replace(CONSTS, '<span class="bi">$1</span>');
+    h = h.replace(BUILTINS, '<span class="bi">$1</span>');
+    h = h.replace(KEYWORDS, '<span class="kw">$1</span>');
+    h = h.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+    h = h.replace(/\u0001([^\u0002]*)\u0002/g, '<span class="com">$1</span>');
+    return h;
+  }
+
+  var head = document.getElementById("head");
+  var out = document.getElementById("out");
+  var stat = document.getElementById("stat");
+  var count = document.getElementById("count");
+  var lastCode = "";
+
+  function regenerate() {
+    if (viewing) return;        // the panel is showing an opened file
+    var code;
+    try { code = MODES[mode].gen.workspaceToCode(ws); }
+    catch (e) { code = "// generator error: " + e.message; }
+    if (!code.trim()) {
+      code = "// Drag “when the program starts” from Events\n" +
+             "// and drop blocks inside it.";
+    }
+    lastCode = code;
+    out.innerHTML = paint(code);
+    var n = ws.getAllBlocks(false).length;
+    count.textContent = n + (n === 1 ? " block" : " blocks");
+    stat.textContent = code.split("\n").length + " lines";
+    head.textContent = "Generated " + MODES[mode].lang;
+  }
+
+  ws.addChangeListener(function (e) {
+    if (e && e.isUiEvent) return;
+    if (viewing && ws.getAllBlocks(false).length) {
+      viewing = null;
+      banner.hidden = true;
+    }
+    regenerate();
+  });
+
+  // ---- carrying the blocks inside the program ------------------------------
+  // The workspace rides along in a C comment at the end of the file. Both
+  // compilers ignore it: measured, the produced .rcx and .rxe are byte for
+  // byte the same with and without it.
+  var MARK = "brickcode-blocks:1:";
+
+  function b64enc(str) {
+    var bytes = new TextEncoder().encode(str), bin = "", i;
+    for (i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64dec(b64) {
+    var bin = atob(b64), bytes = new Uint8Array(bin.length), i;
+    for (i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function blocksComment() {
+    try {
+      var xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws));
+      return "\n/* The blocks that made this program, for the BrickCode block\n" +
+             "   editor. Edit the code by hand and this stops matching it;\n" +
+             "   delete these four lines to keep the program alone.\n" +
+             "   " + MARK + b64enc(xml) + " */\n";
+    } catch (e) { return ""; }
+  }
+
+  // ---- opening a file ------------------------------------------------------
+  var viewing = null;            // text of a program we are only displaying
+  var banner = document.getElementById("banner");
+  var bannerText = document.getElementById("bannerText");
+
+  function showBanner(html) {
+    bannerText.innerHTML = html;
+    banner.hidden = false;
+  }
+  function dropViewed() {
+    if (!viewing) return;
+    viewing = null;
+    banner.hidden = true;
+    regenerate();
+  }
+
+  function openText(text, name) {
+    var ext = (name.match(/\.(nqc|nxc)$/i) || [0, ""])[1].toLowerCase();
+    if (ext === "nqc" || ext === "nxc") setMode(ext);
+
+    var m = text.match(new RegExp(MARK + "([A-Za-z0-9+/=]+)"));
+    if (m) {
+      try {
+        var xml = b64dec(m[1]);
+        viewing = null;
+        banner.hidden = true;
+        ws.clear();
+        Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xml), ws);
+        regenerate();
+        return;
+      } catch (e) { /* damaged marker: fall through and just show the code */ }
+    }
+
+    // No marker. Blocks genuinely cannot be rebuilt from code, so say so
+    // instead of inventing an arrangement that was never there. The canvas is
+    // emptied because nothing on it has anything to do with this file -
+    // switching language above may have dropped that mode's example on it.
+    ws.clear();
+    viewing = text;
+    out.innerHTML = paint(text);
+    head.textContent = name;
+    stat.textContent = text.split("\n").length + " lines";
+    showBanner("<b>" + esc(name) + "</b> was not made here, so its blocks " +
+               "cannot be rebuilt \u2014 the same code can come from many " +
+               "different block arrangements. Shown as code for reference.");
+  }
+
+  function pickFile() { document.getElementById("fileIn").click(); }
+  document.getElementById("btnDrop").onclick = dropViewed;
+  document.getElementById("fileIn").onchange = function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { openText(String(r.result || ""), f.name); };
+    r.readAsText(f);
+    this.value = "";          // so the same file can be picked again
+  };
+
+  // ---- buttons ------------------------------------------------------------
+  function loadExample() {
+    if (typeof viewing !== "undefined" && viewing) {
+      viewing = null;
+      document.getElementById("banner").hidden = true;
+    }
+    ws.clear();
+    Blockly.Xml.domToWorkspace(
+      Blockly.utils.xml.textToDom(MODES[mode].example), ws);
+    regenerate();
+  }
+
+  // Switching language swaps the palette and the generator. The blocks on the
+  // canvas are thrown away on purpose: a "write on line 3" block means nothing
+  // to an RCX, so carrying them across would only produce code that will not
+  // compile. The matching example is loaded instead.
+  function setMode(m) {
+    if (m === mode) return;
+    mode = m;
+    var d = MODES[m];
+    ws.updateToolbox(toolboxOf(d.cats));
+    document.getElementById("title").textContent = d.title;
+    document.getElementById("tag").textContent = d.tag;
+    document.getElementById("miSaveExt").textContent = "." + d.ext;
+    document.getElementById("btnCopy").textContent = "Copy " + d.lang;
+    document.getElementById("note-nqc").hidden = (m !== "nqc");
+    document.getElementById("note-nxc").hidden = (m !== "nxc");
+    document.getElementById("mNqc").className = (m === "nqc") ? "on" : "";
+    document.getElementById("mNxc").className = (m === "nxc") ? "on" : "";
+    loadExample();
+    patchMedia(); dots();
+    setTimeout(function () { patchMedia(); dots(); }, 200);
+  }
+
+  document.getElementById("mNqc").onclick = function () { setMode("nqc"); };
+  document.getElementById("mNxc").onclick = function () { setMode("nxc"); };
+  // A new project is the empty canvas plus the hat block every program
+  // needs, so there is somewhere to drop the first block.
+  function newProject() {
+    dropViewed();
+    ws.clear();
+    Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(
+      '<xml xmlns="https://developers.google.com/blockly/xml">' +
+      '<block type="rcx_task_main" x="40" y="40"></block></xml>'), ws);
+    regenerate();
+  }
+
+  // ---- the File menu -------------------------------------------------------
+  var menu = document.getElementById("menu");
+  var btnMenu = document.getElementById("btnMenu");
+
+  function closeMenu() {
+    menu.hidden = true;
+    btnMenu.setAttribute("aria-expanded", "false");
+  }
+  function toggleMenu() {
+    var open = menu.hidden;
+    menu.hidden = !open;
+    btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  btnMenu.onclick = function (ev) { ev.stopPropagation(); toggleMenu(); };
+  document.addEventListener("click", function (ev) {
+    if (!menu.hidden && !menu.contains(ev.target) && ev.target !== btnMenu)
+      closeMenu();
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") closeMenu();
+  });
+
+  function item(id, fn) {
+    document.getElementById(id).onclick = function () { closeMenu(); fn(); };
+  }
+  item("miNew", newProject);
+  item("miExample", loadExample);
+  item("miOpen", pickFile);
+  item("miSave", function () { saveProgram(); });
+  item("miClear", function () { dropViewed(); ws.clear(); regenerate(); });
+  function saveProgram() {
+    var blob = new Blob([lastCode + blocksComment()],
+                        { type: "text/plain;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "program." + MODES[mode].ext;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+  document.getElementById("btnCopy").onclick = function () {
+    var b = this;
+    function done(ok) {
+      b.textContent = ok ? "Copied!" : "Copy by hand";
+      setTimeout(function () { b.textContent = "Copy " + MODES[mode].lang; }, 1400);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastCode).then(function () { done(true); }, function () { done(false); });
+    } else { done(false); }
+  };
+  document.getElementById("btnTheme").onclick = function () {
+    var dark = document.body.getAttribute("data-theme") === "dark";
+    document.body.setAttribute("data-theme", dark ? "light" : "dark");
+    this.textContent = dark ? "Dark" : "Light";
+    ws.setTheme(dark ? themeLight : themeDark);
+    setTimeout(function () { patchMedia(); dots(); }, 50);
+  };
+
+  // The shortcuts people expect from a File menu.
+  document.addEventListener("keydown", function (ev) {
+    if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+    var k = String(ev.key || "").toLowerCase();
+    if (k === "s")      { ev.preventDefault(); saveProgram(); }
+    else if (k === "o") { ev.preventDefault(); pickFile(); }
+    else if (k === "n") { ev.preventDefault(); newProject(); }
+  });
+
+  window.addEventListener("resize", function () { Blockly.svgResize(ws); });
+
+  // "...brickcode-blocks.html#nxc" opens straight into the NXT language.
+  // BrickCode Studio uses this so the editor matches the switch in its toolbar.
+  function wanted() {
+    var h = String(location.hash || "").replace(/^#/, "").toLowerCase();
+    return (h === "nxc" || h === "nxt") ? "nxc"
+         : (h === "nqc" || h === "rcx") ? "nqc" : null;
+  }
+  loadExample();
+  (function () {
+    var w = wanted();
+    if (w) setMode(w);            // setMode returns at once if it matches
+  })();
+  window.addEventListener("hashchange", function () {
+    var w = wanted();
+    if (w) setMode(w);
+  });
+  window.__ready = true;
+  window.__nqc = function () { return lastCode; };
+  window.__code = function () { return lastCode; };
+  window.__mode = function () { return mode; };
+  window.__setMode = setMode;
+  window.__open = openText;
+  window.__saved = function () { return lastCode + blocksComment(); };
+  window.__viewing = function () { return viewing; };
+  window.__menu = { open: toggleMenu, close: closeMenu, newProject: newProject };
+  window.__ws = ws;
+})();
+</script>
+</body>
+</html>
