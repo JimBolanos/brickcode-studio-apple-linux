@@ -1,7 +1,7 @@
 /*
  * BrickCode Studio — one native GTK4 + C editor for two programming languages:
  *
- *   NQC  (RCX 1.0/2.0, Scout, CyberMaster, Spybotics)  ->  runs `nqc`
+ *   NQC  (RCX 1.0/2.0, Scout, Spybotics)  ->  runs `nqc`
  *   NXC  (NXT)                                          ->  runs `nbc`
  *
  * Works on Linux and macOS (Apple Silicon).
@@ -30,6 +30,7 @@
 #include <gtk/gtk.h>
 #include <glib/gstdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <libusb.h>
 #include <fontconfig/fontconfig.h>
 #include <gio/gio.h>
@@ -40,7 +41,7 @@
 #include <stdlib.h>
 
 #define APP_NAME     "BrickCode Studio"
-#define APP_VERSION  "2.2.0"
+#define APP_VERSION  "2.3.0"
 #define BLOCKS_HTML  "brickcode-blocks.html"
 #define APP_FONT_FILE "Orbitron-ExtraBold.ttf"
 /* fontconfig exposes the typographic family, not the file name: the
@@ -170,6 +171,9 @@ static const char *NXC_BUILTINS[] = {
 
 #include "nqc_tables.inc"
 
+/* Linux: the remote keeps the tower open (see the Remote section); close it before any nqc run. */
+static void remote_tower_close(void);
+
 static const char *NQC_TEMPLATE =
     "// A first program. Press F5, or the Compile & Run button.\n"
     "\n"
@@ -218,7 +222,6 @@ static const ModeInfo MODES[] = {
 static const struct { const char *name; const char *label; const char *desc; } NQC_TARGETS[] = {
     { "RCX2",  "RCX2 (firm0328.lgo)", "RCX 2.0 — firmware 0328 or newer (nqc default)" },
     { "RCX",   "RCX (firm0309.lgo)",  "RCX 1.0 — older firmware" },
-    { "CM",    "CM",                  "CyberMaster" },
     { "Scout", "Scout",               "Scout" },
     { "Spy",   "Spy",                 "Spybotics" },
 };
@@ -499,7 +502,7 @@ static void settings_save(AppState *st) {
     g_key_file_set_integer(kf, "ide", "lang", g_lang);
     g_key_file_set_integer(kf, "ide", "theme",
         gtk_drop_down_get_selected(GTK_DROP_DOWN(st->theme_dropdown)));
-    g_key_file_set_integer(kf, "nqc", "target",
+    g_key_file_set_integer(kf, "nqc", "target2",
         gtk_drop_down_get_selected(GTK_DROP_DOWN(st->target_dropdown)));
     g_key_file_set_integer(kf, "nqc", "slot",
         gtk_drop_down_get_selected(GTK_DROP_DOWN(st->slot_dropdown)));
@@ -1234,6 +1237,7 @@ static gboolean run_tool(AppState *st, const char *const *argv,
     g_free(line);
     g_string_free(pretty, TRUE);
 
+    remote_tower_close();
     GSubprocessLauncher *launcher = g_subprocess_launcher_new(
         G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE);
     if (rcx_port && *rcx_port)
@@ -2616,7 +2620,7 @@ static void about_cb(GtkButton *btn, gpointer user_data) {
 
     const char *rows[][2] = {
         {"Compilers",    "nqc (RCX / Scout)  ·  nbc (NXT)"},
-        {"NQC targets",  "RCX2 · RCX · CM · Scout · Spy"},
+        {"NQC targets",  "RCX2 · RCX · Scout · Spy"},
         {"NQC link",     "IR tower (USB / serial)"},
         {"NXC link",     "USB (libusb) · Bluetooth on Linux"},
         {"Highlighting", "Custom (GRegex)"},
@@ -2905,6 +2909,299 @@ static GtkWidget *nqc_flag_button(AppState *st, const char *label,
 }
 
 /* ---------------------------------------------------------------------
+ * NXT Screen: shows the NXT display, refreshed twice a second.
+ * It reads the Display module's memory with the ReadIOMap system command
+ * (0x94): 800 bytes = 8 rows of 100 bytes, read as 16 chunks of 50 bytes.
+ * In each byte, bit i is the pixel in line (row * 8 + i).
+ * --------------------------------------------------------------------- */
+#define SYS_READ_IOMAP     0x94
+#define NXT_MOD_DISPLAY    0x000A0001
+#define DISPLAY_NORMAL_OFF 119          /* start of the normal screen in that module */
+#define SCREEN_BYTES       800
+#define SCREEN_CHUNK       50
+#define SCREEN_ZOOM        3
+
+typedef struct {
+    GtkWidget *window, *area, *status;
+    libusb_context *ctx;
+    libusb_device_handle *handle;
+    guint timer;
+    guint8 held;                        /* NXT button being held (1-4), 0 = none */
+    guint8 buf[SCREEN_BYTES];
+} ScreenState;
+
+static int screen_pixel(const guint8 *buf, int x, int y) {
+    return (buf[(y / 8) * 100 + x] >> (y % 8)) & 1;
+}
+
+static gboolean screen_read(ScreenState *s) {
+    for (int i = 0; i < SCREEN_BYTES / SCREEN_CHUNK; i++) {
+        guint off = DISPLAY_NORMAL_OFF + i * SCREEN_CHUNK;
+        guint8 req[10] = { CMD_SYSTEM_REPLY, SYS_READ_IOMAP,
+                           NXT_MOD_DISPLAY & 0xFF, (NXT_MOD_DISPLAY >> 8) & 0xFF,
+                           (NXT_MOD_DISPLAY >> 16) & 0xFF, (NXT_MOD_DISPLAY >> 24) & 0xFF,
+                           off & 0xFF, off >> 8, SCREEN_CHUNK, 0 };
+        guint8 rep[64];
+        /* reply: 02 94 status, module id (4), count (2), then the data */
+        if (!nxt_transact(s->handle, req, sizeof(req), rep, sizeof(rep)) || rep[2] != 0)
+            return FALSE;
+        memcpy(s->buf + i * SCREEN_CHUNK, rep + 9, SCREEN_CHUNK);
+    }
+    return TRUE;
+}
+
+/* The NXT brick, drawn with cairo (logical size 380 x 520); the LCD sits at LCD_X, LCD_Y. */
+#define BRICK_W 380
+#define BRICK_H 440
+#define LCD_X   40
+#define LCD_Y   46
+
+/* Keys in the order of the NXT button values: left, enter, right, exit. */
+static const struct { double x, y, w, h; } SCREEN_KEYS[4] = {
+    { 44, 284, 60, 56 }, { 154, 278, 72, 66 }, { 276, 284, 60, 56 }, { 160, 358, 60, 30 },
+};
+
+static void screen_rrect(cairo_t *cr, double x, double y, double w, double h, double r) {
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - r, y + r, r, -G_PI / 2, 0);
+    cairo_arc(cr, x + w - r, y + h - r, r, 0, G_PI / 2);
+    cairo_arc(cr, x + r, y + h - r, r, G_PI / 2, G_PI);
+    cairo_arc(cr, x + r, y + r, r, G_PI, 3 * G_PI / 2);
+    cairo_close_path(cr);
+}
+
+static void screen_draw(GtkDrawingArea *area, cairo_t *cr, int w, int h, gpointer data) {
+    ScreenState *s = data;
+
+    /* body: light gray, with a darker strip on top for the port letters */
+    cairo_pattern_t *p = cairo_pattern_create_linear(0, 0, 0, BRICK_H);
+    cairo_pattern_add_color_stop_rgb(p, 0, 0.96, 0.96, 0.96);
+    cairo_pattern_add_color_stop_rgb(p, 1, 0.86, 0.86, 0.86);
+    screen_rrect(cr, 1, 1, BRICK_W - 2, BRICK_H - 2, 24);
+    cairo_set_source(cr, p);
+    cairo_fill_preserve(cr);
+    cairo_pattern_destroy(p);
+    cairo_set_source_rgb(cr, 0.70, 0.70, 0.70);
+    cairo_set_line_width(cr, 1.5);
+    cairo_stroke(cr);
+    cairo_set_source_rgb(cr, 0.80, 0.80, 0.80);
+    screen_rrect(cr, 2, 2, BRICK_W - 4, 30, 22);
+    cairo_fill(cr);
+    cairo_rectangle(cr, 2, 17, BRICK_W - 4, 15);
+    cairo_fill(cr);
+    cairo_set_source_rgb(cr, 0.42, 0.42, 0.42);
+    cairo_select_font_face(cr, "sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, 12);
+    const char *ports[3] = { "A", "B", "C" };
+    for (int i = 0; i < 3; i++) {
+        cairo_move_to(cr, 70 + i * 60, 23);
+        cairo_show_text(cr, ports[i]);
+    }
+    cairo_move_to(cr, 300, 23);
+    cairo_show_text(cr, "USB");
+
+    /* LCD: dark bezel, then the 100 x 64 screen */
+    cairo_set_source_rgb(cr, 0.15, 0.15, 0.15);
+    screen_rrect(cr, LCD_X - 8, LCD_Y - 8, 100 * SCREEN_ZOOM + 16, 64 * SCREEN_ZOOM + 16, 8);
+    cairo_fill(cr);
+    cairo_set_source_rgb(cr, 0.78, 0.84, 0.72);          /* LCD background */
+    cairo_rectangle(cr, LCD_X, LCD_Y, 100 * SCREEN_ZOOM, 64 * SCREEN_ZOOM);
+    cairo_fill(cr);
+    cairo_set_source_rgb(cr, 0.05, 0.08, 0.05);          /* ink */
+    for (int y = 0; y < 64; y++)
+        for (int x = 0; x < 100; x++)
+            if (screen_pixel(s->buf, x, y))
+                cairo_rectangle(cr, LCD_X + x * SCREEN_ZOOM, LCD_Y + y * SCREEN_ZOOM,
+                                SCREEN_ZOOM, SCREEN_ZOOM);
+    cairo_fill(cr);
+
+    /* keys: gray arrows, orange Enter, gray Exit (darker while pressed) */
+    for (int i = 0; i < 4; i++) {
+        double x = SCREEN_KEYS[i].x, y = SCREEN_KEYS[i].y;
+        double kw = SCREEN_KEYS[i].w, kh = SCREEN_KEYS[i].h;
+        double k = s->held == i + 1 ? 0.8 : 1.0;
+        if (i == 1) {
+            cairo_set_source_rgb(cr, 0.96 * k, 0.54 * k, 0.12 * k);
+            screen_rrect(cr, x, y, kw, kh, 12);
+        } else if (i == 3) {
+            cairo_set_source_rgb(cr, 0.68 * k, 0.68 * k, 0.68 * k);
+            screen_rrect(cr, x, y, kw, kh, 8);
+        } else {                                         /* triangle, corners rounded by the stroke */
+            cairo_set_source_rgb(cr, 0.77 * k, 0.77 * k, 0.77 * k);
+            cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+            if (i == 0) {
+                cairo_move_to(cr, x + 3, y + kh / 2);
+                cairo_line_to(cr, x + kw - 3, y + 3);
+                cairo_line_to(cr, x + kw - 3, y + kh - 3);
+            } else {
+                cairo_move_to(cr, x + kw - 3, y + kh / 2);
+                cairo_line_to(cr, x + 3, y + 3);
+                cairo_line_to(cr, x + 3, y + kh - 3);
+            }
+            cairo_close_path(cr);
+            cairo_set_line_width(cr, 6);
+            cairo_stroke_preserve(cr);
+        }
+        cairo_fill(cr);
+    }
+}
+
+static void screen_stop(ScreenState *s) {
+    if (s->timer) { g_source_remove(s->timer); s->timer = 0; }
+}
+
+static gboolean screen_tick(gpointer data) {
+    ScreenState *s = data;
+    if (!screen_read(s)) {
+        s->timer = 0;
+        gtk_label_set_text(GTK_LABEL(s->status), "Lost connection to the NXT.");
+        return G_SOURCE_REMOVE;
+    }
+    gtk_widget_queue_draw(s->area);
+    return G_SOURCE_CONTINUE;
+}
+
+static void screen_connect_cb(GtkButton *btn, gpointer data) {
+    ScreenState *s = data;
+    screen_stop(s);
+    if (s->handle) {
+        libusb_release_interface(s->handle, 0);
+        libusb_close(s->handle);
+    }
+    if (!s->ctx) libusb_init(&s->ctx);
+    s->handle = nxt_usb_open(s->ctx);
+    if (!s->handle) {
+        gtk_label_set_text(GTK_LABEL(s->status),
+            "NXT not found or busy. Close the NXT Explorer and check the USB cable.");
+        return;
+    }
+    gtk_label_set_text(GTK_LABEL(s->status), "Connected");
+    s->timer = g_timeout_add(500, screen_tick, s);
+}
+
+/* On-screen NXT buttons: WriteIOMap (0x95) of one byte to the UI module, offset 28.
+ * Same values BricxCC sends: 1 left, 2 enter, 3 right, 4 exit when pressed, +8 when released. */
+#define SYS_WRITE_IOMAP 0x95
+#define NXT_MOD_UI      0x000C0001
+#define UI_OFF_BUTTON   28
+
+static void screen_send_button(ScreenState *s, guint8 value) {
+    guint8 req[11] = { CMD_SYSTEM_REPLY, SYS_WRITE_IOMAP,
+                       NXT_MOD_UI & 0xFF, (NXT_MOD_UI >> 8) & 0xFF,
+                       (NXT_MOD_UI >> 16) & 0xFF, (NXT_MOD_UI >> 24) & 0xFF,
+                       UI_OFF_BUTTON, 0, 1, 0, value };
+    guint8 rep[64];
+    if (!s->handle || !nxt_transact(s->handle, req, sizeof(req), rep, sizeof(rep)) || rep[2] != 0)
+        gtk_label_set_text(GTK_LABEL(s->status), "The NXT did not accept the button.");
+    else if (screen_read(s))
+        gtk_widget_queue_draw(s->area);                 /* show the result right away */
+}
+
+static void screen_press(ScreenState *s, guint8 btn) {
+    if (s->held) return;                                /* key repeat or a second button */
+    s->held = btn;
+    gtk_widget_queue_draw(s->area);
+    screen_send_button(s, btn);
+}
+
+static void screen_release(ScreenState *s) {
+    if (!s->held) return;
+    guint8 btn = s->held;
+    s->held = 0;
+    gtk_widget_queue_draw(s->area);
+    screen_send_button(s, btn + 8);
+}
+
+static void screen_area_pressed(GtkGestureClick *g, gint n, gdouble x, gdouble y, gpointer data) {
+    for (int i = 0; i < 4; i++)
+        if (x >= SCREEN_KEYS[i].x && x < SCREEN_KEYS[i].x + SCREEN_KEYS[i].w &&
+            y >= SCREEN_KEYS[i].y && y < SCREEN_KEYS[i].y + SCREEN_KEYS[i].h)
+            screen_press(data, i + 1);
+}
+
+static void screen_area_released(GtkGestureClick *g, gint n, gdouble x, gdouble y, gpointer data) {
+    screen_release(data);
+}
+
+/* Keyboard: arrows, Return and Esc act like the NXT buttons. */
+static gboolean screen_key_pressed(GtkEventControllerKey *c, guint key, guint code,
+                                   GdkModifierType mod, gpointer data) {
+    guint btn = key == GDK_KEY_Left ? 1 : key == GDK_KEY_Right ? 3 :
+                key == GDK_KEY_Escape ? 4 :
+                (key == GDK_KEY_Return || key == GDK_KEY_KP_Enter) ? 2 : 0;
+    if (!btn) return FALSE;
+    screen_press(data, btn);
+    return TRUE;
+}
+
+static void screen_key_released(GtkEventControllerKey *c, guint key, guint code,
+                                GdkModifierType mod, gpointer data) {
+    screen_release(data);
+}
+
+static void screen_cleanup(GtkWidget *window, gpointer data) {
+    ScreenState *s = data;
+    screen_stop(s);
+    if (s->handle) {
+        libusb_release_interface(s->handle, 0);
+        libusb_close(s->handle);
+    }
+    if (s->ctx) libusb_exit(s->ctx);
+    g_free(s);
+}
+
+static void open_screen_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    ScreenState *s = g_new0(ScreenState, 1);
+
+    s->window = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(s->window), "NXT Screen");
+    gtk_window_set_transient_for(GTK_WINDOW(s->window), GTK_WINDOW(st->window));
+    gtk_window_set_resizable(GTK_WINDOW(s->window), FALSE);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_start(box, 10);
+    gtk_widget_set_margin_end(box, 10);
+    gtk_widget_set_margin_top(box, 10);
+    gtk_widget_set_margin_bottom(box, 10);
+    gtk_window_set_child(GTK_WINDOW(s->window), box);
+
+    s->area = gtk_drawing_area_new();
+    gtk_widget_set_halign(s->area, GTK_ALIGN_CENTER);      /* keeps clicks 1:1 with the drawing */
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(s->area), BRICK_W);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(s->area), BRICK_H);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(s->area), screen_draw, s, NULL);
+    GtkGesture *click = gtk_gesture_click_new();
+    g_signal_connect(click, "pressed", G_CALLBACK(screen_area_pressed), s);
+    g_signal_connect(click, "released", G_CALLBACK(screen_area_released), s);
+    g_signal_connect(click, "cancel", G_CALLBACK(screen_area_released), s);
+    gtk_widget_add_controller(s->area, GTK_EVENT_CONTROLLER(click));
+    gtk_box_append(GTK_BOX(box), s->area);
+
+    GtkEventController *kc = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(kc, GTK_PHASE_CAPTURE);
+    g_signal_connect(kc, "key-pressed", G_CALLBACK(screen_key_pressed), s);
+    g_signal_connect(kc, "key-released", G_CALLBACK(screen_key_released), s);
+    gtk_widget_add_controller(s->window, kc);
+
+    GtkWidget *connect_btn = gtk_button_new_with_label("Connect");
+    gtk_widget_add_css_class(connect_btn, "qa-btn");
+    gtk_widget_add_css_class(connect_btn, "qa-green");
+    g_signal_connect(connect_btn, "clicked", G_CALLBACK(screen_connect_cb), s);
+    gtk_box_append(GTK_BOX(box), connect_btn);
+
+    s->status = gtk_label_new("Not connected");
+    gtk_widget_add_css_class(s->status, "status-text");
+    gtk_label_set_wrap(GTK_LABEL(s->status), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(s->status), 44);
+    gtk_box_append(GTK_BOX(box), s->status);
+
+    g_signal_connect(s->window, "destroy", G_CALLBACK(screen_cleanup), s);
+    gtk_window_present(GTK_WINDOW(s->window));
+    screen_connect_cb(NULL, s);
+}
+
+/* ---------------------------------------------------------------------
  * Remote: the buttons of the LEGO IR remote, sent with  nqc -remote
  * Each button is one 16-bit mask (the same values BricxCC uses).
  * --------------------------------------------------------------------- */
@@ -2921,6 +3218,61 @@ static AppState *remote_st = NULL;
 
 static void remote_next(void);
 
+#ifdef __linux__
+/* On Linux the kernel driver waits 0.5 s every time the tower is closed, and nqc closes it
+ * after each message. So the Remote opens /dev/usb/legousbtower0 once and writes the IR
+ * frames itself (about 50 ms each). If anything goes wrong it falls back to nqc. */
+static int tower_fd = -1;
+static gboolean tower_failed = FALSE;
+
+static void remote_tower_close(void) {
+    if (tower_fd >= 0) { close(tower_fd); tower_fd = -1; }
+}
+
+static gboolean tower_open_dev(AppState *st) {
+    if (tower_fd >= 0) return TRUE;
+    if (tower_failed) return FALSE;
+    const char *port = gtk_editable_get_text(GTK_EDITABLE(st->tower_entry));
+    const char *dev = "/dev/usb/legousbtower0";
+    if (port && g_str_has_prefix(port, "usb:") && port[4]) dev = port + 4;
+    else if (port && *port && strcmp(port, "usb") != 0) return FALSE;   /* serial tower: use nqc */
+    tower_fd = open(dev, O_RDWR | O_CLOEXEC);
+    return tower_fd >= 0;
+}
+
+static void tower_write_thread(GTask *task, gpointer src, gpointer data, GCancellable *c) {
+    gsize n;
+    const guchar *p = g_bytes_get_data((GBytes *)data, &n);
+    int fd = tower_fd;
+    g_task_return_boolean(task, fd >= 0 && write(fd, p, n) == (ssize_t)n);
+}
+
+static void remote_done_tower(GObject *src, GAsyncResult *res, gpointer data) {
+    if (!g_task_propagate_boolean(G_TASK(res), NULL)) {
+        remote_tower_close();
+        tower_failed = TRUE;          /* use nqc from now on */
+    }
+    remote_busy = FALSE;
+    remote_next();
+}
+
+/* IR frame: 55 ff 00, then each byte followed by its complement, then checksum. */
+static gboolean remote_send_tower(AppState *st, guchar op, guchar b1, guchar b2) {
+    if (!tower_open_dev(st)) return FALSE;
+    guchar sum = (guchar)(op + b1 + b2);
+    guchar f[11] = { 0x55, 0xff, 0x00, op, (guchar)~op, b1, (guchar)~b1,
+                     b2, (guchar)~b2, sum, (guchar)~sum };
+    GTask *t = g_task_new(NULL, NULL, remote_done_tower, NULL);
+    g_task_set_task_data(t, g_bytes_new(f, sizeof(f)), (GDestroyNotify)g_bytes_unref);
+    remote_busy = TRUE;
+    g_task_run_in_thread(t, tower_write_thread);
+    g_object_unref(t);
+    return TRUE;
+}
+#else
+static void remote_tower_close(void) {}
+#endif
+
 static void remote_done(GObject *src, GAsyncResult *res, gpointer data) {
     g_subprocess_wait_finish(G_SUBPROCESS(src), res, NULL);
     remote_busy = FALSE;
@@ -2936,6 +3288,15 @@ static void remote_send(const char *hex) {
     /* bytes: opcode, low byte, high byte of the 16-bit mask */
     snprintf(msg, sizeof(msg), "%s%.2s%.2s", remote_toggle ? "DA" : "D2", hex + 2, hex);
     remote_toggle = !remote_toggle;
+#ifdef __linux__
+    {
+        unsigned v = (unsigned)strtoul(hex, NULL, 16);       /* 16-bit key mask */
+        if (remote_send_tower(st, msg[1] == 'A' ? 0xDA : 0xD2, v & 0xFF, (v >> 8) & 0xFF)) {
+            g_free(target);
+            return;
+        }
+    }
+#endif
     const char *argv[] = { NQC_CMD, target, "-raw1", msg, NULL };
     GSubprocessLauncher *l = g_subprocess_launcher_new(
         G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
@@ -3018,6 +3379,8 @@ static GtkWidget *remote_hold_button(AppState *st, const char *label, const char
     return b;
 }
 
+static void remote_win_destroy_cb(GtkWidget *w, gpointer data) { remote_tower_close(); }
+
 static void open_remote_cb(GtkButton *btn, gpointer user_data) {
     AppState *st = user_data;
     GtkWidget *win = gtk_window_new();
@@ -3082,6 +3445,92 @@ static void open_remote_cb(GtkButton *btn, gpointer user_data) {
     gtk_box_append(GTK_BOX(last), remote_button(st, "Stop", "qa-pink", 0x0040));
     gtk_box_append(GTK_BOX(last), remote_button(st, "Sound", "qa-orange", 0x0080));
     gtk_box_append(GTK_BOX(box), last);
+
+    g_signal_connect(win, "destroy", G_CALLBACK(remote_win_destroy_cb), NULL);
+    gtk_window_present(GTK_WINDOW(win));
+}
+
+/* ---------------------------------------------------------------------
+ * VLL: the Scout sends a VLL code to a Micro Scout.
+ * Message = opcode 0xE2 (0xEA on every second send, the RCX toggle bit),
+ * source 2 (constant), then the code. Codes are BricxCC's MSVLL_* values.
+ * --------------------------------------------------------------------- */
+static gboolean vll_toggle = FALSE;
+static gboolean vll_busy = FALSE;
+
+static void vll_done(GObject *src, GAsyncResult *res, gpointer data) {
+    g_subprocess_wait_finish(G_SUBPROCESS(src), res, NULL);
+    vll_busy = FALSE;
+}
+
+static void vll_btn_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    if (vll_busy) return;
+    guint code = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(btn), "code"));
+    char msg[16];
+    snprintf(msg, sizeof(msg), "%s02%02X", vll_toggle ? "EA" : "E2", code);
+    vll_toggle = !vll_toggle;
+
+    remote_tower_close();
+    const char *argv[] = { NQC_CMD, "-TScout", "-raw1", msg, NULL };
+    GSubprocessLauncher *l = g_subprocess_launcher_new(
+        G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
+    const char *port = gtk_editable_get_text(GTK_EDITABLE(st->tower_entry));
+    if (port && *port) g_subprocess_launcher_setenv(l, "RCX_PORT", port, TRUE);
+    GSubprocess *p = g_subprocess_launcher_spawnv(l, argv, NULL);
+    g_object_unref(l);
+    if (!p) return;
+    vll_busy = TRUE;
+    g_subprocess_wait_async(p, NULL, vll_done, NULL);
+    g_object_unref(p);
+
+    char *line = g_strdup_printf("$ nqc -TScout -raw1 %s (VLL %u)", msg, code);
+    log_output(st, line, "cmd");
+    g_free(line);
+}
+
+static GtkWidget *vll_button(AppState *st, const char *label, const char *css, guint code) {
+    GtkWidget *b = chip_button(label, css, G_CALLBACK(vll_btn_cb), st);
+    g_object_set_data(G_OBJECT(b), "code", GUINT_TO_POINTER(code));
+    return b;
+}
+
+static void open_vll_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    GtkWidget *win = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(win), T("VLL (Micro Scout)"));
+    gtk_window_set_transient_for(GTK_WINDOW(win), GTK_WINDOW(st->window));
+    gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(box, "drawer");
+    gtk_widget_set_margin_start(box, 14);
+    gtk_widget_set_margin_end(box, 14);
+    gtk_widget_set_margin_top(box, 12);
+    gtk_widget_set_margin_bottom(box, 12);
+    gtk_window_set_child(GTK_WINDOW(win), box);
+
+    GtkWidget *hint = gtk_label_new("Point the Scout's light at the Micro Scout.");
+    gtk_widget_add_css_class(hint, "console-label");
+    gtk_box_append(GTK_BOX(box), hint);
+
+    /* Direct commands: motor forward / backward */
+    GtkWidget *move = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_halign(move, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(move), vll_button(st, "▲", "qa-green", 0));
+    gtk_box_append(GTK_BOX(move), vll_button(st, "▼", "qa-green", 1));
+    gtk_box_append(GTK_BOX(box), move);
+
+    /* Direct commands: beeps 1-5 are codes 4-8 */
+    GtkWidget *l1 = gtk_label_new("Beep");
+    gtk_widget_add_css_class(l1, "settings-label");
+    gtk_box_append(GTK_BOX(box), l1);
+    GtkWidget *beeps = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_halign(beeps, GTK_ALIGN_CENTER);
+    const char *bn[5] = { "1", "2", "3", "4", "5" };
+    for (int i = 0; i < 5; i++)
+        gtk_box_append(GTK_BOX(beeps), vll_button(st, bn[i], "qa-orange", 4 + i));
+    gtk_box_append(GTK_BOX(box), beeps);
 
     gtk_window_present(GTK_WINDOW(win));
 }
@@ -4284,6 +4733,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(st->utils_nxc),
         chip_button("NXT Explorer", "qa-purple", G_CALLBACK(open_explorer_cb), st));
     gtk_box_append(GTK_BOX(st->utils_nxc),
+        chip_button("NXT Screen", "qa-blue", G_CALLBACK(open_screen_cb), st));
+    gtk_box_append(GTK_BOX(st->utils_nxc),
         chip_button("Test tools", "qa-green", G_CALLBACK(test_tools_cb), st));
     gtk_box_append(GTK_BOX(st->utils_nxc),
         chip_button("Test NXT", "qa-green", G_CALLBACK(test_brick_cb), st));
@@ -4357,6 +4808,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
         chip_button("Test brick", "qa-green", G_CALLBACK(test_brick_cb), st));
     gtk_box_append(GTK_BOX(row5),
         chip_button("Remote", "qa-blue", G_CALLBACK(open_remote_cb), st));
+    gtk_box_append(GTK_BOX(row5),
+        chip_button("VLL", "qa-purple", G_CALLBACK(open_vll_cb), st));
     gtk_box_append(GTK_BOX(row5),
         chip_button("Firmware…", "qa-orange", G_CALLBACK(open_firmware_sheet_cb), st));
     gtk_box_append(GTK_BOX(st->utils_nqc), row5);
@@ -4445,6 +4898,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     st->side_nqc_tools = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_box_append(GTK_BOX(st->side_nqc_tools),
         side_button("Remote", "sq-orange", G_CALLBACK(open_remote_cb), st));
+    gtk_box_append(GTK_BOX(st->side_nqc_tools),
+        side_button("VLL", "sq-blue", G_CALLBACK(open_vll_cb), st));
     GtkWidget *dl_btn = side_button("Datalog", "sq-pink", G_CALLBACK(nqc_util_cb), st);
     g_object_set_data(G_OBJECT(dl_btn), "nqc-flag", (gpointer)"-datalog");
     gtk_box_append(GTK_BOX(st->side_nqc_tools), dl_btn);
@@ -4459,6 +4914,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     st->side_nxc_tools = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_box_append(GTK_BOX(st->side_nxc_tools),
         side_button("NXT Explorer", "sq-blue", G_CALLBACK(open_explorer_cb), st));
+    gtk_box_append(GTK_BOX(st->side_nxc_tools),
+        side_button("NXT Screen", "sq-green", G_CALLBACK(open_screen_cb), st));
     gtk_box_append(GTK_BOX(st->side_nxc_tools),
         side_button("Test NXT", "sq-green", G_CALLBACK(test_brick_cb), st));
     gtk_box_append(GTK_BOX(st->side_nxc_tools),
@@ -4528,7 +4985,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
         start_mode = (m == 1) ? MODE_NXC : MODE_NQC;
         gtk_drop_down_set_selected(GTK_DROP_DOWN(st->theme_dropdown),
                                     kf_int(kf, "ide", "theme", 0) == 1 ? 1 : 0);
-        int t = kf_int(kf, "nqc", "target", 0);
+        int t = kf_int(kf, "nqc", "target2", -1);
+        if (t < 0) {                /* old settings: CyberMaster was removed */
+            t = kf_int(kf, "nqc", "target", 0);
+            if (t == 2) t = 0; else if (t > 2) t--;
+        }
         if (t >= 0 && (guint)t < G_N_ELEMENTS(NQC_TARGETS))
             gtk_drop_down_set_selected(GTK_DROP_DOWN(st->target_dropdown), t);
         int slot = kf_int(kf, "nqc", "slot", 0);

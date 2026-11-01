@@ -11,6 +11,8 @@ It supports two languages, switched with the **NQC / NXC** selector in the top b
 - **NQC** for the RCX and the Scout. `nqc` compiles the program and sends it through the USB tower (infrared).
 - **NXC** for the NXT. `nbc` compiles it and the app itself uploads it over USB, with no system driver.
 
+**What you need to connect.** The RCX and the Scout are programmed through the **LEGO USB Tower** (infrared; the serial tower has not been tested yet); the NXT is programmed with a **USB cable** straight to the computer.
+
 The app is only an interface: it uses `nqc` and `nbc` underneath, so both must be installed. It works on Linux (Arch/Omarchy, Fedora, Mint and others) and on macOS with Apple Silicon. The interface is available in English and Spanish.
 
 ![NQC mode](screenshot-nqc-en.png)
@@ -21,7 +23,7 @@ All the code and releases are at [github.com/JimBolanos/brickcode-studio](https:
 
 | System | How to install |
 | --- | --- |
-| Arch / Omarchy | `cd nbc-git && makepkg -si`, then `cd ../brickcode-studio && makepkg -si`. For NQC also install `nqc` from the AUR. |
+| Arch / Omarchy | `bash linux/install-arch.sh` builds nqc, nbc and the app in `~/.local/brickcode`. |
 | Fedora | `bash linux/install-fedora.sh` installs the dependencies and builds nqc, nbc and the app in `~/.local/brickcode`. |
 | Debian / Ubuntu / Mint | `bash linux/install-debian.sh` (same idea as Fedora). |
 | Other Linux | Install the GTK4 and libusb-1.0 development packages, then `make && sudo make install`. |
@@ -56,7 +58,7 @@ The status bar shows the result of the last command (*Ready.*, errors or progres
 ### The sidebar
 
 - **Bricks**: a dot for the RCX tower and another for the NXT. It lights up when the device is detected.
-- **Tools**: in NQC mode *Remote*, *Datalog*, *Firmware…*, *Test brick* and *Test tools*; in NXC mode *NXT Explorer*, *Test NXT* and *Test tools*.
+- **Tools**: in NQC mode *Remote*, *VLL*, *Datalog*, *Firmware…*, *Test brick* and *Test tools*; in NXC mode *NXT Explorer*, *NXT Screen*, *Test NXT* and *Test tools*.
 - **Settings** (bottom): shows or hides the settings panel.
 
 ## 4. Files and editor
@@ -84,7 +86,6 @@ Open the settings panel (⚙) to see the NQC options.
 | --- | --- |
 | RCX2 (firm0328.lgo) | RCX 2.0 with firmware 0328 or newer. The nqc default. |
 | RCX (firm0309.lgo) | RCX 1.0 with the original firmware. |
-| CM | CyberMaster (not tested). |
 | Scout | Scout. |
 | Spy | Spybotics (not tested). |
 
@@ -92,7 +93,7 @@ Open the settings panel (⚙) to see the NQC options.
 
 **How a program is sent.** **Download** compiles and sends the program to the chosen slot. **Run (F5)** does the same and runs it at once. The brick must be on, close to the tower and pointing at it. Compile errors appear in the console and the app marks the line in the editor.
 
-**Tower port.** Set in *Brick utilities*, **Tower port** field. On Linux and macOS the right value for the USB tower is `usb`. The **Detect** button fills it for you. If your tower is serial, type its port, for example `/dev/ttyUSB0`. Empty means the `nqc` default.
+**Tower port.** Set in *Brick utilities*, **Tower port** field. On Linux and macOS the right value for the USB tower is `usb`. The **Detect** button fills it for you. The serial tower has not been tested yet; if you try it, type its port, for example `/dev/ttyUSB0`, and tell us how it goes. Empty means the `nqc` default.
 
 ### Remote
 
@@ -109,6 +110,19 @@ Open the settings panel (⚙) to see the NQC options.
 | Sound | Sends the remote sound key. |
 
 The RCX needs its firmware, must be on and pointing at the tower, and **Target** and **Tower port** must be right (use **Test brick** to check). The console shows every command sent, prefixed `$ nqc -raw1`.
+
+### VLL (Micro Scout)
+
+**VLL** (sidebar, NQC mode) opens a window to control a Micro Scout from a **Scout** brick. The app tells the Scout (through the USB tower) to send a VLL code with its light, so no program is needed.
+
+![VLL](screenshot-vll-en.png)
+
+| Button | What it does |
+| --- | --- |
+| ▲ / ▼ | Motor forward / backward (VLL direct commands 0 and 1). |
+| Beep 1 to 5 | Plays beep 1 to 5 (VLL codes 4 to 8). |
+
+Point the Scout's light at the Micro Scout. The Scout must be on, in range of the tower, with its firmware. This always uses the Scout target, whatever **Target** says. The console shows each command, prefixed `$ nqc -TScout -raw1`. Tested on macOS; still in testing on Linux.
 
 ### Firmware
 
@@ -142,6 +156,10 @@ When you switch to **NXC · NXT**, the settings panel shows the connection port 
 - **Refresh** updates the file list, with each size in bytes.
 - **Delete selected** deletes the chosen file. It does not ask for confirmation.
 
+**NXT Screen** (sidebar) shows a drawing of the NXT with its display, refreshed twice a second. It connects when it opens; **Connect** tries again. Click the drawn buttons (◀ orange Enter ▶ and the gray Exit) like the NXT's own, to move through its menus from the computer; hold one for a long press. The arrow keys, Return and Esc do the same. The NXT Explorer and the NXT Screen cannot use the USB cable at the same time, so close one before opening the other. Tested on macOS; still in testing on Linux.
+
+![NXT Screen](screenshot-nxt-screen-en.png)
+
 If the NXT is in firmware mode (SAMBA), the top bar says so, but the app does not upload programs in that state.
 
 ![NXC mode](screenshot-nxc-en.png)
@@ -168,6 +186,7 @@ If the NXT is in firmware mode (SAMBA), the top bar says so, but the app does no
 | Button | What it does |
 | --- | --- |
 | NXT Explorer | Window to see and delete the files on the NXT (section 6). |
+| NXT Screen | The NXT display and buttons on the computer (section 6). |
 | Test tools | Same as in NQC: checks `nqc` and `nbc`. |
 | Test NXT | Opens the NXT over USB and asks for battery and firmware version. If it answers, the cable and permissions are fine. |
 

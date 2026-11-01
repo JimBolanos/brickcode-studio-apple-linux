@@ -2,7 +2,7 @@
 
 A native GTK4 + C editor that brings classic robot bricks back to life, in one window:
 
-- **NQC** for the RCX, Scout, CyberMaster and Spybotics (compiled and sent by `nqc`)
+- **NQC** for the RCX, Scout and Spybotics (compiled and sent by `nqc`)
 - **NXC** for the NXT (compiled by `nbc`; the app uploads and starts the program over USB with libusb)
 
 Write a program, press **F5**, and it compiles, downloads and runs on the brick.
@@ -17,8 +17,21 @@ The interface is available in **English and Spanish** (selector in the top bar).
 <img src="docs/screenshot-firmware-en.png" width="48%" alt="Firmware sheet">
 <img src="docs/screenshot-remote-en.png" width="20%" alt="Remote">
 </p>
+<p>
+<img src="docs/screenshot-vll-en.png" width="30%" alt="VLL">
+<img src="docs/screenshot-nxt-screen-en.png" width="30%" alt="NXT Screen">
+</p>
 
 Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md)
+
+## What you need to connect
+
+| Brick | How it connects to the computer |
+| --- | --- |
+| RCX, Scout (and Spybotics) | **LEGO USB Tower** (infrared). The program is sent through the tower, so the brick must be on, close to the tower and pointing at it. |
+| NXT | **USB cable** straight to the computer. No tower needed. |
+
+BrickCode Studio uses the **USB tower**. The older **serial tower** has not been tested yet. The tower is not included with this software; you need the original one that came with the RCX / Robotics Invention System 2.0. Details and permissions per system are in the install sections below.
 
 ## Features
 
@@ -29,7 +42,9 @@ Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md
 - RCX tools: tower port detection, firmware sheet with a real progress bar, datalog, IR range, auto-shutoff
 - NXT Explorer: files, battery and firmware over USB
 - Visual block editor (**File → Block editor…**): drag blocks instead of typing, in NQC or NXC. It opens in your browser already set to the language the toolbar is on. Saved programs carry their blocks inside, so you can open them again and keep building — see [`blocks`](blocks).
+- NXT Screen: the NXT display shown live on the computer over USB, drawn as the NXT brick, with clickable buttons (◀ Enter ▶ Exit) and keyboard keys to move through the NXT menus. Tested on macOS (Mac mini M4 with an NXT); still in testing on Linux.
 - Remote (RCX): the buttons of the LEGO IR remote (messages, motors A/B/C, programs P1-P5, stop, sound), sent with `nqc`. The motor buttons run the motor while held, like the real remote. The installers patch nqc at build time so it does not wait for a reply the RCX never sends to remote commands (needed for the motor to keep running). Tested on a Mac mini M4 with an RCX 2.0.
+- VLL (Scout): makes a Scout send VLL codes (motor forward / backward, beeps) to a Micro Scout, through the USB tower. Tested on macOS (Mac mini M4); still in testing on Linux.
 
 ## Install
 
@@ -41,7 +56,9 @@ Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md
 | Ubuntu / Debian | Should work like Mint (same apt packages). Not tested yet. |
 | Arch / Omarchy | Confirmed with RCX and NXT. |
 
-The Scout, CyberMaster and Spybotics targets are in the menu but have not been tested on real bricks yet. Feedback is welcome.
+The Spybotics target is in the menu but has not been tested on a real brick yet (the Scout was tested by COPERNICON). Feedback is welcome.
+
+New in 2.2.0: **VLL** and **NXT Screen**. Both are confirmed on macOS; on Linux they are still in testing.
 
 ### macOS (Apple Silicon)
 
@@ -52,7 +69,7 @@ bash macos/install-mac.sh
 It builds nqc, nbc and the app into `~/.local/brickcode` and creates `~/Applications/BrickCode Studio.app`.
 The RCX needs its firmware once: gear button → Brick utilities → pick
 `~/.local/brickcode/share/firmware/firm0328.lgo` (the installer copies it there) → Send firmware
-(keep the RCX 10-20 cm from the tower, about 3-5 minutes).
+(keep the RCX close to the tower and still, about 3-5 minutes).
 
 ### Linux Mint
 
@@ -100,10 +117,11 @@ Same steps as Linux Mint (Mint is based on Ubuntu). Not tested yet; please repor
 ### Linux Arch / Omarchy
 
 ```
-cd nbc-git && makepkg -si                 # NXC compiler + udev rules for the NXT
-cd ../brickcode-studio && makepkg -si
+bash linux/install-arch.sh
 ```
-For NQC also install `nqc` (AUR).
+Builds `nqc` (with the Remote patch and the Linux USB tower driver enabled), `nbc` and the app into `~/.local/brickcode`, copies the RCX firmware and offers the udev rule for the NXT. Only the `pacman` packages and the udev rule use `sudo`. Not tested yet on a clean Omarchy install.
+
+Alternative with system packages: `cd nbc-git && makepkg -si`, then `cd ../brickcode-studio && makepkg -si`. The `nqc` from the AUR may not support `-getversion` (the *Test brick* button), so the installer above is recommended.
 
 ### Linux, other distros
 
@@ -153,6 +171,8 @@ See the [`examples`](examples) folder: `forward_and_back.nqc`, `counter_to_displ
 BrickCode Studio es un editor nativo para programar ladrillos clásicos: **NQC** (RCX, Scout) y **NXC** (NXT).
 Escribe el programa, pulsa **F5** y se compila, se descarga y se ejecuta en el ladrillo.
 La interfaz está en inglés y español (selector en la barra superior). La instalación es la misma de arriba.
+
+**Cómo se conecta cada ladrillo:** el RCX y el Scout se programan con la **torre USB de LEGO** (infrarrojo; el ladrillo debe estar encendido, cerca de la torre y apuntando a ella). La app usa la torre USB; la torre serial aún no se ha probado. El NXT se programa con un **cable USB** directo al computador, sin torre.
 
 ## About me / Acerca de mí
 
