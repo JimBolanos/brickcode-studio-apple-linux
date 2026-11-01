@@ -57,6 +57,9 @@ static const char *ES[][2] = {
     { NULL, NULL }
 };
 
+#include "bricks.inc"
+
+
 static const char *T(const char *en) {
     if (g_lang == LANG_EN || !en || !*en) return en;
     for (int i = 0; ES[i][0]; i++)
@@ -293,6 +296,9 @@ typedef struct {
     gboolean port_hint_shown;
     char *ok_msg;
     GtkWidget *dev_dot, *dev_label;   /* connected-brick indicator */
+    GtkWidget *topbar;
+    GtkWidget *stack;        /* HOME / CODE / TOOLS / ABOUT */
+    GtkWidget *nav_btn[4];
     GtkWidget *drawer;       /* right settings drawer (GtkRevealer) */
     GtkWidget *console_box;
     char *post_rxe;          /* NXT: file to upload after nbc succeeds */
@@ -2292,6 +2298,35 @@ static void apply_omarchy_style(AppState *st) {
         border_c, fg, accent);
 
     g_string_append_printf(c,
+        /* ---- the four screens and the bottom navigation ---- */
+        ".bottomnav { padding: 12px 0 14px 0; }"
+        "button.nav-btn { background: none; background-image: none; border: none; "
+        "  box-shadow: none; color: %s; font-weight: bold; font-size: 12px; "
+        "  padding: 8px 20px; border-radius: 999px; }"
+        "button.nav-btn:hover { color: %s; }"
+        "button.nav-btn.nav-on { color: %s; border: 2px solid #C10085; }"
+
+        ".home-head { margin: 22px 0 2px 0; }"
+        ".home-word { font-size: 23px; font-weight: bold; color: %s; letter-spacing: 2px; }"
+        ".home-sub { color: %s; font-size: 12.5px; margin-bottom: 16px; }"
+        ".home-row { margin: 0 20px 6px 20px; }"
+        ".tools-wrap { margin: 12px 20px 20px 20px; }"
+
+        "button.brick-card { border: none; box-shadow: none; padding: 22px 22px 18px 22px; "
+        "  border-radius: 22px; }"
+        "button.brick-card:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.22); }"
+        ".bcard-rcx   { background-image: linear-gradient(160deg, #7C369A, #501836); }"
+        ".bcard-scout { background-image: linear-gradient(160deg, #5C355E, #671646); }"
+        ".bcard-nxt   { background-image: linear-gradient(160deg, #0F9C93, #331528); }"
+        ".bc-lang { color: alpha(#FFFFFF,0.80); font-size: 11px; font-weight: bold; letter-spacing: 2px; }"
+        ".bc-name { color: #FFFFFF; font-size: 30px; font-weight: bold; letter-spacing: 1px; }"
+        ".bc-foot { color: alpha(#FFFFFF,0.88); font-size: 11.5px; font-weight: bold; }"
+
+        ".ab-card { background-color: %s; border-radius: 18px; padding: 20px 22px; }"
+        ".ab-k { color: %s; font-size: 12px; }"
+        ".ab-v { color: %s; font-size: 12px; font-weight: bold; }"
+        ".ab-name { color: %s; font-size: 17px; font-weight: bold; }"
+        ".ab-fine { color: %s; font-size: 10.5px; }"
         "window.fw-win { background: none; }"
         ".fw-sheet { background-color: %s; border-radius: 14px; padding: 26px 30px 22px 30px; "
         "  border: 1px solid %s; }"
@@ -2313,6 +2348,10 @@ static void apply_omarchy_style(AppState *st) {
         "progressbar.fw-bar progress { min-height: 10px; border-radius: 999px; background-color: %s; }"
         "menubutton.kebab-btn button, menubutton.kebab-btn button label, menubutton.kebab-btn arrow "
         "  { color: %s; }",
+        /* the four screens */
+        muted_fg, fg, fg, fg, muted_fg,
+        dark_bg, muted_fg, fg, fg, muted_fg,
+        /* the firmware sheet, as before */
         bg, border_c, fg, muted_fg,
         field_bg, border_c, accent, fg, muted_fg, green,
         field_bg, fg, red, fg, border_c, accent, fg);
@@ -3516,6 +3555,248 @@ static GtkWidget *side_brick_row(const char *label, GtkWidget **dot_out) {
     return row;
 }
 
+
+/* =====================================================================
+ * The four screens
+ * ===================================================================== */
+
+static const struct { const char *id; const char *label; } SCREENS[] = {
+    { "home", "HOME" }, { "tools", "TOOLS" }, { "about", "ABOUT" }, { "code", "CODE" }
+};
+
+static void show_screen(AppState *st, const char *id) {
+    gtk_stack_set_visible_child_name(GTK_STACK(st->stack), id);
+    for (guint i = 0; i < G_N_ELEMENTS(SCREENS); i++) {
+        if (g_strcmp0(SCREENS[i].id, id) == 0)
+            gtk_widget_add_css_class(st->nav_btn[i], "nav-on");
+        else
+            gtk_widget_remove_css_class(st->nav_btn[i], "nav-on");
+    }
+    /* The file tab, the language switch and Run belong to the editor. */
+    gtk_widget_set_visible(st->topbar, g_strcmp0(id, "code") == 0);
+}
+
+static void nav_clicked_cb(GtkButton *b, gpointer user_data) {
+    AppState *st = user_data;
+    show_screen(st, g_object_get_data(G_OBJECT(b), "screen"));
+}
+
+/* ---- HOME: one card per brick --------------------------------------- */
+
+typedef struct { AppState *st; int mode; int target; } BrickPick;
+
+static void brick_picked_cb(GtkButton *b, gpointer data) {
+    BrickPick *p = data;
+    /* One click answers what the toolbar switch and the Target dropdown
+     * used to ask separately. */
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(p->st->seg_btn[p->mode]), TRUE);
+    if (p->mode == MODE_NQC && p->target >= 0)
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(p->st->target_dropdown), p->target);
+    show_screen(p->st, "code");
+}
+
+static void brick_draw_cb(GtkDrawingArea *area, cairo_t *cr,
+                           int w, int h, gpointer data) {
+    ((void (*)(cairo_t *, int, int)) data)(cr, w, h);
+}
+
+static GtkWidget *brick_card(AppState *st, const char *css, const char *lang,
+                              const char *name, const char *foot,
+                              void (*draw)(cairo_t *, int, int),
+                              int mode, int target) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_hexpand(box, TRUE);
+
+    GtkWidget *l = gtk_label_new(lang);
+    gtk_widget_add_css_class(l, "bc-lang");
+    gtk_label_set_xalign(GTK_LABEL(l), 0.0);
+    gtk_box_append(GTK_BOX(box), l);
+
+    GtkWidget *n = gtk_label_new(name);
+    gtk_widget_add_css_class(n, "bc-name");
+    gtk_label_set_xalign(GTK_LABEL(n), 0.0);
+    gtk_box_append(GTK_BOX(box), n);
+
+    GtkWidget *art = gtk_drawing_area_new();
+    gtk_widget_set_vexpand(art, TRUE);
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(art), 180);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(art), 230);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(art), brick_draw_cb, draw, NULL);
+    gtk_box_append(GTK_BOX(box), art);
+
+    GtkWidget *f = gtk_label_new(foot);
+    gtk_widget_add_css_class(f, "bc-foot");
+    gtk_label_set_xalign(GTK_LABEL(f), 0.0);
+    gtk_label_set_wrap(GTK_LABEL(f), TRUE);
+    gtk_box_append(GTK_BOX(box), f);
+
+    GtkWidget *b = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(b), box);
+    gtk_widget_add_css_class(b, "brick-card");
+    gtk_widget_add_css_class(b, css);
+    gtk_widget_set_hexpand(b, TRUE);
+    gtk_widget_set_vexpand(b, TRUE);
+
+    BrickPick *p = g_new0(BrickPick, 1);
+    p->st = st; p->mode = mode; p->target = target;
+    g_object_set_data_full(G_OBJECT(b), "pick", p, g_free);
+    g_signal_connect(b, "clicked", G_CALLBACK(brick_picked_cb), p);
+    return b;
+}
+
+static GtkWidget *home_screen(AppState *st) {
+    GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+    GtkWidget *head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+    gtk_widget_add_css_class(head, "home-head");
+    gtk_widget_set_halign(head, GTK_ALIGN_CENTER);
+    GtkWidget *title = gtk_label_new("BrickCode Studio");
+    gtk_widget_add_css_class(title, "home-word");
+    gtk_box_append(GTK_BOX(head), title);
+    gtk_box_append(GTK_BOX(page), head);
+
+    GtkWidget *sub = gtk_label_new("Pick the brick you are programming");
+    gtk_widget_add_css_class(sub, "home-sub");
+    gtk_box_append(GTK_BOX(page), sub);
+
+    GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
+    gtk_widget_add_css_class(row, "home-row");
+    gtk_widget_set_vexpand(row, TRUE);
+    gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-rcx", "NQC", "RCX",
+        "USB tower  ·  3 sensors, 3 motors", bk_draw_rcx, MODE_NQC, 0));
+    gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-scout", "NQC", "SCOUT",
+        "Built-in light sensor  ·  stand-alone", bk_draw_scout, MODE_NQC, 3));
+    gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-nxt", "NXC", "NXT",
+        "USB or Bluetooth  ·  encoders", bk_draw_nxt, MODE_NXC, -1));
+    gtk_box_append(GTK_BOX(page), row);
+    return page;
+}
+
+/* ---- TOOLS ----------------------------------------------------------- */
+
+static GtkWidget *tools_screen(AppState *st) {
+    GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *title = gtk_label_new("Tools");
+    gtk_widget_add_css_class(title, "home-word");
+    gtk_widget_set_margin_top(title, 26);
+    gtk_box_append(GTK_BOX(page), title);
+    GtkWidget *sub = gtk_label_new("The same utilities as the editor drawer, with room to read them");
+    gtk_widget_add_css_class(sub, "home-sub");
+    gtk_box_append(GTK_BOX(page), sub);
+
+    GtkWidget *wrap = gtk_box_new(GTK_ORIENTATION_VERTICAL, 14);
+    gtk_widget_add_css_class(wrap, "tools-wrap");
+    gtk_widget_set_halign(wrap, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(wrap, GTK_ALIGN_START);
+
+    GtkWidget *g1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_box_append(GTK_BOX(g1), chip_button("Remote", "qa-blue",
+        G_CALLBACK(open_remote_cb), st));
+    gtk_box_append(GTK_BOX(g1), chip_button("Firmware…", "qa-orange",
+        G_CALLBACK(open_firmware_sheet_cb), st));
+    gtk_box_append(GTK_BOX(g1), chip_button("Test brick", "qa-green",
+        G_CALLBACK(test_brick_cb), st));
+    gtk_box_append(GTK_BOX(wrap), g1);
+
+    GtkWidget *g2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_box_append(GTK_BOX(g2), chip_button("Test tools", "qa-green",
+        G_CALLBACK(test_tools_cb), st));
+    gtk_box_append(GTK_BOX(g2), chip_button("NXT Explorer", "qa-purple",
+        G_CALLBACK(open_explorer_cb), st));
+    gtk_box_append(GTK_BOX(wrap), g2);
+
+    gtk_box_append(GTK_BOX(page), wrap);
+    return page;
+}
+
+/* ---- ABOUT ----------------------------------------------------------- */
+
+static GtkWidget *about_row(const char *k, const char *v) {
+    GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
+    GtkWidget *a = gtk_label_new(k);
+    gtk_widget_add_css_class(a, "ab-k");
+    gtk_label_set_xalign(GTK_LABEL(a), 0.0);
+    gtk_widget_set_hexpand(a, TRUE);
+    GtkWidget *b = gtk_label_new(v);
+    gtk_widget_add_css_class(b, "ab-v");
+    gtk_label_set_xalign(GTK_LABEL(b), 1.0);
+    gtk_box_append(GTK_BOX(r), a);
+    gtk_box_append(GTK_BOX(r), b);
+    return r;
+}
+
+static GtkWidget *about_screen(AppState *st) {
+    (void) st;
+    GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *title = gtk_label_new("BrickCode Studio");
+    gtk_widget_add_css_class(title, "home-word");
+    gtk_widget_set_margin_top(title, 26);
+    gtk_box_append(GTK_BOX(page), title);
+    GtkWidget *sub = gtk_label_new("Version " APP_VERSION
+                                   "   ·   NQC + NXC editor   ·   Linux and macOS");
+    gtk_widget_add_css_class(sub, "home-sub");
+    gtk_box_append(GTK_BOX(page), sub);
+
+    GtkWidget *cols = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
+    gtk_widget_add_css_class(cols, "tools-wrap");
+    gtk_widget_set_halign(cols, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(cols, GTK_ALIGN_START);
+
+    GtkWidget *spec = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
+    gtk_widget_add_css_class(spec, "ab-card");
+    gtk_box_append(GTK_BOX(spec), about_row("Compilers", "nqc (RCX / Scout)  ·  nbc (NXT)"));
+    gtk_box_append(GTK_BOX(spec), about_row("NQC targets", "RCX2 · RCX · CM · Scout · Spy"));
+    gtk_box_append(GTK_BOX(spec), about_row("NQC link", "IR tower (USB / serial)"));
+    gtk_box_append(GTK_BOX(spec), about_row("NXC link", "USB (libusb) · Bluetooth on Linux"));
+    gtk_box_append(GTK_BOX(spec), about_row("Block editor", "File → Block editor…"));
+    gtk_box_append(GTK_BOX(cols), spec);
+
+    GtkWidget *who = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
+    gtk_widget_add_css_class(who, "ab-card");
+    GtkWidget *nm = gtk_label_new("Jim Bolaños");
+    gtk_widget_add_css_class(nm, "ab-name");
+    gtk_label_set_xalign(GTK_LABEL(nm), 0.0);
+    gtk_box_append(GTK_BOX(who), nm);
+    GtkWidget *bio = gtk_label_new(
+        "Builds and programs LEGO robots as a hobby — RCX, Scout, NXT and\n"
+        "Powered Up hubs. Made BrickCode Studio so these classic bricks keep\n"
+        "running on modern computers: one editor, no old drivers.");
+    gtk_widget_add_css_class(bio, "ab-k");
+    gtk_label_set_xalign(GTK_LABEL(bio), 0.0);
+    gtk_box_append(GTK_BOX(who), bio);
+    GtkWidget *lk = gtk_label_new("github.com/JimBolanos   ·   MIT License   ·   © 2026 Jim Bolaños");
+    gtk_widget_add_css_class(lk, "ab-v");
+    gtk_label_set_xalign(GTK_LABEL(lk), 0.0);
+    gtk_box_append(GTK_BOX(who), lk);
+    GtkWidget *tm = gtk_label_new(
+        "Not affiliated with or endorsed by the LEGO Group. LEGO, MINDSTORMS,\n"
+        "RCX, Scout and NXT are trademarks of the LEGO Group.");
+    gtk_widget_add_css_class(tm, "ab-fine");
+    gtk_label_set_xalign(GTK_LABEL(tm), 0.0);
+    gtk_box_append(GTK_BOX(who), tm);
+    gtk_box_append(GTK_BOX(cols), who);
+
+    gtk_box_append(GTK_BOX(page), cols);
+    return page;
+}
+
+/* ---- the bottom navigation ------------------------------------------- */
+
+static GtkWidget *bottom_nav(AppState *st) {
+    GtkWidget *nav = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_add_css_class(nav, "bottomnav");
+    gtk_widget_set_halign(nav, GTK_ALIGN_CENTER);
+    for (guint i = 0; i < G_N_ELEMENTS(SCREENS); i++) {
+        GtkWidget *b = gtk_button_new_with_label(SCREENS[i].label);
+        gtk_widget_add_css_class(b, "nav-btn");
+        g_object_set_data(G_OBJECT(b), "screen", (gpointer) SCREENS[i].id);
+        g_signal_connect(b, "clicked", G_CALLBACK(nav_clicked_cb), st);
+        st->nav_btn[i] = b;
+        gtk_box_append(GTK_BOX(nav), b);
+    }
+    return nav;
+}
+
 static void seg_toggled_cb(GtkToggleButton *tb, gpointer user_data) {
     AppState *st = user_data;
     if (!gtk_toggle_button_get_active(tb)) return;
@@ -3554,6 +3835,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     /* ---- Top bar: project tab, language, brick status, actions ---- */
     GtkWidget *topbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    st->topbar = topbar;
     gtk_widget_add_css_class(topbar, "topbar");
 
     GtkWidget *about_btn = gtk_button_new();
@@ -4007,7 +4289,18 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(body), center);
     gtk_box_append(GTK_BOX(body), edge);
     gtk_box_append(GTK_BOX(body), st->drawer);
-    gtk_box_append(GTK_BOX(root), body);
+    /* The editor keeps every widget it had; it simply becomes one page. */
+    st->stack = gtk_stack_new();
+    gtk_widget_set_vexpand(st->stack, TRUE);
+    gtk_stack_set_transition_type(GTK_STACK(st->stack),
+                                   GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+    gtk_stack_set_transition_duration(GTK_STACK(st->stack), 140);
+    gtk_stack_add_named(GTK_STACK(st->stack), home_screen(st), "home");
+    gtk_stack_add_named(GTK_STACK(st->stack), tools_screen(st), "tools");
+    gtk_stack_add_named(GTK_STACK(st->stack), about_screen(st), "about");
+    gtk_stack_add_named(GTK_STACK(st->stack), body, "code");
+    gtk_box_append(GTK_BOX(root), st->stack);
+    gtk_box_append(GTK_BOX(root), bottom_nav(st));
 
     /* ---- Status bar ---- */
     GtkWidget *statusbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -4109,6 +4402,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     update_line_numbers(st);
     st->dirty = FALSE;
     update_title(st);
+    show_screen(st, "home");
     gtk_window_present(GTK_WINDOW(st->window));
 }
 
