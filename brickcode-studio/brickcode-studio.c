@@ -267,6 +267,7 @@ typedef struct {
     GtkWidget *slot_dropdown;
 
     /* Utilities (collapsible) */
+    GtkWidget *utils_row;    /* the brick utilities, now on the TOOLS screen */
     GtkWidget *utils_expander;
     GtkWidget *utils_nxc;
     GtkWidget *utils_nqc;
@@ -3692,36 +3693,29 @@ static GtkWidget *home_screen(AppState *st) {
 
 static GtkWidget *tools_screen(AppState *st) {
     GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
     GtkWidget *title = gtk_label_new("Tools");
     gtk_widget_add_css_class(title, "home-word");
-    gtk_widget_set_margin_top(title, 26);
+    gtk_widget_set_margin_top(title, 22);
     gtk_box_append(GTK_BOX(page), title);
-    GtkWidget *sub = gtk_label_new("The same utilities as the editor drawer, with room to read them");
+    GtkWidget *sub = gtk_label_new(
+        "Everything you do to the brick itself. What you set for the program "
+        "stays in the editor's Settings drawer.");
     gtk_widget_add_css_class(sub, "home-sub");
     gtk_box_append(GTK_BOX(page), sub);
 
-    GtkWidget *wrap = gtk_box_new(GTK_ORIENTATION_VERTICAL, 14);
-    gtk_widget_add_css_class(wrap, "tools-wrap");
-    gtk_widget_set_halign(wrap, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(wrap, GTK_ALIGN_START);
-
-    GtkWidget *g1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_box_append(GTK_BOX(g1), chip_button("Remote", "qa-blue",
-        G_CALLBACK(open_remote_cb), st));
-    gtk_box_append(GTK_BOX(g1), chip_button("Firmware…", "qa-orange",
-        G_CALLBACK(open_firmware_sheet_cb), st));
-    gtk_box_append(GTK_BOX(g1), chip_button("Test brick", "qa-green",
-        G_CALLBACK(test_brick_cb), st));
-    gtk_box_append(GTK_BOX(wrap), g1);
-
-    GtkWidget *g2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_box_append(GTK_BOX(g2), chip_button("Test tools", "qa-green",
-        G_CALLBACK(test_tools_cb), st));
-    gtk_box_append(GTK_BOX(g2), chip_button("NXT Explorer", "qa-purple",
-        G_CALLBACK(open_explorer_cb), st));
-    gtk_box_append(GTK_BOX(wrap), g2);
-
-    gtk_box_append(GTK_BOX(page), wrap);
+    /* The real utilities, moved out of the drawer rather than copied, so
+     * there is one of each. apply_mode() still shows the NQC or the NXC
+     * set depending on the language, wherever they are parented. */
+    GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_add_css_class(card, "ab-card");
+    gtk_widget_set_halign(card, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(card, GTK_ALIGN_START);
+    gtk_widget_set_margin_start(card, 22);
+    gtk_widget_set_margin_end(card, 22);
+    gtk_widget_set_margin_top(card, 10);
+    if (st->utils_row) gtk_box_append(GTK_BOX(card), st->utils_row);
+    gtk_box_append(GTK_BOX(page), card);
     return page;
 }
 
@@ -4278,6 +4272,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     /* ---- Utilities (collapsible; contents depend on the language) ---- */
     GtkWidget *utils_row = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(utils_row, "utils-row");
+    st->utils_row = utils_row;
     st->utils_expander = gtk_expander_new(NULL);
     GtkWidget *utils_title = gtk_label_new("Brick utilities");
     gtk_widget_add_css_class(utils_title, "console-label");
@@ -4371,7 +4366,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_expander_set_child(GTK_EXPANDER(st->utils_expander), utils_content);
     gtk_box_append(GTK_BOX(utils_row), st->utils_expander);
-    gtk_box_append(GTK_BOX(drawer_box), utils_row);
+    /* utils_row is not appended here: it belongs to the TOOLS screen now,
+     * so the utilities live in exactly one place. */
 
     /* ---- Raw command row ---- */
     GtkWidget *command_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
