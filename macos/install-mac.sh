@@ -14,7 +14,7 @@ command -v brew >/dev/null || { echo "Install Homebrew first: https://brew.sh"; 
 [ -f "$SRC/brickcode-studio.c" ] || { echo "Cannot find $SRC/brickcode-studio.c"; exit 1; }
 
 echo "==> 1/4 Homebrew packages"
-brew install gtk4 libusb pkg-config fpc bison flex
+brew install gtk4 libusb fontconfig pkg-config fpc bison flex
 
 # macOS yacc/flex are Xcode stubs: use Homebrew's bison/flex through a shim
 mkdir -p "$WORK/shims"

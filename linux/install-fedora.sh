@@ -13,6 +13,7 @@ mkdir -p "$PREFIX/bin" "$PREFIX/share/brickcode/nbc" "$PREFIX/share/firmware" "$
 
 echo "==> 1/5 Packages (sudo password needed)"
 sudo dnf install -y gcc gcc-c++ make git pkgconf-pkg-config gtk4-devel libusb1-devel \
+  fontconfig-devel \
     fpc bison flex
 
 echo "==> 2/5 nqc (RCX / Scout)"

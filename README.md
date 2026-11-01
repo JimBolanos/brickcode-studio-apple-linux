@@ -65,6 +65,7 @@ Somewhere in the output you should see "registered new interface driver legousbt
 sudo apt install nqc                      # RCX / Scout compiler
 sudo apt install libusb-1.0-0-dev         # libusb
 sudo apt install libgtk-4-dev             # GTK4
+sudo apt install libfontconfig-1-dev      # fontconfig (the bundled wordmark font)
 git clone https://github.com/JimBolanos/brickcode-studio.git
 cd brickcode-studio/brickcode-studio
 make                                      # no sudo needed
@@ -78,9 +79,9 @@ https://brickbot.github.io/nqc/PLATFORM-Linux.html
 
 ### Linux Fedora
 
-First confirmed by COPERNICON (Eurobricks). The app only needs GTK4 and libusb:
+First confirmed by COPERNICON (Eurobricks). The app only needs GTK4, libusb and fontconfig:
 ```
-sudo dnf install gcc make pkgconf-pkg-config gtk4-devel libusb1-devel
+sudo dnf install gcc make pkgconf-pkg-config gtk4-devel libusb1-devel fontconfig-devel
 git clone https://github.com/JimBolanos/brickcode-studio.git
 cd brickcode-studio/brickcode-studio
 make
@@ -106,7 +107,7 @@ For NQC also install `nqc` (AUR).
 
 ### Linux, other distros
 
-Install the GTK4 and libusb-1.0 development packages, then `cd brickcode-studio && make && sudo make install`.
+Install the GTK4, libusb-1.0 and fontconfig development packages, then `cd brickcode-studio && make && sudo make install`.
 
 ## Firmware
 
