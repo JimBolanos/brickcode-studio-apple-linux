@@ -10,7 +10,23 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 
-[ -d "$REPO/.git" ] || { echo "Not a git clone: $REPO"; exit 1; }
+if [ ! -d "$REPO/.git" ]; then
+  # Most people arrive here from a release zip, where there is nothing to
+  # pull. Saying only "not a git clone" leaves them stuck holding the thing
+  # they are trying to install.
+  echo "This is not a git clone: $REPO"
+  echo
+  echo "update-mac.sh pulls, so it needs one. If you downloaded a release"
+  echo "zip, there is nothing to pull — install what is already here:"
+  echo
+  echo "    bash macos/install-mac.sh"
+  echo
+  echo "To follow the project with git instead:"
+  echo
+  echo "    git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git"
+  echo "    cd brickcode-studio-osx-linux && bash macos/update-mac.sh"
+  exit 1
+fi
 
 cd "$REPO"
 
