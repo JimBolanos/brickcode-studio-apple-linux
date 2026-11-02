@@ -22,7 +22,16 @@ printf '#!/bin/sh\nexec "%s/bin/bison" -y "$@"\n' "$(brew --prefix bison)" > "$W
 chmod +x "$WORK/shims/yacc"
 export PATH="$WORK/shims:$(brew --prefix flex)/bin:$(brew --prefix bison)/bin:$PATH"
 
+# nqc and nbc are third-party and change about never, but building them from
+# scratch takes minutes. Once installed they are left alone, so re-running this
+# after changing the app itself is quick. --full rebuilds them anyway.
+FULL=""
+[ "${1:-}" = "--full" ] && FULL=1
+
 echo "==> 2/4 nqc (RCX / Scout)"
+if [ -z "$FULL" ] && [ -x "$PREFIX/bin/nqc" ]; then
+  echo "    already built, skipping (pass --full to rebuild)"
+else
 [ -d "$WORK/nqc" ] || git clone --depth 1 https://github.com/jverne/nqc.git "$WORK/nqc"
 ( cd "$WORK/nqc"
   # nqc waits ~0.5 s for a reply the RCX never sends to remote/message commands.
@@ -34,15 +43,20 @@ echo "==> 2/4 nqc (RCX / Scout)"
   make -j"$(sysctl -n hw.ncpu)"
   cp bin/nqc "$PREFIX/bin/nqc"
   cp firmware/*.lgo "$PREFIX/share/firmware/" )
+fi
 cp "$FW"/*.lgo "$PREFIX/share/firmware/"      # bundled copies (offline)
 
 echo "==> 3/4 nbc (NXT compiler, compile-only: the app uploads over USB itself)"
+if [ -z "$FULL" ] && [ -x "$PREFIX/bin/nbc" ]; then
+  echo "    already built, skipping (pass --full to rebuild)"
+else
 [ -d "$WORK/nbc-compiler" ] || git clone --depth 1 https://github.com/pierre-24/nbc-compiler.git "$WORK/nbc-compiler"
 ( cd "$WORK/nbc-compiler/src/NXT"
   make clean >/dev/null 2>&1 || true
   make all PFLAGS="-S2cdghi -dRELEASE -vewnhi -l -Fu../commons -Fu. -Fu../bricktools"
   cp nbc "$PREFIX/bin/nbc"
   cp NBCCommon.h NXCDefs.h NXTDefs.h "$PREFIX/share/brickcode/nbc/" )
+fi
 
 echo "==> 4/4 BrickCode Studio"
 # -DBLOCKS_DIR tells the binary where the visual block editor landed.
@@ -72,7 +86,11 @@ for s in 16 32 64 128 256 512; do
 done
 iconutil -c icns /tmp/cbs.iconset -o "$APP/Contents/Resources/AppIcon.icns" || true
 rm -rf /tmp/cbs.iconset
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+# Read from the source rather than written here again: this said 2.2.0 for
+# three releases, because nothing made it follow.
+VER=$(sed -n 's/.*APP_VERSION *"\([^"]*\)".*/\1/p' "$SRC/brickcode-studio.c" | head -1)
+[ -n "$VER" ] || { echo "Cannot read APP_VERSION from brickcode-studio.c"; exit 1; }
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -81,7 +99,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key><string>BrickCodeStudio</string>
   <key>CFBundleIdentifier</key><string>org.brickcode.Studio</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>2.2.0</string>
+  <key>CFBundleShortVersionString</key><string>$VER</string>
+  <key>CFBundleVersion</key><string>$VER</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST

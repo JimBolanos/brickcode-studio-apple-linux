@@ -1,31 +1,39 @@
 #!/bin/bash
-# Update the repo from the newest brickcode_studio.zip in ~/Downloads, push, tag, reinstall.
+# Update an installed BrickCode Studio on macOS: pull, then rebuild and
+# reinstall. Nothing is committed, pushed or tagged — publishing is a separate
+# decision, and this script used to make it for you.
+#
+#   bash macos/update-mac.sh            quick: the app only
+#   bash macos/update-mac.sh --full     also rebuild nqc and nbc
 set -e
-REPO="$HOME/brickcode-repo"
-ZIP="${1:-$(ls -t "$HOME"/Downloads/brickcode_studio*.zip 2>/dev/null | head -1)}"
-[ -f "$ZIP" ] || { echo "No zip found in ~/Downloads (or pass the path)"; exit 1; }
-[ -d "$REPO/.git" ] || { echo "Repo not found: $REPO"; exit 1; }
 
-TMP="$HOME/Downloads/bcs_new"
-rm -rf "$TMP"; mkdir -p "$TMP"
-unzip -oq "$ZIP" -d "$TMP"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+REPO="$(cd "$HERE/.." && pwd)"
+
+[ -d "$REPO/.git" ] || { echo "Not a git clone: $REPO"; exit 1; }
 
 cd "$REPO"
-git pull --rebase --autostash || true
-rsync -a --exclude .git "$TMP"/ "$REPO"/
 
-VER=$(sed -n 's/.*APP_VERSION *"\(.*\)".*/\1/p' brickcode-studio/brickcode-studio.c | head -1)
-echo "Version: $VER"
-
-git add -A
-git commit -m "Update to $VER" || echo "Nothing new to commit"
-git push
-if git rev-parse "v$VER" >/dev/null 2>&1; then
-  echo "Tag v$VER already exists, skipping"
-else
-  git tag "v$VER" && git push --tags
+if [ -n "$(git status --porcelain)" ]; then
+  echo "There are uncommitted changes here:"
+  git status --short
+  echo
+  echo "Commit or stash them first. This pulls, and a pull on top of local"
+  echo "edits is how work gets lost."
+  exit 1
 fi
 
-bash macos/install-mac.sh
-rm -rf "$TMP"
-echo "Done. Version $VER installed. Create the GitHub release for tag v$VER."
+echo "==> pulling"
+git pull --ff-only
+
+VER=$(sed -n 's/.*APP_VERSION *"\([^"]*\)".*/\1/p' brickcode-studio/brickcode-studio.c | head -1)
+[ -n "$VER" ] || { echo "Cannot read APP_VERSION"; exit 1; }
+
+echo "==> installing $VER"
+bash "$HERE/install-mac.sh" "$@"
+
+echo
+echo "Installed $VER."
+echo "To publish it as well, tag and release it yourself:"
+echo "  git tag -a v$VER -m \"BrickCode Studio $VER\""
+echo "  git push origin v$VER"
