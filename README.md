@@ -35,7 +35,10 @@ The block editor, writing NQC for the RCX and NXC for the NXT:
 
 Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md)
 
-## What's new in 2.3.0
+## What's new
+
+The headlines of the 2.3 line. Every release, down to the small fixes, is in
+[CHANGELOG.md](CHANGELOG.md).
 
 **A dashboard.** The app opens on the three bricks it can program. Picking one
 sets the language *and* the target together — until now those were two separate
@@ -74,7 +77,7 @@ BrickCode Studio uses the **USB tower**. The older **serial tower** has not been
 - Device chip: shows whether an NXT or an RCX tower is connected
 - RCX tools: tower port detection, firmware sheet with a real progress bar, datalog, IR range, auto-shutoff
 - NXT Explorer: files, battery and firmware over USB
-- Visual block editor (**File → Block editor…**): drag blocks instead of typing, in NQC or NXC. It opens in your browser already set to the language the toolbar is on. Saved programs carry their blocks inside, so you can open them again and keep building — see [`blocks`](blocks).
+- Visual block editor (**BLOCKS** in the bottom bar, the button on the editor screen, or **File → Block editor…**): drag blocks instead of typing, in NQC or NXC. It opens in your browser already set to the language the toolbar is on. Saved programs carry their blocks inside, so you can open them again and keep building — see [`blocks`](blocks).
 - NXT Screen: the NXT display shown live on the computer over USB, drawn as the NXT brick, with clickable buttons (◀ Enter ▶ Exit) and keyboard keys to move through the NXT menus. Tested on macOS (Mac mini M4 with an NXT); still in testing on Linux.
 - Remote (RCX): the buttons of the LEGO IR remote (messages, motors A/B/C, programs P1-P5, stop, sound), sent with `nqc`. The motor buttons run the motor while held, like the real remote. The installers patch nqc at build time so it does not wait for a reply the RCX never sends to remote commands (needed for the motor to keep running). Tested on a Mac mini M4 with an RCX 2.0.
 - VLL (Scout): makes a Scout send VLL codes (motor forward / backward, beeps) to a Micro Scout, through the USB tower. Tested on macOS (Mac mini M4); still in testing on Linux.

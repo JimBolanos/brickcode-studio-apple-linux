@@ -5,6 +5,13 @@ All notable changes to BrickCode Studio. Dates are release dates.
 ## 2.3.2 — 2026-11-02
 
 ### Fixed
+- **The Links in About were unreadable.** 2.3.1 stopped them wrapping into
+  ragged lines by cutting them with an ellipsis instead, but the column only
+  gives an address about 190px beside its label: every github row came out as
+  the same `github.com/JimBolano…`, so Repository and Issues read identically.
+  The address now sits under its own label, with the full width, and the two
+  github rows drop the `github.com/JimBolanos/` that was eating it. Hovering
+  still shows the real address.
 - **`linux/install-debian.sh` failed at the first step on Debian, Ubuntu and
   Mint.** It asked apt for `libfontconfig-1-dev`, which is not a package —
   the name is `libfontconfig-dev` — so `apt` stopped with "Unable to locate
@@ -28,6 +35,10 @@ All notable changes to BrickCode Studio. Dates are release dates.
 - `install-debian.sh` was marked "not tested yet". It has now been run end to
   end on Ubuntu 24.04: nqc 3.2 and nbc 1.2.1 both build, and both produce
   working output. No brick was attached, so the tower is still untested there.
+- The README's "What's new in 2.3.0" heading needed editing every release to
+  stay true, and had already stopped being true. It is "What's new" now, with
+  a pointer to this file for the full history. The About screenshot beside it
+  still showed 2.3.0 and the repository's old name.
 
 ## 2.3.1 — 2026-11-02
 

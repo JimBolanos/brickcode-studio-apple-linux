@@ -4282,27 +4282,38 @@ static GtkWidget *doc_row(AppState *st, const char *colour, const char *title,
     return b;
 }
 
-static GtkWidget *link_row(AppState *st, const char *name, const char *url) {
+/* shown is what the row displays; NULL shows the address itself. The two
+ * github rows pass a short form, because "github.com/JimBolanos/" eats the
+ * width that tells Repository and Issues apart. */
+static GtkWidget *link_row(AppState *st, const char *name, const char *url,
+                           const char *shown) {
+    /* Name above, address below. Side by side, the address had about 190px
+     * in this 340px column: long ones wrapped into three ragged lines, and
+     * ellipsizing them instead cut every github link down to the same
+     * "github.com/JimBolano..." — tidy, and useless, since Repository and
+     * Issues then read identically. Stacked, the address gets the full
+     * width and the rows stay one height. */
     GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    GtkWidget *col = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    gtk_widget_set_hexpand(col, TRUE);
+
     GtkWidget *n = gtk_label_new(name);
     gtk_widget_add_css_class(n, "ab-v");
     gtk_label_set_xalign(GTK_LABEL(n), 0.0);
-    gtk_widget_set_size_request(n, 112, -1);
-    GtkWidget *u = gtk_label_new(url);
+
+    GtkWidget *u = gtk_label_new(shown ? shown : url);
     gtk_widget_add_css_class(u, "link-url");
     gtk_label_set_xalign(GTK_LABEL(u), 0.0);
-    /* One line, cut with an ellipsis, rather than wrapped. A long address
-     * wrapped into this narrow column breaks into three ragged lines and
-     * pushes every row under it out of line. The whole address is still
-     * there on hover, and the row opens it either way. */
     gtk_label_set_wrap(GTK_LABEL(u), FALSE);
     gtk_label_set_ellipsize(GTK_LABEL(u), PANGO_ELLIPSIZE_END);
-    gtk_widget_set_tooltip_text(u, url);
-    gtk_widget_set_hexpand(u, TRUE);
+    gtk_widget_set_tooltip_text(u, url);   /* hover always shows the real one */
+
+    gtk_box_append(GTK_BOX(col), n);
+    gtk_box_append(GTK_BOX(col), u);
+
     GtkWidget *go = gtk_label_new("↗");
     gtk_widget_add_css_class(go, "doc-go");
-    gtk_box_append(GTK_BOX(r), n);
-    gtk_box_append(GTK_BOX(r), u);
+    gtk_box_append(GTK_BOX(r), col);
     gtk_box_append(GTK_BOX(r), go);
 
     GtkWidget *b = gtk_button_new();
@@ -4458,13 +4469,15 @@ static GtkWidget *about_screen(AppState *st) {
     gtk_widget_add_css_class(links, "ab-card");
     gtk_box_append(GTK_BOX(links), section("Links"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Repository",
-        "github.com/JimBolanos/brickcode-studio-osx-linux"));
+        "github.com/JimBolanos/brickcode-studio-osx-linux",
+        "brickcode-studio-osx-linux"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Issues & ideas",
-        "github.com/JimBolanos/brickcode-studio-osx-linux/issues"));
+        "github.com/JimBolanos/brickcode-studio-osx-linux/issues",
+        "brickcode-studio-osx-linux/issues"));
     gtk_box_append(GTK_BOX(links), link_row(st, "NQC reference",
-        "bricxcc.sourceforge.net/nqc"));
+        "bricxcc.sourceforge.net/nqc", NULL));
     gtk_box_append(GTK_BOX(links), link_row(st, "NXC guide",
-        "bricxcc.sourceforge.net/nbc"));
+        "bricxcc.sourceforge.net/nbc", NULL));
     gtk_box_append(GTK_BOX(right), links);
 
     GtkWidget *legal = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
