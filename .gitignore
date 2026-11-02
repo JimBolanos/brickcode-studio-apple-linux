@@ -11,3 +11,7 @@ RELEASE-*.md
 /brickcode-blocks.html
 Claude outputs/
 .DS_Store
+
+# screenshots the test suite writes for a human to look at
+blocks/shots/
+blocks/test/__pycache__/

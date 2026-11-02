@@ -7,7 +7,29 @@ all. Open it on its own, or from **File → Block editor…** inside BrickCode
 Studio.
 
 The app passes `#nqc` or `#nxc` in the URL so the editor comes up on the same
-language as the toolbar. Opening the file directly starts on NQC.
+language as the toolbar. Opening the file directly starts on NQC. Adding
+`-only` — `#nqc-only` — also takes the language switch away, for a host that
+can compile one of the two and not the other.
+
+## One editor, two editions
+
+This folder is the editor's only home. The Windows edition carries a built
+copy in `package\BrickCodeStudio\blocks\`, and that copy is made from here:
+
+```
+python3 build.py                                   # index.html -> brickcode-blocks.html
+python3 pin.py nqc-only /path/to/win11/package/BrickCodeStudio/blocks/brickcode-blocks.html
+```
+
+`pin.py` writes the same page with `data-pin` on `<html>`, which does what
+`#nqc-only` does but from inside the file. Windows needs that: it opens the
+editor through `ShellExecute`, which resolves a `file:` URL back to a plain
+path before the browser sees it and loses everything after the `#`. A
+fragment cannot override a pin, so the Windows copy cannot be talked into
+offering NXC, which that package has no `nbc` to compile.
+
+Edit `index.html` here, never a built `brickcode-blocks.html`: those are
+generated and the next build overwrites them.
 
 ## Blocks ride inside the program
 
@@ -58,3 +80,27 @@ those eight steps; on the NXT the percentage is passed through.
 the Blockly sprite sheet into `index.html` to produce it.
 
 Blockly 13.4.0, Apache 2.0.
+
+## The tests
+
+```
+cd test
+python3 run_all.py            # the twelve that have to pass
+python3 run_all.py nxc pin    # or only some
+```
+
+Needs playwright with chromium, and `nqc` and `nbc` on `PATH` (or `NQC=` and
+`NBC=` pointing at them). Plain `python3`, not `python3 -I`: the tests import
+`paths.py` from that folder and isolated mode keeps it off `sys.path`.
+
+Nothing is taken on trust. Every program the generator writes is handed to
+the real `nqc` or `nbc`, and a test fails if no `.rcx` or `.rxe` comes out —
+which is how two bugs were caught that read perfectly well as source:
+
+- `OUT_A + OUT_C` compiles under both compilers and drives the wrong motor on
+  the NXT, because there the constants are an enumeration and not a bit mask.
+- NXC rejects a function used before it is defined, so My Blocks have to be
+  emitted above `task main` on that side.
+
+The other files in `test/` take screenshots for a human to look at. They are
+not in `run_all.py`: there is nothing in them to assert.
