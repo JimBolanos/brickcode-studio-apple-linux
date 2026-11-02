@@ -4173,6 +4173,16 @@ static GtkWidget *home_screen(AppState *st) {
     GtkWidget *head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
     gtk_widget_add_css_class(head, "home-head");
     gtk_widget_set_halign(head, GTK_ALIGN_CENTER);
+
+    /* The icon leads the wordmark, the way the mock-up had it. */
+    GtkWidget *mark = gtk_drawing_area_new();
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(mark), 38);
+    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(mark), 38);
+    gtk_widget_set_valign(mark, GTK_ALIGN_CENTER);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(mark), brick_draw_cb,
+                                    (gpointer) bk_draw_logo, NULL);
+    gtk_box_append(GTK_BOX(head), mark);
+
     GtkWidget *title = gtk_label_new("BrickCode Studio");
     gtk_widget_add_css_class(title, "home-word");
     gtk_box_append(GTK_BOX(head), title);

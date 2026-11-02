@@ -76,6 +76,61 @@ static void bk_begin(cairo_t *cr, int w, int h, double dw, double dh) {
     cairo_scale(cr, s, s);
 }
 
+/* The app's own icon, the same shapes as brickcode-studio.svg, drawn here
+ * so the masthead needs neither librsvg nor an installed image file. */
+static void bk_ellipse(cairo_t *cr, const char *hex,
+                       double cx, double cy, double rx, double ry) {
+    cairo_save(cr);
+    cairo_new_path(cr);
+    cairo_translate(cr, cx, cy);
+    cairo_scale(cr, rx, ry);
+    cairo_arc(cr, 0, 0, 1, 0, 2 * G_PI);
+    cairo_restore(cr);
+    bk_hex(cr, hex);
+    cairo_fill(cr);
+}
+
+static void bk_draw_logo(cairo_t *cr, int w, int h) {
+    cairo_save(cr);
+    double s = MIN(w, h) / 512.0;
+    cairo_translate(cr, (w - 512 * s) / 2, (h - 512 * s) / 2);
+    cairo_scale(cr, s, s);
+
+    cairo_pattern_t *g = cairo_pattern_create_linear(0, 0, 0, 512);
+    cairo_pattern_add_color_stop_rgb(g, 0, 0x1C / 255.0, 0x2A / 255.0, 0x4A / 255.0);
+    cairo_pattern_add_color_stop_rgb(g, 1, 0x12 / 255.0, 0x1A / 255.0, 0x30 / 255.0);
+    bk_rrect(cr, 0, 0, 512, 512, 112.64);
+    cairo_set_source(cr, g);
+    cairo_fill(cr);
+    cairo_pattern_destroy(g);
+
+    bk_fill(cr, "#787E88", 66, 92, 380, 340, 44);
+    bk_fill(cr, "#DEE2E8", 66, 84, 380, 336, 44);
+    bk_fill(cr, "#F4F6FA", 80, 92, 352, 20, 10);
+    bk_fill(cr, "#3C4048", 112, 128, 288, 138, 16);
+    bk_fill(cr, "#96B08C", 122, 138, 268, 118, 10);
+
+    bk_fill(cr, "#223422", 196, 170, 22, 22, 3);
+    bk_fill(cr, "#223422", 296, 170, 22, 22, 3);
+    bk_fill(cr, "#223422", 196, 214, 108, 12, 5);
+    bk_fill(cr, "#223422", 184, 200, 16, 14, 5);
+    bk_fill(cr, "#223422", 300, 200, 16, 14, 5);
+
+    bk_fill(cr, "#464C58", 112, 292, 64, 48, 12);
+    bk_fill(cr, "#464C58", 336, 292, 64, 48, 12);
+    bk_fill(cr, "#464C58", 180, 362, 152, 30, 12);
+
+    bk_ellipse(cr, "#FA8C14", 256, 316, 46, 34);
+    bk_ellipse(cr, "#FFB046", 256, 310, 32, 18);
+
+    bk_fill(cr, "#282C34", 112, 404, 52, 20, 6);
+    bk_fill(cr, "#282C34", 176, 404, 52, 20, 6);
+    bk_fill(cr, "#282C34", 240, 404, 52, 20, 6);
+    bk_fill(cr, "#282C34", 304, 404, 52, 20, 6);
+
+    cairo_restore(cr);
+}
+
 /* ------------------------------------------------------------------ RCX */
 static void bk_draw_rcx(cairo_t *cr, int w, int h) {
     cairo_save(cr);
