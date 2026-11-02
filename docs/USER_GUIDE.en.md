@@ -19,7 +19,7 @@ The app is only an interface: it uses `nqc` and `nbc` underneath, so both must b
 
 ## 2. Installation
 
-All the code and releases are at [github.com/JimBolanos/brickcode-studio](https://github.com/JimBolanos/brickcode-studio). Run the commands in a terminal from the project folder.
+All the code and releases are at [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux). Run the commands in a terminal from the project folder.
 
 | System | How to install |
 | --- | --- |
@@ -245,7 +245,7 @@ If none of this solves it, open an issue on the GitHub repository or write in th
 
 **Links.**
 
-- Code and downloads: [github.com/JimBolanos/brickcode-studio](https://github.com/JimBolanos/brickcode-studio)
+- Code and downloads: [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux)
 - Rebrickable profile: [rebrickable.com/users/jimmy.bolanos](https://rebrickable.com/users/jimmy.bolanos/)
 - RCX firmware files: [nqc firmware folder](https://github.com/jverne/nqc/tree/master/firmware)
 

@@ -4236,7 +4236,7 @@ static char *guide_uri(const char *anchor) {
         g_free(local);
         if (uri) return uri;
     }
-    return g_strconcat("https://github.com/JimBolanos/brickcode-studio/blob/main/docs/",
+    return g_strconcat("https://github.com/JimBolanos/brickcode-studio-osx-linux/blob/main/docs/",
                        file, anchor ? "#" : "", anchor ? anchor : "", NULL);
 }
 
@@ -4291,7 +4291,13 @@ static GtkWidget *link_row(AppState *st, const char *name, const char *url) {
     GtkWidget *u = gtk_label_new(url);
     gtk_widget_add_css_class(u, "link-url");
     gtk_label_set_xalign(GTK_LABEL(u), 0.0);
-    gtk_label_set_wrap(GTK_LABEL(u), TRUE);
+    /* One line, cut with an ellipsis, rather than wrapped. A long address
+     * wrapped into this narrow column breaks into three ragged lines and
+     * pushes every row under it out of line. The whole address is still
+     * there on hover, and the row opens it either way. */
+    gtk_label_set_wrap(GTK_LABEL(u), FALSE);
+    gtk_label_set_ellipsize(GTK_LABEL(u), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_tooltip_text(u, url);
     gtk_widget_set_hexpand(u, TRUE);
     GtkWidget *go = gtk_label_new("↗");
     gtk_widget_add_css_class(go, "doc-go");
@@ -4452,9 +4458,9 @@ static GtkWidget *about_screen(AppState *st) {
     gtk_widget_add_css_class(links, "ab-card");
     gtk_box_append(GTK_BOX(links), section("Links"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Repository",
-        "github.com/JimBolanos/brickcode-studio"));
+        "github.com/JimBolanos/brickcode-studio-osx-linux"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Issues & ideas",
-        "github.com/JimBolanos/brickcode-studio/issues"));
+        "github.com/JimBolanos/brickcode-studio-osx-linux/issues"));
     gtk_box_append(GTK_BOX(links), link_row(st, "NQC reference",
         "bricxcc.sourceforge.net/nqc"));
     gtk_box_append(GTK_BOX(links), link_row(st, "NXC guide",
