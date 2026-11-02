@@ -308,7 +308,7 @@ typedef struct {
     GtkWidget *dev_dot, *dev_label;   /* connected-brick indicator */
     GtkWidget *topbar;
     GtkWidget *stack;        /* HOME / CODE / TOOLS / ABOUT */
-    GtkWidget *nav_btn[3];
+    GtkWidget *nav_btn[4];
     GtkWidget *drawer;       /* right settings drawer (GtkRevealer) */
     GtkWidget *console_box;
     char *post_rxe;          /* NXT: file to upload after nbc succeeds */
@@ -4080,7 +4080,7 @@ static GtkWidget *side_brick_row(const char *label, GtkWidget **dot_out) {
  * ===================================================================== */
 
 static const struct { const char *id; const char *label; } SCREENS[] = {
-    { "home", "HOME" }, { "about", "ABOUT" }, { "code", "CODE" }
+    { "home", "HOME" }, { "code", "CODE" }, { "blocks", "BLOCKS" }, { "about", "ABOUT" }
 };
 
 static void show_screen(AppState *st, const char *id) {
@@ -4097,7 +4097,11 @@ static void show_screen(AppState *st, const char *id) {
 
 static void nav_clicked_cb(GtkButton *b, gpointer user_data) {
     AppState *st = user_data;
-    show_screen(st, g_object_get_data(G_OBJECT(b), "screen"));
+    const char *id = g_object_get_data(G_OBJECT(b), "screen");
+    /* BLOCKS is a door, not a room: it opens the editor in the browser and
+     * leaves you on the screen you were already on. */
+    if (g_strcmp0(id, "blocks") == 0) { open_blocks_cb(b, st); return; }
+    show_screen(st, id);
 }
 
 /* ---- HOME: one card per brick --------------------------------------- */
