@@ -127,8 +127,8 @@ that, they put Homebrew on your path. If Homebrew is already there, skip this.
 **4. Download the code.**
 
 ```
-git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio-osx-linux
+git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+cd brickcode-studio-apple-linux
 ```
 
 **5. Install it.**
@@ -145,7 +145,7 @@ Now open **BrickCode Studio** from your Applications folder, or with ⌘ Space.
 **To update later**, two lines:
 
 ```
-cd brickcode-studio-osx-linux
+cd brickcode-studio-apple-linux
 bash macos/update-mac.sh
 ```
 
@@ -170,8 +170,8 @@ sudo apt update && sudo apt install -y git
 **3. Download the code.**
 
 ```
-git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio-osx-linux
+git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+cd brickcode-studio-apple-linux
 ```
 
 **4. Install.**
@@ -190,7 +190,7 @@ Then open **BrickCode Studio** from the applications menu.
 **To update later:**
 
 ```
-cd brickcode-studio-osx-linux
+cd brickcode-studio-apple-linux
 git pull
 bash linux/install-debian.sh
 ```
@@ -207,8 +207,8 @@ Same shape, with `dnf`:
 
 ```
 sudo dnf install -y git
-git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio-osx-linux
+git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+cd brickcode-studio-apple-linux
 bash linux/install-fedora.sh
 ```
 
@@ -221,8 +221,8 @@ Unplug and replug the NXT afterwards.
 If you already have `nqc` and `nbc` and only want the app:
 
 ```
-git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio-osx-linux/brickcode-studio
+git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+cd brickcode-studio-apple-linux/brickcode-studio
 make
 sudo make install
 ```

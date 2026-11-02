@@ -19,7 +19,7 @@ La app es solo una interfaz: usa `nqc` y `nbc` por debajo, así que ambos deben 
 
 ## 2. Instalación
 
-Todo el código y las versiones están en [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux). Los comandos se ejecutan en una terminal desde la carpeta del proyecto.
+Todo el código y las versiones están en [github.com/JimBolanos/brickcode-studio-apple-linux](https://github.com/JimBolanos/brickcode-studio-apple-linux). Los comandos se ejecutan en una terminal desde la carpeta del proyecto.
 
 | Sistema | Cómo instalar |
 | --- | --- |
@@ -58,8 +58,8 @@ Si nunca abriste una terminal, esto es todo. Copiá cada bloque, pegalo, apretá
 4. Bajá el código:
 
    ```
-   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-   cd brickcode-studio-osx-linux
+   git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+   cd brickcode-studio-apple-linux
    ```
 
 5. Instalá:
@@ -70,7 +70,7 @@ Si nunca abriste una terminal, esto es todo. Copiá cada bloque, pegalo, apretá
 
    La primera vez tarda unos minutos: compila dos compiladores desde el código fuente. Terminó cuando imprime `Done.` y vuelve el cursor.
 
-Ya podés abrir **BrickCode Studio** desde Aplicaciones. Para actualizar más adelante: `cd brickcode-studio-osx-linux` y `bash macos/update-mac.sh`.
+Ya podés abrir **BrickCode Studio** desde Aplicaciones. Para actualizar más adelante: `cd brickcode-studio-apple-linux` y `bash macos/update-mac.sh`.
 
 **En Debian, Ubuntu o Linux Mint**
 
@@ -81,8 +81,8 @@ Ya podés abrir **BrickCode Studio** desde Aplicaciones. Para actualizar más ad
 3. Bajá el código:
 
    ```
-   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-   cd brickcode-studio-osx-linux
+   git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+   cd brickcode-studio-apple-linux
    ```
 
 4. `bash linux/install-debian.sh`
@@ -307,7 +307,7 @@ Si nada de esto resuelve el problema, abre un *issue* en el repositorio de GitHu
 
 **Enlaces.**
 
-- Código y descargas: [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux)
+- Código y descargas: [github.com/JimBolanos/brickcode-studio-apple-linux](https://github.com/JimBolanos/brickcode-studio-apple-linux)
 - Perfil de Rebrickable: [rebrickable.com/users/jimmy.bolanos](https://rebrickable.com/users/jimmy.bolanos/)
 - Firmwares para el RCX: [carpeta firmware de nqc](https://github.com/jverne/nqc/tree/master/firmware)
 

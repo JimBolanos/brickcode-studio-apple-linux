@@ -4236,7 +4236,7 @@ static char *guide_uri(const char *anchor) {
         g_free(local);
         if (uri) return uri;
     }
-    return g_strconcat("https://github.com/JimBolanos/brickcode-studio-osx-linux/blob/main/docs/",
+    return g_strconcat("https://github.com/JimBolanos/brickcode-studio-apple-linux/blob/main/docs/",
                        file, anchor ? "#" : "", anchor ? anchor : "", NULL);
 }
 
@@ -4469,11 +4469,11 @@ static GtkWidget *about_screen(AppState *st) {
     gtk_widget_add_css_class(links, "ab-card");
     gtk_box_append(GTK_BOX(links), section("Links"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Repository",
-        "github.com/JimBolanos/brickcode-studio-osx-linux",
-        "brickcode-studio-osx-linux"));
+        "github.com/JimBolanos/brickcode-studio-apple-linux",
+        "brickcode-studio-apple-linux"));
     gtk_box_append(GTK_BOX(links), link_row(st, "Issues & ideas",
-        "github.com/JimBolanos/brickcode-studio-osx-linux/issues",
-        "brickcode-studio-osx-linux/issues"));
+        "github.com/JimBolanos/brickcode-studio-apple-linux/issues",
+        "brickcode-studio-apple-linux/issues"));
     gtk_box_append(GTK_BOX(links), link_row(st, "NQC reference",
         "bricxcc.sourceforge.net/nqc", NULL));
     gtk_box_append(GTK_BOX(links), link_row(st, "NXC guide",

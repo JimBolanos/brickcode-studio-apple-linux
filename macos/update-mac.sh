@@ -23,8 +23,8 @@ if [ ! -d "$REPO/.git" ]; then
   echo
   echo "To follow the project with git instead:"
   echo
-  echo "    git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git"
-  echo "    cd brickcode-studio-osx-linux && bash macos/update-mac.sh"
+  echo "    git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git"
+  echo "    cd brickcode-studio-apple-linux && bash macos/update-mac.sh"
   exit 1
 fi
 

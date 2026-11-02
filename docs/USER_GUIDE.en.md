@@ -19,7 +19,7 @@ The app is only an interface: it uses `nqc` and `nbc` underneath, so both must b
 
 ## 2. Installation
 
-All the code and releases are at [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux). Run the commands in a terminal from the project folder.
+All the code and releases are at [github.com/JimBolanos/brickcode-studio-apple-linux](https://github.com/JimBolanos/brickcode-studio-apple-linux). Run the commands in a terminal from the project folder.
 
 | System | How to install |
 | --- | --- |
@@ -62,8 +62,8 @@ it, press Return, and wait for the prompt before the next one.
 4. Download the code:
 
    ```
-   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-   cd brickcode-studio-osx-linux
+   git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+   cd brickcode-studio-apple-linux
    ```
 
 5. Install:
@@ -76,7 +76,7 @@ it, press Return, and wait for the prompt before the next one.
    is done when it prints `Done.` and the prompt comes back.
 
 Open **BrickCode Studio** from Applications. To update later:
-`cd brickcode-studio-osx-linux` and `bash macos/update-mac.sh`.
+`cd brickcode-studio-apple-linux` and `bash macos/update-mac.sh`.
 
 **On Debian, Ubuntu or Linux Mint**
 
@@ -87,8 +87,8 @@ Open **BrickCode Studio** from Applications. To update later:
 3. Download the code:
 
    ```
-   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-   cd brickcode-studio-osx-linux
+   git clone https://github.com/JimBolanos/brickcode-studio-apple-linux.git
+   cd brickcode-studio-apple-linux
    ```
 
 4. `bash linux/install-debian.sh`
@@ -317,7 +317,7 @@ If none of this solves it, open an issue on the GitHub repository or write in th
 
 **Links.**
 
-- Code and downloads: [github.com/JimBolanos/brickcode-studio-osx-linux](https://github.com/JimBolanos/brickcode-studio-osx-linux)
+- Code and downloads: [github.com/JimBolanos/brickcode-studio-apple-linux](https://github.com/JimBolanos/brickcode-studio-apple-linux)
 - Rebrickable profile: [rebrickable.com/users/jimmy.bolanos](https://rebrickable.com/users/jimmy.bolanos/)
 - RCX firmware files: [nqc firmware folder](https://github.com/jverne/nqc/tree/master/firmware)
 
