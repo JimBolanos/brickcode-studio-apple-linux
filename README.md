@@ -19,6 +19,11 @@ target and tools in one click.
 ![NXC mode, NXT](docs/screenshot-nxc-en.png)
 ![About](docs/screenshot-about-en.png)
 
+The block editor, writing NQC for the RCX and NXC for the NXT:
+
+![Block editor, NQC for the RCX and Scout](docs/screenshot-blocks-nqc-en.png)
+![Block editor, NXC for the NXT](docs/screenshot-blocks-nxc-en.png)
+
 <p>
 <img src="docs/screenshot-firmware-en.png" width="48%" alt="Firmware sheet">
 <img src="docs/screenshot-remote-en.png" width="20%" alt="Remote">
