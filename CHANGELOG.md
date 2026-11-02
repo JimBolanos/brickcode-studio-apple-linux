@@ -2,6 +2,23 @@
 
 All notable changes to BrickCode Studio. Dates are release dates.
 
+## 2.3.3 — 2026-11-02
+
+### Fixed
+- **`linux/install-arch.sh` could not build the app.** It compiled without
+  fontconfig, so linking died on `undefined reference to
+  FcConfigAppFontAddFile` — and it died at step 4 of 5, after spending
+  minutes building nqc and nbc. It also never installed the block editor or
+  the Orbitron font, and never passed `-DBLOCKS_DIR`, so even a binary that
+  had linked would not have found the editor. Reported from Omarchy.
+- The three Linux installers each carried their own copy of everything after
+  the package step — about 55 identical lines, three times over. Arch was
+  simply the copy nobody updated when fontconfig and the block editor were
+  added. Those steps live in `linux/_build.sh` now, sourced by all three, so
+  the next fix lands everywhere at once. Verified by running the Debian one
+  end to end on Ubuntu 24.04 after the change: nqc, nbc, the app, the editor
+  and the font all install, and both compilers produce working output.
+
 ## 2.3.2 — 2026-11-02
 
 ### Fixed
