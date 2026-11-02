@@ -37,7 +37,18 @@ The installers also copy the RCX firmware files (`firmware/*.lgo`) and patch `nq
 
 ## 3. The main window
 
-The window has a sidebar, the editor, the console and, on demand, a settings panel on the right. You work on one program at a time; to work on another, close the window (the app asks to save if there are unsaved changes) and open it again.
+The app opens on **HOME**, a dashboard with the three bricks it can program. Pick one and the editor opens set up for it: the language, the target and the sidebar tools all follow from that single click. You can still change any of them afterwards.
+
+Along the bottom there are four entries:
+
+| Entry | What it does |
+| --- | --- |
+| **HOME** | The dashboard. Pick a brick. |
+| **CODE** | The editor. This is the window described below. |
+| **BLOCKS** | Opens the visual block editor in your browser. It is a door, not a screen: you stay where you were. See section 11. |
+| **ABOUT** | What the app is, what it uses, the documentation and the links. |
+
+The editor screen has a sidebar, the editor, the console and, on demand, a settings panel on the right. You work on one program at a time; to work on another, close the window (the app asks to save if there are unsaved changes) and open it again.
 
 | Element | What it does |
 | --- | --- |
@@ -239,3 +250,15 @@ If none of this solves it, open an issue on the GitHub repository or write in th
 - RCX firmware files: [nqc firmware folder](https://github.com/jverne/nqc/tree/master/firmware)
 
 BrickCode Studio is not affiliated with LEGO. LEGO, Mindstorms, RCX, Scout and NXT are trademarks of their respective owners.
+
+## 11. The block editor
+
+Prefer dragging blocks to typing? **BLOCKS** in the bottom bar, or the **Block editor** button in the settings drawer, opens it in your default browser. It is one self-contained page: Blockly, the palette and the icons are all inside it, so it works with no network.
+
+It writes **NQC** for the RCX and Scout or **NXC** for the NXT, and the switch at the top right chooses which. The app passes the language it is already on, so it usually comes up right.
+
+**Save** and **Save as…** always use the extension the language needs: whatever you type, a program written in NQC mode is saved `.nqc` and one in NXC mode `.nxc`. `nqc` and `nbc` are chosen by extension further down the line, so a `.txt` would simply not compile.
+
+**Programs keep their blocks.** Saving writes the workspace into the file as a comment at the end, and **Open** reads it back, so a program made here opens again as blocks and you carry on where you left off. A `.nqc` or `.nxc` written anywhere else is shown as code, with the page saying so: blocks cannot be rebuilt from text, since the same code can come from many different arrangements.
+
+Both compilers ignore that comment. Measured: the `.rcx` and `.rxe` they produce are byte for byte the same with and without it.

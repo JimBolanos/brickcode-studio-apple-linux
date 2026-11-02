@@ -37,7 +37,18 @@ Los instaladores también copian los firmware del RCX (`firmware/*.lgo`) y parch
 
 ## 3. La ventana principal
 
-La ventana tiene una barra lateral, el editor, la consola y, cuando la pides, un panel de ajustes a la derecha. Se trabaja con un programa a la vez; para trabajar en otro, cierra la ventana (la app pregunta si hay cambios sin guardar) y ábrela de nuevo.
+La app abre en **HOME**, un panel con los tres ladrillos que sabe programar. Eliges uno y el editor se abre configurado para él: el lenguaje, el modelo y las herramientas de la barra lateral salen de ese único clic. Después puedes cambiar cualquiera de los tres.
+
+Abajo hay cuatro entradas:
+
+| Entrada | Qué hace |
+| --- | --- |
+| **HOME** | El panel. Elige un ladrillo. |
+| **CODE** | El editor. Es la ventana que se describe abajo. |
+| **BLOCKS** | Abre el editor visual de bloques en el navegador. Es una puerta, no una pantalla: te quedas donde estabas. Ver la sección 11. |
+| **ABOUT** | Qué es la app, qué usa, la documentación y los enlaces. |
+
+La pantalla del editor tiene una barra lateral, el editor, la consola y, cuando la pides, un panel de ajustes a la derecha. Se trabaja con un programa a la vez; para trabajar en otro, cierra la ventana (la app pregunta si hay cambios sin guardar) y ábrela de nuevo.
 
 | Elemento | Qué hace |
 | --- | --- |
@@ -239,3 +250,15 @@ Si nada de esto resuelve el problema, abre un *issue* en el repositorio de GitHu
 - Firmwares para el RCX: [carpeta firmware de nqc](https://github.com/jverne/nqc/tree/master/firmware)
 
 BrickCode Studio no está afiliado a LEGO. LEGO, Mindstorms, RCX, Scout y NXT son marcas de sus respectivos dueños.
+
+## 11. El editor de bloques
+
+¿Prefieres arrastrar bloques a escribir? **BLOCKS** en la barra inferior, o el botón **Block editor** del cajón de ajustes, lo abre en tu navegador. Es una sola página autocontenida: Blockly, la paleta y los iconos van dentro, así que funciona sin red.
+
+Escribe **NQC** para el RCX y el Scout o **NXC** para el NXT, y el conmutador de arriba a la derecha elige cuál. La app le pasa el lenguaje en el que ya está, así que normalmente abre en el correcto.
+
+**Guardar** y **Guardar como…** usan siempre la extensión que el lenguaje necesita: escribas lo que escribas, un programa en modo NQC se guarda `.nqc` y uno en modo NXC `.nxc`. Más adelante `nqc` y `nbc` se eligen por la extensión, así que un `.txt` sencillamente no compilaría.
+
+**Los programas se llevan sus bloques dentro.** Al guardar, el espacio de trabajo se escribe en el archivo como un comentario al final, y **Abrir** lo lee de vuelta: un programa hecho aquí se abre otra vez como bloques y sigues donde lo dejaste. Un `.nqc` o `.nxc` escrito en otro sitio se muestra como código, y la página lo dice: los bloques no se pueden reconstruir desde el texto, porque el mismo código puede salir de muchos arreglos distintos.
+
+Los dos compiladores ignoran ese comentario. Medido: el `.rcx` y el `.rxe` que producen son byte a byte los mismos con y sin él.

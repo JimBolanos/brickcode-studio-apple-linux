@@ -5,13 +5,19 @@ A native GTK4 + C editor that brings classic robot bricks back to life, in one w
 - **NQC** for the RCX, Scout and Spybotics (compiled and sent by `nqc`)
 - **NXC** for the NXT (compiled by `nbc`; the app uploads and starts the program over USB with libusb)
 
-Write a program, press **F5**, and it compiles, downloads and runs on the brick.
+Write a program, press **F5**, and it compiles, downloads and runs on the brick —
+or drag blocks instead of typing, and the editor writes the NQC or NXC for you.
 Works on **Linux** (Omarchy theme followed live) and **macOS on Apple Silicon**, with no vendor driver.
 The interface is available in **English and Spanish** (selector in the top bar).
 
-![NQC mode, light](docs/screenshot-nqc-en.png)
-![NQC mode, dark, Spanish](docs/screenshot-nqc-dark-es.png)
-![NXC mode, Spanish](docs/screenshot-nxc-es.png)
+Pick the brick on the dashboard and the editor opens set up for it — language,
+target and tools in one click.
+
+![Dashboard: pick the brick you are programming](docs/screenshot-dashboard-en.png)
+
+![NQC mode, RCX](docs/screenshot-nqc-en.png)
+![NXC mode, NXT](docs/screenshot-nxc-en.png)
+![About](docs/screenshot-about-en.png)
 
 <p>
 <img src="docs/screenshot-firmware-en.png" width="48%" alt="Firmware sheet">
@@ -23,6 +29,28 @@ The interface is available in **English and Spanish** (selector in the top bar).
 </p>
 
 Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md)
+
+## What's new in 2.3.0
+
+**A dashboard.** The app opens on the three bricks it can program. Picking one
+sets the language *and* the target together — until now those were two separate
+controls in two different places — and drops you in the editor ready to type.
+
+**A visual block editor.** **BLOCKS** in the bottom bar, or the button in the
+drawer, opens it in your browser. It writes NQC for the RCX and Scout or NXC for
+the NXT, with the MINDSTORMS palette, and it works offline. Saved programs carry
+their blocks inside a trailing comment, so you can open one again and keep
+building where you left off — and both compilers ignore that comment, so the
+program you send to the brick is byte for byte the same.
+
+**The MINDSTORMS Robot Inventor look**, sampled colour by colour from the real
+thing. The app now opens dark; Light is still one click away in Settings.
+
+**NXT Screen**, the NXT display shown live on the computer over USB, drawn as the
+brick, with clickable buttons and keyboard keys.
+
+**A bottom bar**: HOME, CODE, BLOCKS, ABOUT. The editor itself is unchanged —
+same sidebar, same console, same drawer, same utilities.
 
 ## What you need to connect
 
