@@ -14,9 +14,12 @@ REPO="$(cd "$HERE/.." && pwd)"
 
 cd "$REPO"
 
-if [ -n "$(git status --porcelain)" ]; then
-  echo "There are uncommitted changes here:"
-  git status --short
+# Tracked files only. An untracked file cannot be lost by a fast-forward
+# pull — git refuses the pull itself if one is in the way — so stopping for
+# a venv or a stray screenshot would only be in the way.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "There are uncommitted changes to tracked files:"
+  git status --short --untracked-files=no
   echo
   echo "Commit or stash them first. This pulls, and a pull on top of local"
   echo "edits is how work gets lost."
