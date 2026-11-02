@@ -31,6 +31,78 @@ All the code and releases are at [github.com/JimBolanos/brickcode-studio-osx-lin
 
 The installers also copy the RCX firmware files (`firmware/*.lgo`) and patch `nqc` so the Remote works smoothly.
 
+### From nothing, step by step
+
+If you have never opened a terminal, this is all of it. Copy each block, paste
+it, press Return, and wait for the prompt before the next one.
+
+**On macOS (Apple Silicon)**
+
+1. Open Terminal: ⌘ Space, type `Terminal`, Return.
+
+2. Apple's developer tools:
+
+   ```
+   xcode-select --install
+   ```
+
+   A window pops up: click **Install** and wait. If it says they are already
+   installed, carry on.
+
+3. Homebrew, which fetches the libraries:
+
+   ```
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+   It asks for your Mac password — typing it shows nothing on screen, that is
+   normal. At the end it may print two `echo` lines and ask you to run them:
+   do that, they put Homebrew on your path. Skip this if you already have it.
+
+4. Download the code:
+
+   ```
+   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
+   cd brickcode-studio-osx-linux
+   ```
+
+5. Install:
+
+   ```
+   bash macos/install-mac.sh
+   ```
+
+   The first run takes a few minutes: it builds two compilers from source. It
+   is done when it prints `Done.` and the prompt comes back.
+
+Open **BrickCode Studio** from Applications. To update later:
+`cd brickcode-studio-osx-linux` and `bash macos/update-mac.sh`.
+
+**On Debian, Ubuntu or Linux Mint**
+
+1. Open a terminal: Ctrl-Alt-T.
+
+2. `sudo apt update && sudo apt install -y git`
+
+3. Download the code:
+
+   ```
+   git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
+   cd brickcode-studio-osx-linux
+   ```
+
+4. `bash linux/install-debian.sh`
+
+   It asks for your password once, for the packages, and near the end asks
+   whether to install the NXT USB rule: answer **y** unless you have no NXT.
+   The first run takes a few minutes.
+
+Open it from the applications menu. To update: `git pull`, then run the script
+again.
+
+Fedora is the same with `sudo dnf install -y git` and
+`bash linux/install-fedora.sh`.
+
 **USB permissions on Linux.** For the NXT to work without root you need the `70-nxt.rules` udev rule (installed by the `nbc-git` package and the Fedora script); then unplug and replug the NXT. For the RCX tower your user must be in the group that controls it (`dialout` or `plugdev`, depending on the distro); log out and in after adding it.
 
 **macOS needs no drivers and no sudo.** `nqc` talks to the tower by itself and the app uses libusb for the NXT.

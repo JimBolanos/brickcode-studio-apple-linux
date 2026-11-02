@@ -2,6 +2,33 @@
 
 All notable changes to BrickCode Studio. Dates are release dates.
 
+## 2.3.2 — 2026-11-02
+
+### Fixed
+- **`linux/install-debian.sh` failed at the first step on Debian, Ubuntu and
+  Mint.** It asked apt for `libfontconfig-1-dev`, which is not a package —
+  the name is `libfontconfig-dev` — so `apt` stopped with "Unable to locate
+  package" and nothing was installed. Nobody on that family of distributions
+  could have used the script. The README repeated the same wrong name in its
+  manual steps.
+
+### Added
+- **Install instructions that assume nothing**, for macOS and for Debian,
+  Ubuntu and Mint: numbered steps from opening a terminal to opening the app,
+  one block per step. They used to start at `bash macos/install-mac.sh`,
+  which is no use to someone who has not got the code yet or does not have
+  Homebrew.
+- `update-mac.sh` run outside a clone said only "Not a git clone" and
+  stopped. Most people arrive from a release zip, where there is nothing to
+  pull, so it now points at `install-mac.sh`.
+
+### Changed
+- The Linux instructions said `cd brickcode-studio/brickcode-studio` after
+  cloning, a path that stopped existing when the repository was renamed.
+- `install-debian.sh` was marked "not tested yet". It has now been run end to
+  end on Ubuntu 24.04: nqc 3.2 and nbc 1.2.1 both build, and both produce
+  working output. No brick was attached, so the tower is still untested there.
+
 ## 2.3.1 — 2026-11-02
 
 ### Fixed

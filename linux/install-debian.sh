@@ -13,7 +13,7 @@ mkdir -p "$PREFIX/bin" "$PREFIX/share/brickcode/nbc" "$PREFIX/share/firmware" "$
 
 echo "==> 1/5 Packages (sudo password needed)"
 sudo apt install -y build-essential git pkg-config libgtk-4-dev libusb-1.0-0-dev \
-  libfontconfig-1-dev \
+  libfontconfig-dev \
     fpc bison flex
 
 echo "==> 2/5 nqc (RCX / Scout)"

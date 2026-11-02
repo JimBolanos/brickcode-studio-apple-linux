@@ -86,60 +86,149 @@ BrickCode Studio uses the **USB tower**. The older **serial tower** has not been
 | macOS, Apple Silicon | Confirmed on a Mac mini M4 (RCX and NXT). |
 | Linux Mint | Tested by COPERNICON (Eurobricks) with the RCX and the USB tower. NXT not tested yet. |
 | Fedora | App built and run by COPERNICON. The tower could not be tested there (USB permissions). |
-| Ubuntu / Debian | Should work like Mint (same apt packages). Not tested yet. |
+| Ubuntu / Debian | `linux/install-debian.sh` run end to end on Ubuntu 24.04: nqc, nbc and the app all build, and both compilers produce working output. No brick was attached, so the tower is still untested there. |
 | Arch / Omarchy | Confirmed with RCX and NXT. |
 
 The Spybotics target is in the menu but has not been tested on a real brick yet (the Scout was tested by COPERNICON). Feedback is welcome.
 
-New in 2.2.0: **VLL** and **NXT Screen**. Both are confirmed on macOS; on Linux they are still in testing.
+**VLL** and **NXT Screen** are confirmed on macOS; on Linux they are still in testing.
 
 ### macOS (Apple Silicon)
 
-Needs Homebrew and the Xcode Command Line Tools. No drivers and no sudo.
+No drivers, no `sudo`, nothing to buy. It is built from source on your own
+Mac, which is five steps in Terminal. Copy each block, paste it, press Return,
+and wait for the prompt to come back before the next one.
+
+**1. Open Terminal.** Press ⌘ Space, type `Terminal`, press Return. A window
+with a text prompt appears — that is where everything below goes.
+
+**2. Install Apple's developer tools.**
+
+```
+xcode-select --install
+```
+
+A window pops up: click **Install** and wait. If it says they are already
+installed, that is fine, carry on.
+
+**3. Install Homebrew**, which fetches the libraries this needs.
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+It asks for your Mac password — typing it shows nothing on screen, that is
+normal. At the end it may print two `echo` lines and ask you to run them: do
+that, they put Homebrew on your path. If Homebrew is already there, skip this.
+
+**4. Download the code.**
+
+```
+git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
+cd brickcode-studio-osx-linux
+```
+
+**5. Install it.**
+
 ```
 bash macos/install-mac.sh
 ```
+
+This one takes a few minutes the first time — it builds two compilers from
+source. It is done when it prints `Done.` and the prompt comes back.
+
+Now open **BrickCode Studio** from your Applications folder, or with ⌘ Space.
+
+**To update later**, two lines:
+
+```
+cd brickcode-studio-osx-linux
+bash macos/update-mac.sh
+```
+
 It builds nqc, nbc and the app into `~/.local/brickcode` and creates `~/Applications/BrickCode Studio.app`.
 The RCX needs its firmware once: gear button → Brick utilities → pick
 `~/.local/brickcode/share/firmware/firm0328.lgo` (the installer copies it there) → Send firmware
 (keep the RCX close to the tower and still, about 3-5 minutes).
 
-### Linux Mint
+### Debian, Ubuntu, Linux Mint
 
-Steps by COPERNICON (Eurobricks). First plug in the tower and check that the laptop recognises it:
+One script does all of it. Copy each block into a terminal, press Return, and
+wait for the prompt before the next one.
+
+**1. Open a terminal.** Ctrl-Alt-T on most desktops.
+
+**2. Get git**, which is how you fetch the code.
+
 ```
-sudo dmesg --follow
+sudo apt update && sudo apt install -y git
 ```
-Somewhere in the output you should see "registered new interface driver legousbtower". Then:
+
+**3. Download the code.**
+
 ```
-sudo apt install nqc                      # RCX / Scout compiler
-sudo apt install libusb-1.0-0-dev         # libusb
-sudo apt install libgtk-4-dev             # GTK4
-sudo apt install libfontconfig-1-dev      # fontconfig (the bundled wordmark font)
 git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio/brickcode-studio
-make                                      # no sudo needed
-sudo make install
+cd brickcode-studio-osx-linux
 ```
-In the app, set **Tower port** to `usb` (the **Detect** button does it). A good guide to installing NQC on Linux:
-https://brickbot.github.io/nqc/PLATFORM-Linux.html
 
-`nbc`, the compiler for the NXT, is not in the apt repositories. `bash linux/install-debian.sh` builds nqc, nbc and the app into
-`~/.local/brickcode` (not tested yet). For the NXT you also need the udev rule `nbc-git/70-nxt.rules`.
+**4. Install.**
+
+```
+bash linux/install-debian.sh
+```
+
+It asks for your password once, for the packages, and near the end asks
+whether to install the USB rule for the NXT — answer **y** unless you have no
+NXT. The first run takes a few minutes: it builds `nqc` and `nbc` from source,
+because neither is packaged with everything this needs.
+
+Then open **BrickCode Studio** from the applications menu.
+
+**To update later:**
+
+```
+cd brickcode-studio-osx-linux
+git pull
+bash linux/install-debian.sh
+```
+
+Plug the tower in and, in the app, set **Tower port** to `usb` — the **Detect**
+button does it. To check the kernel sees the tower at all, run
+`sudo dmesg --follow` while plugging it in: you should see
+`registered new interface driver legousbtower`. If you have an NXT, unplug and
+replug it after the install so the USB rule applies.
 
 ### Linux Fedora
 
-First confirmed by COPERNICON (Eurobricks). The app only needs GTK4, libusb and fontconfig:
+Same shape, with `dnf`:
+
 ```
-sudo dnf install gcc make pkgconf-pkg-config gtk4-devel libusb1-devel fontconfig-devel
+sudo dnf install -y git
 git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
-cd brickcode-studio/brickcode-studio
+cd brickcode-studio-osx-linux
+bash linux/install-fedora.sh
+```
+
+It installs the dependencies, builds nqc, nbc and the app into
+`~/.local/brickcode`, and offers the udev rule so the NXT works without root.
+Unplug and replug the NXT afterwards.
+
+### Linux, building the app alone
+
+If you already have `nqc` and `nbc` and only want the app:
+
+```
+git clone https://github.com/JimBolanos/brickcode-studio-osx-linux.git
+cd brickcode-studio-osx-linux/brickcode-studio
 make
 sudo make install
 ```
-`make` needs no sudo, only `make install` does. To compile programs you also need `nqc` (RCX/Scout) and `nbc` (NXT), which Fedora
-does not package. `bash linux/install-fedora.sh` installs all the dependencies, builds nqc, nbc and the app into `~/.local/brickcode`,
-and offers the udev rule so the NXT works without root. Unplug and replug the NXT afterwards.
+
+It needs the development packages for GTK4, libusb-1.0 and fontconfig —
+`libgtk-4-dev libusb-1.0-0-dev libfontconfig-dev` on Debian and friends,
+`gtk4-devel libusb1-devel fontconfig-devel` on Fedora. `make` needs no sudo,
+only `make install` does. A good guide to installing NQC on Linux by hand:
+https://brickbot.github.io/nqc/PLATFORM-Linux.html
 
 For the RCX tower your user needs access to the device (group `dialout` or `plugdev`, depending on the distro); log out and in after adding it.
 
