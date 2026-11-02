@@ -41,7 +41,7 @@
 #include <stdlib.h>
 
 #define APP_NAME     "BrickCode Studio"
-#define APP_VERSION  "2.3.0"
+#define APP_VERSION  "2.3.1"
 #define BLOCKS_HTML  "brickcode-blocks.html"
 #define APP_FONT_FILE "Orbitron-ExtraBold.ttf"
 /* fontconfig exposes the typographic family, not the file name: the

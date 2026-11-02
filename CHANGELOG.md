@@ -2,6 +2,27 @@
 
 All notable changes to BrickCode Studio. Dates are release dates.
 
+## 2.3.1 — 2026-11-02
+
+### Fixed
+- **The Links column in About came out ragged.** Those labels wrapped, so a
+  long address broke into three lines and pushed the rows under it out of
+  line. They are cut with an ellipsis on one line now, with the whole address
+  on hover.
+- **Every link pointed at the repo's old name.** GitHub redirects it, so
+  nothing looked broken — but that redirect stops working the moment a repo
+  called `brickcode-studio` exists on the account again, and then the links
+  go somewhere wrong instead of failing loudly.
+
+### Added
+- `blocks/pin.py` and `blocks/test/`. The script that builds the Windows
+  edition's copy of the editor, and the suite that compiles everything the
+  generator writes, both lived outside the repo — so neither edition could be
+  rebuilt from what was committed anywhere. `blocks/test/run_all.py` runs the
+  twelve tests that assert something.
+- `CLAUDE.md`, with the handful of traps that have each already cost a
+  rebuild.
+
 ## 2.3.0 — 2026-11-02
 
 Two lines of work landed together: the NXT Screen, and a new front end with a
