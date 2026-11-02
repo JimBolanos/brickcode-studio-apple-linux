@@ -4,3 +4,10 @@ pkg/
 src/
 *.pkg.tar.*
 .prefix
+
+# andamios de trabajo, no forman parte del proyecto
+*.bundle
+RELEASE-*.md
+/brickcode-blocks.html
+Claude outputs/
+.DS_Store
