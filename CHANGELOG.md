@@ -21,6 +21,7 @@ visual block editor.
   without it.
 - **NXT Screen.** The NXT display shown live over USB, drawn as the brick, with
   clickable buttons and keyboard keys to walk its menus.
+- **VLL panel.** The Scout sends VLL codes to a Micro Scout.
 - **Bottom navigation**: HOME, CODE, BLOCKS, ABOUT.
 - **ABOUT screen** with what the app uses, the documentation, the links and the
   author — all of it opening the guide installed beside the app, so it works
