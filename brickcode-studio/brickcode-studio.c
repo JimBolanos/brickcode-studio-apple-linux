@@ -720,6 +720,26 @@ static void load_app_font(void) {
     g_free(p);
 }
 
+/* Hand a URI to whatever the desktop uses to open things. */
+static void launch_uri(AppState *st, const char *uri) {
+    GError *error = NULL;
+#ifdef __APPLE__
+    char *argv[] = { "open", (char *) uri, NULL };
+#else
+    char *argv[] = { "xdg-open", (char *) uri, NULL };
+#endif
+    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
+                       NULL, NULL, NULL, &error)) {
+        log_output(st, error ? error->message : "Could not open that.", "err");
+        g_clear_error(&error);
+    }
+}
+
+static void open_uri_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    launch_uri(st, g_object_get_data(G_OBJECT(btn), "uri"));
+}
+
 static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
     AppState *st = user_data;
     char *path = blocks_html_path();
@@ -2362,7 +2382,12 @@ static void apply_omarchy_style(AppState *st) {
         ".ab-h1 { color: #F2F2F2; font-size: 19px; font-weight: bold; }"
         ".ab-chip { background-color: #202020; border-radius: 11px; padding: 5px 11px; "
         "  color: #BEBEBE; font-size: 10.5px; font-weight: bold; }"
-        ".doc-row { background-color: #202020; border-radius: 15px; padding: 12px 15px; }"
+        "button.doc-row { background: none; background-image: none; border: none; "
+        "  box-shadow: none; background-color: #202020; border-radius: 15px; padding: 12px 15px; }"
+        "button.doc-row:hover { background-color: #2A2A2A; }"
+        "button.link-row { background: none; background-image: none; border: none; "
+        "  box-shadow: none; border-radius: 10px; padding: 7px 8px; }"
+        "button.link-row:hover { background-color: #202020; }"
         ".doc-dot { border-radius: 999px; }"
         ".dot-blue { background-color: #0085F3; } .dot-pink { background-color: #FA4FC7; }"
         ".dot-yellow { background-color: #F3BC00; } .dot-cyan { background-color: #1BC5EE; }"
@@ -4182,10 +4207,30 @@ static GtkWidget *about_row(const char *k, const char *v) {
     return r;
 }
 
-/* A coloured dot, a title, a line of explanation and a chevron. */
-static GtkWidget *doc_row(const char *colour, const char *title, const char *desc) {
+/* Where the guide lives. Installed beside the app when it is there, so
+ * this works with no network; otherwise the rendered copy on GitHub. The
+ * anchor is appended either way. */
+static char *guide_uri(const char *anchor) {
+    const char *file = (g_lang == LANG_ES) ? "USER_GUIDE.es.md" : "USER_GUIDE.en.md";
+    char *local = find_data_file("docs", file, "BRICKCODE_DOCS");
+    char *uri;
+    if (local) {
+        char *base = g_filename_to_uri(local, NULL, NULL);
+        uri = base ? g_strconcat(base, anchor ? "#" : "", anchor ? anchor : "", NULL)
+                   : NULL;
+        g_free(base);
+        g_free(local);
+        if (uri) return uri;
+    }
+    return g_strconcat("https://github.com/JimBolanos/brickcode-studio/blob/main/docs/",
+                       file, anchor ? "#" : "", anchor ? anchor : "", NULL);
+}
+
+/* A coloured dot, a title, a line of explanation and a chevron - and, now,
+ * something that happens when you press it. */
+static GtkWidget *doc_row(AppState *st, const char *colour, const char *title,
+                           const char *desc, const char *anchor) {
     GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
-    gtk_widget_add_css_class(r, "doc-row");
 
     GtkWidget *dot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_css_class(dot, "doc-dot");
@@ -4209,12 +4254,22 @@ static GtkWidget *doc_row(const char *colour, const char *title, const char *des
     GtkWidget *go = gtk_label_new("›");
     gtk_widget_add_css_class(go, "doc-go");
     gtk_box_append(GTK_BOX(r), go);
-    return r;
+
+    GtkWidget *b = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(b), r);
+    gtk_widget_add_css_class(b, "doc-row");
+    if (anchor && g_str_has_prefix(anchor, "!")) {
+        /* "!blocks" is the one row that opens the editor, not a document. */
+        g_signal_connect(b, "clicked", G_CALLBACK(open_blocks_cb), st);
+    } else {
+        g_object_set_data_full(G_OBJECT(b), "uri", guide_uri(anchor), g_free);
+        g_signal_connect(b, "clicked", G_CALLBACK(open_uri_cb), st);
+    }
+    return b;
 }
 
-static GtkWidget *link_row(const char *name, const char *url) {
+static GtkWidget *link_row(AppState *st, const char *name, const char *url) {
     GtkWidget *r = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_widget_add_css_class(r, "link-row");
     GtkWidget *n = gtk_label_new(name);
     gtk_widget_add_css_class(n, "ab-v");
     gtk_label_set_xalign(GTK_LABEL(n), 0.0);
@@ -4224,9 +4279,19 @@ static GtkWidget *link_row(const char *name, const char *url) {
     gtk_label_set_xalign(GTK_LABEL(u), 0.0);
     gtk_label_set_wrap(GTK_LABEL(u), TRUE);
     gtk_widget_set_hexpand(u, TRUE);
+    GtkWidget *go = gtk_label_new("↗");
+    gtk_widget_add_css_class(go, "doc-go");
     gtk_box_append(GTK_BOX(r), n);
     gtk_box_append(GTK_BOX(r), u);
-    return r;
+    gtk_box_append(GTK_BOX(r), go);
+
+    GtkWidget *b = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(b), r);
+    gtk_widget_add_css_class(b, "link-row");
+    g_object_set_data_full(G_OBJECT(b), "uri",
+                           g_strconcat("https://", url, NULL), g_free);
+    g_signal_connect(b, "clicked", G_CALLBACK(open_uri_cb), st);
+    return b;
 }
 
 static GtkWidget *section(const char *label) {
@@ -4260,7 +4325,6 @@ static void avatar_draw_cb(GtkDrawingArea *a, cairo_t *cr,
 }
 
 static GtkWidget *about_screen(AppState *st) {
-    (void) st;
     GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     GtkWidget *title = gtk_label_new("BrickCode Studio");
@@ -4313,18 +4377,25 @@ static GtkWidget *about_screen(AppState *st) {
     GtkWidget *docs = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);
     gtk_widget_add_css_class(docs, "ab-card");
     gtk_box_append(GTK_BOX(docs), section("Documentation"));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-blue", "Getting started",
-        "Write a program, press F5, watch it run on the brick."));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-pink", "Install",
-        "Homebrew on macOS · apt, dnf or AUR on Linux."));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-yellow", "Firmware",
-        "Sending firm0328.lgo to an RCX, and when you need to."));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-cyan", "The USB tower",
-        "How the RCX and Scout are reached, and the Windows caveat."));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-green", "Examples",
-        "Six programs that ship with the app, NQC and NXC."));
-    gtk_box_append(GTK_BOX(docs), doc_row("dot-red", "Block editor",
-        "Drag blocks instead of typing. Programs keep their blocks."));
+    /* The anchors are the guide's own section headings. */
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-blue", "Getting started",
+        "Write a program, press F5, watch it run on the brick.",
+        "1-what-is-brickcode-studio"));
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-pink", "Install",
+        "Homebrew on macOS · apt, dnf or AUR on Linux.",
+        "2-installation"));
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-yellow", "Firmware",
+        "Sending firm0328.lgo to an RCX, and when you need to.",
+        "firmware"));
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-cyan", "Tools, one by one",
+        "Every utility in the drawer, and what it does to the brick.",
+        "7-tools-one-by-one"));
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-green", "Troubleshooting",
+        "The tower, the firmware, and what to try when nothing answers.",
+        "9-troubleshooting"));
+    gtk_box_append(GTK_BOX(docs), doc_row(st, "dot-red", "Block editor",
+        "Drag blocks instead of typing. Programs keep their blocks.",
+        "!blocks"));
     gtk_box_append(GTK_BOX(mid), docs);
 
     GtkWidget *who = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
@@ -4366,12 +4437,14 @@ static GtkWidget *about_screen(AppState *st) {
     GtkWidget *links = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_add_css_class(links, "ab-card");
     gtk_box_append(GTK_BOX(links), section("Links"));
-    gtk_box_append(GTK_BOX(links), link_row("Repository",
+    gtk_box_append(GTK_BOX(links), link_row(st, "Repository",
         "github.com/JimBolanos/brickcode-studio"));
-    gtk_box_append(GTK_BOX(links), link_row("Issues & ideas",
+    gtk_box_append(GTK_BOX(links), link_row(st, "Issues & ideas",
         "github.com/JimBolanos/brickcode-studio/issues"));
-    gtk_box_append(GTK_BOX(links), link_row("NQC reference", "bricxcc.sourceforge.net/nqc"));
-    gtk_box_append(GTK_BOX(links), link_row("NXC guide", "bricxcc.sourceforge.net/nbc"));
+    gtk_box_append(GTK_BOX(links), link_row(st, "NQC reference",
+        "bricxcc.sourceforge.net/nqc"));
+    gtk_box_append(GTK_BOX(links), link_row(st, "NXC guide",
+        "bricxcc.sourceforge.net/nbc"));
     gtk_box_append(GTK_BOX(right), links);
 
     GtkWidget *legal = gtk_box_new(GTK_ORIENTATION_VERTICAL, 9);

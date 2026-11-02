@@ -19,6 +19,7 @@ install: brickcode-studio
 	install -Dm644 ../blocks/brickcode-blocks.html $(DESTDIR)$(PREFIX)/share/brickcode-studio/blocks/brickcode-blocks.html
 	install -Dm644 Orbitron-ExtraBold.ttf $(DESTDIR)$(PREFIX)/share/brickcode-studio/fonts/Orbitron-ExtraBold.ttf
 	install -Dm644 Orbitron-OFL.txt $(DESTDIR)$(PREFIX)/share/brickcode-studio/fonts/Orbitron-OFL.txt
+	for f in ../docs/USER_GUIDE.*.md; do install -Dm644 $$f $(DESTDIR)$(PREFIX)/share/brickcode-studio/docs/$$(basename $$f); done
 
 # PREFIX is compiled into the binary (-DBLOCKS_DIR), so a build made for one
 # prefix must not be installed into another. .prefix records the last one and
