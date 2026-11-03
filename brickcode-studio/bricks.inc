@@ -140,32 +140,60 @@ static void bk_draw_rcx(cairo_t *cr, int w, int h) {
     bk_fill(cr, "#F4C81B", 6, 2, 198, 260, 13);      /* the yellow face */
     bk_fill(cr, "#1D1D1F", 74, 2, 62, 17, 4);        /* dark block on top */
 
-    bk_fill(cr, "#9A9A9A", 30, 26, 150, 46, 7);      /* input pads 1 2 3 */
-    for (int row = 0; row < 2; row++)
-        for (int col = 0; col < 4; col++)
-            bk_fill(cr, "#C2C2C2", 38 + col * 32, 33 + row * 18, 26, 14, 2.5);
+    /* Three ports, not a grid. The brick has three inputs and three
+     * outputs; the old drawing showed eight pads above and sixteen below,
+     * which matched nothing on it and left the numbers labelling air. */
+    bk_fill(cr, "#9A9A9A", 30, 26, 150, 46, 7);      /* inputs 1 2 3 */
+    for (int port = 0; port < 3; port++)
+        for (int row = 0; row < 2; row++)
+            for (int col = 0; col < 2; col++)
+                bk_fill(cr, "#C2C2C2", 34 + port * 54 + col * 18,
+                        32 + row * 19, 16, 15, 2.5);
 
-    bk_text(cr, "#1D1D1F", 27,  88, 11, TRUE, FALSE, "View");
-    bk_text(cr, "#1D1D1F", 155, 88, 11, TRUE, FALSE, "Prgm");
-    bk_text(cr, "#1D1D1F", 72,  95, 15, TRUE, FALSE, "1");
-    bk_text(cr, "#1D1D1F", 99,  95, 15, TRUE, FALSE, "2");
-    bk_text(cr, "#1D1D1F", 126, 95, 15, TRUE, FALSE, "3");
-    bk_text(cr, "#1D1D1F", 22,  118, 11, TRUE, FALSE, "On-Off");
-    bk_text(cr, "#1D1D1F", 160, 118, 11, TRUE, FALSE, "Run");
-    bk_text(cr, "#1D1D1F", 72,  126, 15, TRUE, FALSE, "A");
-    bk_text(cr, "#1D1D1F", 98,  126, 15, TRUE, FALSE, "B");
-    bk_text(cr, "#1D1D1F", 124, 126, 15, TRUE, FALSE, "C");
+    bk_text(cr, "#1D1D1F", 27,  86, 11, TRUE, FALSE, "View");
+    bk_text(cr, "#1D1D1F", 155, 86, 11, TRUE, FALSE, "Prgm");
+    bk_text(cr, "#1D1D1F", 72,  87, 14, TRUE, TRUE,  "1");
+    bk_text(cr, "#1D1D1F", 105, 87, 14, TRUE, TRUE,  "2");
+    bk_text(cr, "#1D1D1F", 138, 87, 14, TRUE, TRUE,  "3");
 
-    bk_fill(cr, "#2B2B2D", 22,  92,  30, 15, 3);     /* View  */
-    bk_fill(cr, "#2B2B2D", 158, 92,  30, 15, 3);     /* Prgm  */
-    bk_fill(cr, "#D4302B", 22,  122, 30, 16, 3);     /* On-Off */
-    bk_fill(cr, "#189A48", 158, 122, 30, 16, 3);     /* Run   */
+    /* The screen. The old drawing left it out entirely, which is why the
+     * middle read as a gap with the labels floating in it. */
+    bk_fill(cr, "#7E8780", 60, 90, 90, 46, 10);
+    bk_fill(cr, "#C5CCC0", 62, 92, 86, 42, 9);
+    bk_dot(cr, "#3F4637", 105, 106, 3.1);            /* the running figure */
+    bk_hex(cr, "#3F4637");
+    cairo_set_line_width(cr, 2.6);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_new_path(cr);
+    cairo_move_to(cr, 105, 111); cairo_line_to(cr, 105, 120);
+    cairo_move_to(cr, 105, 113); cairo_line_to(cr,  99, 117);
+    cairo_move_to(cr, 105, 113); cairo_line_to(cr, 112, 115);
+    cairo_move_to(cr, 105, 120); cairo_line_to(cr,  99, 126);
+    cairo_move_to(cr, 105, 120); cairo_line_to(cr, 111, 125);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
 
-    bk_fill(cr, "#4A4A4C", 30, 146, 150, 78, 7);     /* output pads A B C */
-    for (int row = 0; row < 4; row++)
-        for (int col = 0; col < 4; col++)
-            bk_fill(cr, "#161618", 38 + col * 32, 154 + row * 18,
-                    26, row == 3 ? 10 : 14, 2.5);
+    /* a size smaller than the rest: at 11 it ran under the screen */
+    bk_text(cr, "#1D1D1F", 22,  116, 10, TRUE, FALSE, "On-Off");
+    bk_text(cr, "#1D1D1F", 160, 116, 11, TRUE, FALSE, "Run");
+    bk_text(cr, "#1D1D1F", 72,  150, 14, TRUE, TRUE,  "A");
+    bk_text(cr, "#1D1D1F", 105, 150, 14, TRUE, TRUE,  "B");
+    bk_text(cr, "#1D1D1F", 138, 150, 14, TRUE, TRUE,  "C");
+
+    bk_fill(cr, "#2B2B2D", 22,  90,  30, 15, 3);     /* View  */
+    bk_fill(cr, "#2B2B2D", 158, 90,  30, 15, 3);     /* Prgm  */
+    bk_fill(cr, "#D4302B", 22,  120, 30, 16, 3);     /* On-Off */
+    bk_fill(cr, "#189A48", 158, 120, 30, 16, 3);     /* Run   */
+
+    /* Outputs: three ports again, and the same height as the inputs. The
+     * old one was nearly twice as tall; on the brick they match, and the
+     * plain yellow that leaves below is on the real one too. */
+    bk_fill(cr, "#4A4A4C", 30, 156, 150, 46, 7);     /* outputs A B C */
+    for (int port = 0; port < 3; port++)
+        for (int row = 0; row < 2; row++)
+            for (int col = 0; col < 2; col++)
+                bk_fill(cr, "#161618", 34 + port * 54 + col * 18,
+                        162 + row * 19, 16, 15, 2.5);
 
     bk_text(cr, "#1D1D1F", 20, 252, 12, TRUE, FALSE, "RCX 2.0");
     cairo_save(cr);
