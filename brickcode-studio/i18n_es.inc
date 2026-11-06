@@ -5,6 +5,8 @@
 { "Save", "Guardar" },
 { "Save as…", "Guardar como…" },
 { "Block editor…", "Editor de bloques…" },
+{ "Pybricks block editor (EV3)…", "Editor de bloques Pybricks (EV3)…" },
+{ "Blocks only  ·  paste the Python into Pybricks", "Solo bloques  ·  pega el Python en Pybricks" },
 { "New program", "Nuevo programa" },
 { "Language", "Idioma" },
 { "No brick connected", "Ningún ladrillo conectado" },

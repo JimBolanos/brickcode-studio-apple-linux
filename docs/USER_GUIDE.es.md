@@ -324,3 +324,14 @@ Escribe **NQC** para el RCX y el Scout o **NXC** para el NXT, y el conmutador de
 **Los programas se llevan sus bloques dentro.** Al guardar, el espacio de trabajo se escribe en el archivo como un comentario al final, y **Abrir** lo lee de vuelta: un programa hecho aquí se abre otra vez como bloques y sigues donde lo dejaste. Un `.nqc` o `.nxc` escrito en otro sitio se muestra como código, y la página lo dice: los bloques no se pueden reconstruir desde el texto, porque el mismo código puede salir de muchos arreglos distintos.
 
 Los dos compiladores ignoran ese comentario. Medido: el `.rcx` y el `.rxe` que producen son byte a byte los mismos con y sin él.
+
+
+### El editor del EV3
+
+La cuarta tarjeta del panel es el **EV3**, y funciona distinto de las otras tres: no hay pantalla de código y desde aquí no se compila ni se envía nada. Su tarjeta (o **Archivo → Editor de bloques Pybricks (EV3)…**) abre en el navegador un segundo editor de bloques, `pybricks-blocks.html`, que escribe **Python de Pybricks** para el EV3. Copias el Python con **Copy Python** y lo pegas tú mismo en Pybricks.
+
+Está organizado como el editor de Pybricks. Un bloque **set up** arriba nombra cada dispositivo una sola vez (el ladrillo, cada motor con su puerto, cada sensor con su puerto, una base de tracción), y todos los demás bloques eligen un dispositivo de una lista con esos nombres: así `arm1.run_angle(...)` dice lo que hace y dos motores del mismo tipo no se confunden. Si renombras un dispositivo, todos los bloques que lo usan lo siguen. Están los sensores del EV3 (touch, color, giroscopio, ultrasónico, infrarrojo) y los del NXT (touch, luz, color, sonido, ultrasónico).
+
+Un bloque que apunta a un dispositivo que no está en el set up, dos dispositivos en un mismo puerto o dos con el mismo nombre muestran un triángulo de aviso, y el archivo generado lo dice en una línea `# ERROR:` arriba.
+
+El EV3 no es compatible con code.pybricks.com. Pega el Python en **labs.pybricks.com** por USB, o guárdalo como `main.py` para el build de ev3dev. Por ahora el editor está solo en inglés.

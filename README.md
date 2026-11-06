@@ -4,6 +4,7 @@ A native GTK4 + C editor that brings classic robot bricks back to life, in one w
 
 - **NQC** for the RCX, Scout and Spybotics (compiled and sent by `nqc`)
 - **NXC** for the NXT (compiled by `nbc`; the app uploads and starts the program over USB with libusb)
+- **Pybricks Python** for the EV3, written by a block editor (blocks only: you paste the code into Pybricks yourself)
 
 Write a program, press **F5**, and it compiles, downloads and runs on the brick —
 or drag blocks instead of typing, and the editor writes the NQC or NXC for you.
@@ -24,6 +25,12 @@ The block editor, writing NQC for the RCX and NXC for the NXT:
 ![Block editor, NQC for the RCX and Scout](docs/screenshot-blocks-nqc-en.png)
 ![Block editor, NXC for the NXT](docs/screenshot-blocks-nxc-en.png)
 
+And a third one for the EV3, writing Pybricks Python. Devices are named once
+in a **set up** block, the way Pybricks does it, and every other block picks
+one by name:
+
+![Pybricks block editor for the EV3](docs/screenshot-blocks-pybricks-en.png)
+
 <p>
 <img src="docs/screenshot-firmware-en.png" width="48%" alt="Firmware sheet">
 <img src="docs/screenshot-remote-en.png" width="20%" alt="Remote">
@@ -37,8 +44,13 @@ Full guide: [English](docs/USER_GUIDE.en.md) · [Español](docs/USER_GUIDE.es.md
 
 ## What's new
 
-The headlines of the 2.3 line. Every release, down to the small fixes, is in
-[CHANGELOG.md](CHANGELOG.md).
+The headlines of the 2.3 and 2.4 lines. Every release, down to the small
+fixes, is in [CHANGELOG.md](CHANGELOG.md).
+
+**An EV3 block editor (2.4).** A fourth card on the dashboard opens
+[`pybricks`](pybricks), a block editor that writes Pybricks Python for the EV3,
+with EV3 and NXT sensors, a drive base and the same palette as the other
+editor. It only writes code: copy it and paste it into Pybricks.
 
 **A dashboard.** The app opens on the three bricks it can program. Picking one
 sets the language *and* the target together — until now those were two separate
@@ -286,6 +298,15 @@ Press **Save** there and open the file here with **File → Open…**. The
 program carries its own blocks in a trailing comment, so opening it back in
 the block editor restores exactly what you built. Both compilers ignore that
 comment — the compiled program is byte for byte the same with or without it.
+
+## Pybricks block editor (EV3)
+
+The **EV3** card on the dashboard, or **File → Pybricks block editor (EV3)…**,
+opens [`pybricks/pybricks-blocks.html`](pybricks) in your browser. It writes
+Pybricks Python and nothing else: nothing is compiled or sent from here. Press
+**Copy Python** and paste it into [labs.pybricks.com](https://labs.pybricks.com)
+over USB (the EV3 is not supported by code.pybricks.com), or save it as
+`main.py` for the ev3dev build. See [`pybricks/README.md`](pybricks/README.md).
 
 ## Examples
 

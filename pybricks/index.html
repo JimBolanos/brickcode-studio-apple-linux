@@ -1,0 +1,1403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pybricks Blocks</title>
+<style>
+  /* The same values the NQC/NXC editor uses, so the two are one family. */
+  :root {
+    --bg: #131313; --panel: #1B1B1B; --field: #262626;
+    --fg: #E8E8E8; --muted: #8A8A8A; --border: #2E2E2E; --accent: #0085F3;
+    --green: #068E3A; --code-bg: #131313; --code-fg: #D8DEE9;
+    --kw: #569cd6; --bi: #4ec9b0; --num: #b5cea8; --com: #6a9955;
+    --str: #ce9178;
+  }
+  body[data-theme="light"] {
+    --bg: #F5F5F7; --panel: #FFFFFF; --field: #ECECF0;
+    --fg: #1D1D1F; --muted: #6E6E73; --border: #D9D9DE; --accent: #0085F3;
+    --code-bg: #FFFFFF; --code-fg: #1A1D2B; --num: #2E7D32; --str: #A31515;
+    --kw: #0000FF; --bi: #267F99; --com: #008000;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    display: flex; flex-direction: column;
+  }
+
+  header {
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap; flex: 0 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .appicon { display: block; border-radius: 7px; flex: 0 0 auto; }
+  .brandname { font-weight: 700; font-size: 13px; letter-spacing: .1px; }
+  .title { font-weight: 600; font-size: 13px; }
+  .tag {
+    color: var(--muted); font-size: 12px; background: var(--field);
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
+  }
+  .spacer { flex: 1 1 auto; }
+  button {
+    font: inherit; font-size: 12.5px; font-weight: 500;
+    color: var(--fg); background: var(--field);
+    border: 1px solid var(--border); border-radius: 9px; padding: 7px 13px;
+    cursor: pointer;
+  }
+  button:hover { background: var(--border); }
+  body[data-theme="light"] button:hover { filter: brightness(0.96); }
+  button.go {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; font-weight: 600;
+  }
+  button.go:hover { filter: brightness(1.08); }
+
+  main { flex: 1 1 auto; display: flex; min-height: 0; }
+  #blocklyDiv { flex: 1 1 auto; min-width: 0; }
+  .side {
+    flex: 0 0 470px; display: flex; flex-direction: column;
+    border-left: 1px solid var(--border); background: var(--panel); min-width: 0;
+  }
+  .sidehead {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-bottom: 1px solid var(--border);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .sidehead .count { margin-left: auto; color: var(--muted); font-weight: 400; }
+  pre#out {
+    flex: 1 1 auto; margin: 0; padding: 13px 15px; overflow: auto;
+    background: var(--code-bg); color: var(--code-fg);
+    font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre; tab-size: 4;
+  }
+  .kw { color: var(--kw); } .bi { color: var(--bi); }
+  .num { color: var(--num); } .com { color: var(--com); font-style: italic; }
+  .str { color: var(--str); }
+  .note {
+    flex: 0 0 auto; border-top: 1px solid var(--border); padding: 10px 14px;
+    font-size: 12px; color: var(--muted); background: var(--bg);
+  }
+  .note b { color: var(--fg); }
+  footer {
+    flex: 0 0 auto; background: var(--panel);
+    border-top: 1px solid var(--border); padding: 7px 14px;
+    font-size: 11.5px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Categories with a colour dot on top, the way MINDSTORMS does it */
+  .blocklyToolboxCategoryContainer { height: auto !important; }
+  .blocklyToolboxCategory {
+    border-left: 0 !important; padding: 9px 4px !important; text-align: center;
+    height: auto !important; min-height: 0 !important; line-height: 1.2 !important;
+  }
+  .blocklyTreeRowContentContainer {
+    display: flex !important; flex-direction: column; align-items: center; gap: 5px;
+    height: auto !important; min-height: 0 !important;
+  }
+  .blocklyToolboxCategoryIcon {
+    width: 19px !important; height: 19px !important; border-radius: 50% !important;
+    flex: 0 0 auto; display: inline-block !important; background-image: none !important;
+    visibility: visible !important; opacity: 1 !important;
+  }
+  .blocklyToolboxCategoryLabel {
+    font-size: 10.5px !important; font-weight: 600 !important; line-height: 1.25;
+    max-width: 66px; display: block;
+    white-space: normal !important; overflow-wrap: anywhere;
+  }
+  .blocklyFlyoutButtonBackground {
+    fill: var(--field) !important; stroke: var(--border) !important;
+  }
+  .blocklyFlyoutButton .blocklyText { fill: var(--fg) !important; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+    background: var(--field); border: 1px solid var(--border); color: var(--fg);
+    padding: 9px 16px; border-radius: 10px; font-size: 13px; z-index: 50;
+  }
+  .toast[hidden] { display: none; }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    .side { flex: 0 0 45%; border-left: 0; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="brand"><svg class="appicon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="26" height="26"><defs><linearGradient id="pbIcon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C2A4A"/><stop offset="1" stop-color="#121A30"/></linearGradient></defs><rect width="512" height="512" rx="112.64" fill="url(#pbIcon)"/><rect x="66" y="92" width="380" height="340" rx="44" fill="#787E88"/><rect x="66" y="84" width="380" height="336" rx="44" fill="#DEE2E8"/><rect x="80" y="92" width="352" height="20" rx="10" fill="#F4F6FA"/><rect x="112" y="128" width="288" height="138" rx="16" fill="#3C4048"/><rect x="122" y="138" width="268" height="118" rx="10" fill="#96B08C"/><g fill="#223422"><rect x="196" y="170" width="22" height="22" rx="3"/><rect x="296" y="170" width="22" height="22" rx="3"/><rect x="196" y="214" width="108" height="12" rx="5"/><rect x="184" y="200" width="16" height="14" rx="5"/><rect x="300" y="200" width="16" height="14" rx="5"/></g><g fill="#464C58"><rect x="112" y="292" width="64" height="48" rx="12"/><rect x="336" y="292" width="64" height="48" rx="12"/><rect x="180" y="362" width="152" height="30" rx="12"/></g><ellipse cx="256" cy="316" rx="46" ry="34" fill="#FA8C14"/><ellipse cx="256" cy="310" rx="32" ry="18" fill="#FFB046"/><g fill="#282C34"><rect x="112" y="404" width="52" height="20" rx="6"/><rect x="176" y="404" width="52" height="20" rx="6"/><rect x="240" y="404" width="52" height="20" rx="6"/><rect x="304" y="404" width="52" height="20" rx="6"/></g></svg><span class="brandname">BrickCode Studio</span></div>
+  <div class="title">Pybricks Blocks</div>
+  <div class="tag">for the MINDSTORMS EV3</div>
+  <div class="spacer"></div>
+  <button id="btnExample">Example</button>
+  <button id="btnClear">Clear</button>
+  <button id="btnTheme">Light</button>
+  <button id="btnCopy" class="go">Copy Python</button>
+</header>
+
+<main>
+  <div id="blocklyDiv"></div>
+  <div class="side">
+    <div class="sidehead"><span>Generated Python</span>
+      <span class="count" id="lines">0 lines</span></div>
+    <pre id="out"></pre>
+    <div class="note">
+      The blocks only write Python. Getting it onto the brick stays your job:
+      paste it into <b>labs.pybricks.com</b> over USB, or save it as
+      <code>main.py</code> for the ev3dev build. The EV3 is not supported by
+      code.pybricks.com.
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>Blockly 13.4.0 (Apache 2.0)</span><span>·</span>
+  <span id="count">0 blocks</span>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="blockly.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* The MINDSTORMS Robot Inventor palette, the same values the NQC/NXC
+     editor uses, so the two look like one family. */
+  var C_EVENT = "#F3BC00", C_MOTOR = "#0085F3", C_MOVE  = "#FA4FC7",
+      C_SOUND = "#B765E3", C_CTRL  = "#FFAC15", C_SENSE = "#1BC5EE",
+      C_OPS   = "#00B044", C_VAR   = "#FF8D2F", C_MYB   = "#FD4B52",
+      C_DISP  = "#8B49FC", C_SETUP = "#6E7B91";
+
+  /* Zelos, not Classic: it carries the Scratch palette, which is the one
+     MINDSTORMS uses, so Variables comes out orange and My Blocks red
+     without having to repaint Blockly's own blocks. startHats gives the
+     program block its dome. */
+  var BASE = (Blockly.Themes && Blockly.Themes.Zelos) || Blockly.Themes.Classic;
+  function theme(name, s) {
+    return Blockly.Theme.defineTheme(name, {
+      base: BASE, startHats: true, componentStyles: s,
+      fontStyle: {
+        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+        weight: "600", size: 12
+      }
+    });
+  }
+  var themeDark = theme("pybricksDark", {
+    workspaceBackgroundColour: "#131313",
+    toolboxBackgroundColour: "#1B1B1B",
+    toolboxForegroundColour: "#E8E8E8",
+    flyoutBackgroundColour: "#202020",
+    flyoutForegroundColour: "#E8E8E8",
+    flyoutOpacity: 1,
+    scrollbarColour: "#3A3A3A",
+    insertionMarkerColour: "#ffffff", insertionMarkerOpacity: 0.3,
+    cursorColour: "#ffffff"
+  });
+  var themeLight = theme("pybricksLight", {
+    workspaceBackgroundColour: "#F5F5F7",
+    toolboxBackgroundColour: "#FFFFFF",
+    toolboxForegroundColour: "#1D1D1F",
+    flyoutBackgroundColour: "#ECECF0",
+    flyoutForegroundColour: "#1D1D1F",
+    flyoutOpacity: 1,
+    scrollbarColour: "#C9C9CE",
+    insertionMarkerColour: "#1D1D1F", insertionMarkerOpacity: 0.3,
+    cursorColour: "#1D1D1F"
+  });
+
+  /* Every field is one argument of a real Pybricks call. The signatures
+     come from pybricks/pybricks-api, not from the rendered docs: the v2
+     pages still say the gyro takes positive_direction, and it does not. */
+  var MPORTS = [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"]];
+  var SPORTS = [["1", "S1"], ["2", "S2"], ["3", "S3"], ["4", "S4"]];
+  var THEN   = [["hold", "HOLD"], ["brake", "BRAKE"], ["coast", "COAST"]];
+  var COLORS = [["black", "BLACK"], ["blue", "BLUE"], ["green", "GREEN"],
+                ["yellow", "YELLOW"], ["red", "RED"], ["white", "WHITE"],
+                ["brown", "BROWN"], ["none", "NONE"]];
+  var BUTTONS = [["centre", "CENTER"], ["left", "LEFT"], ["right", "RIGHT"],
+                 ["up", "UP"], ["down", "DOWN"]];
+
+  var DEFS = [
+    /* ---------------------------------------------------------- Events */
+    { type: "pb_setup", message0: "set up %1 %2",
+      args0: [{ type: "input_dummy" },
+              { type: "input_statement", name: "DO", check: "Device" }],
+      colour: C_SETUP,
+      tooltip: "Name the brick, the motors and the sensors here, once. " +
+               "Every other block picks from these names." },
+    { type: "pb_program", message0: "when the program starts %1 %2",
+      args0: [{ type: "input_dummy" }, { type: "input_statement", name: "DO", check: "Action" }],
+      colour: C_EVENT,
+      tooltip: "Everything inside runs when you start the program." },
+    { type: "pb_button", message0: "brick button %1 pressed?",
+      args0: [{ type: "field_dropdown", name: "BTN", options: BUTTONS }],
+      output: "Boolean", colour: C_EVENT,
+      tooltip: "True while that button on the brick is held down." },
+    { type: "pb_wait_until", message0: "wait until %1",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
+      previousStatement: null, nextStatement: null, colour: C_EVENT,
+      tooltip: "Holds the program here until this becomes true." },
+
+    /* ---------------------------------------------------------- Motors */
+    { type: "pb_run", message0: "motor %1 run at %2 deg/s",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "SPEED", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Runs until something stops it. The program carries on." },
+    { type: "pb_run_time",
+      message0: "motor %1 run at %2 deg/s for %3 ms then %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "input_value", name: "TIME", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Runs for a set time, then stops. Waits until it is done." },
+    { type: "pb_run_angle",
+      message0: "motor %1 turn %2 deg at %3 deg/s then %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "ANGLE", check: "Number" },
+              { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Turns by an angle from where it is now." },
+    { type: "pb_run_target",
+      message0: "motor %1 turn to %2 deg at %3 deg/s then %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "TARGET", check: "Number" },
+              { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Turns to an absolute angle, the shorter way round." },
+    { type: "pb_run_until_stalled",
+      message0: "motor %1 run at %2 deg/s until it stalls then %3",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Pushes until it cannot turn. Good for finding a hard stop." },
+    { type: "pb_dc", message0: "motor %1 power %2 %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "DUTY", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Raw power, -100 to 100, with no speed control." },
+    { type: "pb_stop", message0: "motor %1 %2",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "field_dropdown", name: "HOW", options:
+                [["coast", "stop"], ["brake", "brake"], ["hold", "hold"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "coast spins free, brake slows it, hold keeps the angle." },
+    { type: "pb_reset_angle", message0: "motor %1 call this angle %2 deg",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "ANGLE", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Sets the counter, usually 0 after finding a hard stop." },
+    { type: "pb_angle", message0: "motor %1 angle",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
+      output: "Number", colour: C_MOTOR, tooltip: "Degrees turned so far." },
+    { type: "pb_speed", message0: "motor %1 speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
+      output: "Number", colour: C_MOTOR, tooltip: "Turning speed, deg/s." },
+
+    /* -------------------------------------------------------- Movement */
+    { type: "pb_straight", message0: "%1 drive straight %2 mm then %3",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "input_value", name: "DIST", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Forward is positive, backward negative." },
+    { type: "pb_turn", message0: "%1 turn %2 deg then %3",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "input_value", name: "ANGLE", check: "Number" },
+              { type: "field_dropdown", name: "THEN", options: THEN }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Turns on the spot. Right is positive, left negative." },
+    { type: "pb_drive", message0: "%1 drive at %2 mm/s turning %3 deg/s",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "input_value", name: "RATE", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Keeps going until you stop it. The program carries on." },
+    { type: "pb_drive_stop", message0: "%1 %2",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "field_dropdown", name: "HOW", options:
+                [["coast", "stop"], ["brake", "brake"], ["hold", "hold"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Stops both wheels." },
+    { type: "pb_drive_reset", message0: "%1 reset the distance and angle driven",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Sets both counters back to zero." },
+    { type: "pb_distance", message0: "%1 distance driven",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
+      output: "Number", colour: C_MOVE, tooltip: "In mm, since the last reset." },
+    { type: "pb_heading", message0: "%1 angle turned",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
+      output: "Number", colour: C_MOVE, tooltip: "In degrees, since the last reset." },
+
+    /* --------------------------------------------------------- Display */
+    { type: "pb_screen_clear", message0: "clear the screen",
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_screen_print", message0: "print %1",
+      args0: [{ type: "input_value", name: "WHAT" }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "Writes a line, scrolling the screen like a terminal." },
+    { type: "pb_screen_text", message0: "write %1 at x %2 y %3",
+      args0: [{ type: "input_value", name: "WHAT" },
+              { type: "input_value", name: "X", check: "Number" },
+              { type: "input_value", name: "Y", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "The screen is 178 wide by 128 tall. 0,0 is the top left." },
+    { type: "pb_screen_box",
+      message0: "box from x %1 y %2 to x %3 y %4 filled %5",
+      args0: [{ type: "input_value", name: "X1", check: "Number" },
+              { type: "input_value", name: "Y1", check: "Number" },
+              { type: "input_value", name: "X2", check: "Number" },
+              { type: "input_value", name: "Y2", check: "Number" },
+              { type: "field_checkbox", name: "FILL", checked: false }],
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_screen_circle", message0: "circle at x %1 y %2 radius %3 filled %4",
+      args0: [{ type: "input_value", name: "X", check: "Number" },
+              { type: "input_value", name: "Y", check: "Number" },
+              { type: "input_value", name: "R", check: "Number" },
+              { type: "field_checkbox", name: "FILL", checked: false }],
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_screen_line", message0: "line from x %1 y %2 to x %3 y %4",
+      args0: [{ type: "input_value", name: "X1", check: "Number" },
+              { type: "input_value", name: "Y1", check: "Number" },
+              { type: "input_value", name: "X2", check: "Number" },
+              { type: "input_value", name: "Y2", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_light", message0: "brick light %1",
+      args0: [{ type: "field_dropdown", name: "COLOR", options:
+                [["green", "GREEN"], ["orange", "ORANGE"], ["red", "RED"],
+                 ["off", "OFF"]] }],
+      previousStatement: null, nextStatement: null, colour: C_DISP },
+
+    /* ----------------------------------------------------------- Sound */
+    { type: "pb_beep", message0: "beep at %1 Hz for %2 ms",
+      args0: [{ type: "input_value", name: "FREQ", check: "Number" },
+              { type: "input_value", name: "MS", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+    { type: "pb_notes", message0: "play notes %1 at tempo %2",
+      args0: [{ type: "field_input", name: "NOTES", text: "C4/4 E4/4 G4/4" },
+              { type: "input_value", name: "TEMPO", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND,
+      tooltip: "Note then length, like C4/4. R is a rest." },
+    { type: "pb_volume", message0: "set volume to %1 %%",
+      args0: [{ type: "input_value", name: "VOL", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    /* --------------------------------------------------------- Sensors */
+    { type: "pb_touch", message0: "touch sensor %1 pressed?",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["touch", "ntouch"] }],
+      output: "Boolean", colour: C_SENSE },
+    { type: "pb_color", message0: "colour sensor %1 sees %2 ?",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["color", "ncolor"] },
+              { type: "field_dropdown", name: "COLOR", options: COLORS }],
+      output: "Boolean", colour: C_SENSE },
+    { type: "pb_reflection", message0: "colour sensor %1 reflection %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["color", "ncolor", "nlight"] }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 on black, 100 on white, measured with its own red light." },
+    { type: "pb_ambient", message0: "colour sensor %1 ambient light %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["color", "ncolor", "nlight"] }],
+      output: "Number", colour: C_SENSE },
+    { type: "pb_ultra", message0: "ultrasonic sensor %1 distance mm",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["ultra", "nultra"] }],
+      output: "Number", colour: C_SENSE },
+    { type: "pb_gyro_angle", message0: "gyro sensor %1 angle",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["gyro"] }],
+      output: "Number", colour: C_SENSE },
+    { type: "pb_gyro_speed", message0: "gyro sensor %1 speed deg/s",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["gyro"] }],
+      output: "Number", colour: C_SENSE },
+    { type: "pb_gyro_reset", message0: "gyro sensor %1 call this angle %2",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["gyro"] },
+              { type: "input_value", name: "ANGLE", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_SENSE },
+    { type: "pb_sound_level", message0: "sound sensor %1 loudness %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["nsound"] }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 is quiet, 100 is loud. Only the NXT sound sensor does this." },
+    { type: "pb_infra", message0: "infrared sensor %1 distance %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["infra"] }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 is closest, 100 is farthest. Not millimetres." },
+
+    /* --------------------------------------------------------- Control */
+    { type: "pb_wait", message0: "wait %1 ms",
+      args0: [{ type: "input_value", name: "MS", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+    { type: "pb_forever", message0: "forever %1 %2",
+      args0: [{ type: "input_dummy" }, { type: "input_statement", name: "DO" }],
+      previousStatement: null, colour: C_CTRL,
+      tooltip: "Never ends. Nothing can go after it." },
+    { type: "pb_exit", message0: "stop the program",
+      previousStatement: null, colour: C_CTRL },
+
+    /* ------------------------------------------------------- Operators */
+    { type: "pb_random", message0: "random %1 to %2",
+      args0: [{ type: "input_value", name: "LO", check: "Number" },
+              { type: "input_value", name: "HI", check: "Number" }],
+      output: "Number", colour: C_OPS },
+
+    /* Control and Operators are defined here rather than taken from
+       Blockly: the built-in if, repeat and compare blocks keep their own
+       factory colours and would not follow the palette. */
+    { type: "pb_repeat", message0: "repeat %1 times %2 %3",
+      args0: [{ type: "input_value", name: "TIMES", check: "Number" },
+              { type: "input_dummy" }, { type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+    { type: "pb_while", message0: "while %1 %2 %3",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" },
+              { type: "input_dummy" }, { type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+    { type: "pb_until", message0: "repeat until %1 %2 %3",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" },
+              { type: "input_dummy" }, { type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+    { type: "pb_if", message0: "if %1 then %2 %3",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" },
+              { type: "input_dummy" }, { type: "input_statement", name: "DO" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+    { type: "pb_if_else", message0: "if %1 then %2 %3 else %4 %5",
+      args0: [{ type: "input_value", name: "COND", check: "Boolean" },
+              { type: "input_dummy" }, { type: "input_statement", name: "DO" },
+              { type: "input_dummy" }, { type: "input_statement", name: "ELSE" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL },
+
+    { type: "pb_number", message0: "%1",
+      args0: [{ type: "field_number", name: "NUM", value: 0 }],
+      output: "Number", colour: C_OPS },
+    { type: "pb_text", message0: "\u201c %1 \u201d",
+      args0: [{ type: "field_input", name: "TEXT", text: "Hello" }],
+      output: "String", colour: C_OPS },
+    { type: "pb_arith", message0: "%1 %2 %3",
+      args0: [{ type: "input_value", name: "A", check: "Number" },
+              { type: "field_dropdown", name: "OP", options:
+                [["+", "+"], ["-", "-"], ["\u00d7", "*"], ["\u00f7", "/"]] },
+              { type: "input_value", name: "B", check: "Number" }],
+      output: "Number", inputsInline: true, colour: C_OPS },
+    { type: "pb_compare", message0: "%1 %2 %3",
+      args0: [{ type: "input_value", name: "A" },
+              { type: "field_dropdown", name: "OP", options:
+                [["<", "<"], ["\u2264", "<="], ["=", "=="], ["\u2260", "!="],
+                 ["\u2265", ">="], [">", ">"]] },
+              { type: "input_value", name: "B" }],
+      output: "Boolean", inputsInline: true, colour: C_OPS },
+    { type: "pb_and", message0: "%1 and %2",
+      args0: [{ type: "input_value", name: "A", check: "Boolean" },
+              { type: "input_value", name: "B", check: "Boolean" }],
+      output: "Boolean", inputsInline: true, colour: C_OPS },
+    { type: "pb_or", message0: "%1 or %2",
+      args0: [{ type: "input_value", name: "A", check: "Boolean" },
+              { type: "input_value", name: "B", check: "Boolean" }],
+      output: "Boolean", inputsInline: true, colour: C_OPS },
+    { type: "pb_not", message0: "not %1",
+      args0: [{ type: "input_value", name: "BOOL", check: "Boolean" }],
+      output: "Boolean", colour: C_OPS },
+    { type: "pb_bool", message0: "%1",
+      args0: [{ type: "field_dropdown", name: "B", options:
+                [["true", "True"], ["false", "False"]] }],
+      output: "Boolean", colour: C_OPS }
+  ];
+
+  /* Two kinds of statement, kept apart by their connection checks: Actions
+     go under "when the program starts", Devices go under "set up". Without
+     this a motor declaration could be dropped into a loop. Blockly's own
+     blocks carry no check and so fit either; that is fine. */
+  DEFS.forEach(function (d) {
+    if (d.previousStatement === null) d.previousStatement = "Action";
+    if (d.nextStatement === null) d.nextStatement = "Action";
+    (d.args0 || []).forEach(function (a) {
+      if (a.type === "input_statement" && a.check === undefined) a.check = "Action";
+    });
+  });
+  Blockly.defineBlocksWithJsonArray(DEFS);
+
+  /* ------------------------------------------------------- the generator */
+  var py = new Blockly.Generator("Pybricks");
+  py.INDENT = "    ";
+  py.ORDER_ATOMIC = 0;
+  py.ORDER_NONE = 99;
+
+  /* ------------------------------------------------------------ devices */
+  var ws;                      /* the workspace, assigned once it exists */
+  var loading = false;         /* true while a program is being loaded */
+
+  var BUS_M = [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"]];
+  var BUS_S = [["S1", "S1"], ["S2", "S2"], ["S3", "S3"], ["S4", "S4"]];
+
+  /* One row per kind of device. `mod` and `cls` are the Pybricks module and
+     class; `alias` is the name an NXT class is imported under, because the
+     NXT touch, colour and ultrasonic sensors share their names with the EV3
+     ones and the two cannot both be imported plain. `base` is the name a
+     new block starts with. */
+  var KINDS = {
+    brick: { label: "EV3 brick",          cls: "EV3Brick",         mod: "hubs",       base: "ev3" },
+    motor: { label: "motor",              cls: "Motor",            mod: "ev3devices", base: "motor", bus: "M" },
+    touch: { label: "touch sensor",       cls: "TouchSensor",      mod: "ev3devices", base: "touch", bus: "S" },
+    color: { label: "colour sensor",      cls: "ColorSensor",      mod: "ev3devices", base: "color", bus: "S" },
+    gyro:  { label: "gyro sensor",        cls: "GyroSensor",       mod: "ev3devices", base: "gyro", bus: "S" },
+    ultra: { label: "ultrasonic sensor",  cls: "UltrasonicSensor", mod: "ev3devices", base: "ultrasonic", bus: "S" },
+    infra: { label: "infrared sensor",    cls: "InfraredSensor",   mod: "ev3devices", base: "infrared", bus: "S" },
+    ntouch:{ label: "NXT touch sensor",   cls: "TouchSensor",      mod: "nxtdevices", alias: "NXTTouchSensor", base: "nxt_touch", bus: "S" },
+    nlight:{ label: "NXT light sensor",   cls: "LightSensor",      mod: "nxtdevices", alias: "NXTLightSensor", base: "nxt_light", bus: "S" },
+    ncolor:{ label: "NXT colour sensor",  cls: "ColorSensor",      mod: "nxtdevices", alias: "NXTColorSensor", base: "nxt_color", bus: "S" },
+    nsound:{ label: "NXT sound sensor",   cls: "SoundSensor",      mod: "nxtdevices", alias: "NXTSoundSensor", base: "nxt_sound", bus: "S" },
+    nultra:{ label: "NXT ultrasonic sensor", cls: "UltrasonicSensor", mod: "nxtdevices", alias: "NXTUltrasonicSensor", base: "nxt_ultrasonic", bus: "S" },
+    drive: { label: "drive base",         cls: "DriveBase",        mod: "robotics",   base: "robot" }
+  };
+  /* the order declarations are written in: a drive base needs its motors
+     above it, whatever order the blocks were dragged out in */
+  var KIND_ORDER = ["brick", "motor", "touch", "color", "gyro", "ultra", "infra",
+                    "ntouch", "nlight", "ncolor", "nsound", "nultra", "drive"];
+
+  /* Names a device cannot have: Python's own words, and every name the
+     generated file already uses. */
+  var RESERVED = {};
+  ("False None True and as assert async await break class continue def del " +
+   "elif else except finally for from global if import in is lambda " +
+   "nonlocal not or pass raise return try while with yield " +
+   "Port Stop Color Button Direction wait randint print range len int str " +
+   "float abs min max Motor DriveBase EV3Brick TouchSensor ColorSensor " +
+   "UltrasonicSensor GyroSensor InfraredSensor LightSensor SoundSensor " +
+   "NXTTouchSensor NXTLightSensor NXTColorSensor NXTSoundSensor " +
+   "NXTUltrasonicSensor").split(" ").forEach(function (w) { RESERVED[w] = true; });
+
+  function isDev(b) { return /^pb_dev_/.test(b.type); }
+  function kindOf(b) { return b.type.slice(7); }
+  function devName(b) { return String(b.getFieldValue("NAME")); }
+  function allDevices() {
+    return ws ? ws.getAllBlocks(true).filter(isDev) : [];
+  }
+  function freshName(kind) {
+    var base = KINDS[kind].base, used = {}, i;
+    allDevices().forEach(function (b) { used[devName(b)] = true; });
+    if (!used[base]) return base;
+    for (i = 2; used[base + i]; i++) { /* count up to a free one */ }
+    return base + i;
+  }
+  function freePort(bus, self) {
+    var used = {};
+    allDevices().forEach(function (b) {
+      var p = b.getFieldValue("PORT");
+      if (p && b !== self) used[p] = true; });
+    var opts = bus === "M" ? BUS_M : BUS_S;
+    for (var i = 0; i < opts.length; i++) if (!used[opts[i][1]]) return opts[i][1];
+    return opts[0][1];
+  }
+
+  /* The list a block picks a device from: every declared device of the right
+     kind, plus the current value if it is no longer declared (so the block
+     says what it is pointing at rather than showing something else). */
+  function deviceOptions(kinds, current) {
+    var out = [], seen = {};
+    if (current === "") out.push(["?", ""]);
+    allDevices().forEach(function (b) {
+      if (kinds.indexOf(kindOf(b)) < 0) return;
+      var n = devName(b);
+      if (!seen[n]) { seen[n] = true; out.push([n, n]); }
+    });
+    if (current && !seen[current]) out.push([current, current]);
+    if (!out.length) out.push(["?", ""]);
+    return out;
+  }
+
+  /* A dropdown whose list is the devices declared in Set up. Blockly's own
+     dropdown refuses a value that is not in its list, which would break
+     loading a program whose Set up blocks come later in the file, so this
+     one accepts any text and lets the checks below complain instead. */
+  class FieldDevice extends Blockly.FieldDropdown {
+    constructor(kinds) {
+      super(function () { return deviceOptions(kinds, this.value_); });
+      this.kinds = kinds;
+    }
+    static fromJson(o) { return new FieldDevice(o.kinds); }
+    getOptions() { return this.menuGenerator_(); }
+    doClassValidation_(v) { return typeof v === "string" ? v : null; }
+  }
+  Blockly.fieldRegistry.register("field_device", FieldDevice);
+
+  function nameValidator(block) {
+    return function (v) {
+      var s = String(v).trim().replace(/\s+/g, "_").replace(/[^A-Za-z0-9_]/g, "");
+      if (!s) return null;
+      if (/^[0-9]/.test(s)) s = "_" + s;
+      if (loading || !block.workspace || block.workspace.isFlyout) return s;
+      if (RESERVED[s]) {
+        toast("“" + s + "” is a word Python or Pybricks already uses.");
+        return null;
+      }
+      var clash = allDevices().some(function (o) {
+        return o !== block && devName(o) === s; });
+      if (clash) { toast("A device is already called " + s + "."); return null; }
+      return s;
+    };
+  }
+
+  function defineDevice(kind) {
+    var K = KINDS[kind];
+    Blockly.Blocks["pb_dev_" + kind] = {
+      init: function () {
+        var args = [{ type: "field_input", name: "NAME", text: freshName(kind) }];
+        var msg = K.label + " named %1";
+        if (K.bus) {
+          msg += " on port %2";
+          args.push({ type: "field_dropdown", name: "PORT",
+                      options: K.bus === "M" ? BUS_M : BUS_S });
+        }
+        this.jsonInit({ message0: msg, args0: args, colour: C_SETUP,
+          previousStatement: "Device", nextStatement: "Device",
+          tooltip: kind === "brick"
+            ? "The brick itself. Needed for the screen, sound, light and buttons."
+            : "Gives this " + K.label + " a name. Other blocks pick it by name." });
+        this.getField("NAME").setValidator(nameValidator(this));
+        if (K.bus) this.setFieldValue(freePort(K.bus, this), "PORT");
+      }
+    };
+    py.forBlock["pb_dev_" + kind] = function () { return ""; };
+  }
+
+  Blockly.Blocks["pb_dev_drive"] = {
+    init: function () {
+      this.jsonInit({
+        message0: "drive base named %1 left motor %2 right motor %3 %4 " +
+                  "wheel %5 mm axle track %6 mm",
+        args0: [{ type: "field_input", name: "NAME", text: freshName("drive") },
+                { type: "field_device", name: "LEFT", kinds: ["motor"] },
+                { type: "field_device", name: "RIGHT", kinds: ["motor"] },
+                { type: "input_dummy" },
+                { type: "field_number", name: "WHEEL", value: 56, min: 1 },
+                { type: "field_number", name: "AXLE", value: 114, min: 1 }],
+        colour: C_SETUP, previousStatement: "Device", nextStatement: "Device",
+        tooltip: "Two motors driving a robot. Measure the wheel across, and " +
+                 "the distance between where the two wheels touch the ground."
+      });
+      this.getField("NAME").setValidator(nameValidator(this));
+      var m = deviceOptions(["motor"], null);
+      if (m.length > 1) this.setFieldValue(m[1][1], "RIGHT");
+    }
+  };
+
+  /* Change a device's name and every block that picks it follows. Names are
+     unique, so a block holding the old name can only mean this device. */
+  function renamed(oldName, newName) {
+    if (oldName === newName) return;
+    ws.getAllBlocks(false).forEach(function (b) {
+      b.inputList.forEach(function (inp) {
+        inp.fieldRow.forEach(function (f) {
+          if (f instanceof FieldDevice && f.getValue() === oldName)
+            f.setValue(newName);
+        });
+      });
+    });
+  }
+
+  /* The warning triangle on a block whose device is missing, doubled up, or
+     on a port something else already has. */
+  function warn(b, text) {
+    if (b.__warn === text) return;
+    b.__warn = text;
+    b.setWarningText(text || null);
+  }
+  function audit() {
+    var devs = allDevices(), names = {}, ports = {};
+    devs.forEach(function (b) {
+      var n = devName(b), p = b.getFieldValue("PORT");
+      (names[n] = names[n] || []).push(b);
+      if (p) { var k = KINDS[kindOf(b)].bus + p; (ports[k] = ports[k] || []).push(b); }
+    });
+    function declared(n, kinds) {
+      return devs.some(function (b) {
+        return devName(b) === n && kinds.indexOf(kindOf(b)) >= 0; });
+    }
+    ws.getAllBlocks(false).forEach(function (b) {
+      var t = null;
+      if (isDev(b)) {
+        var n = devName(b), p = b.getFieldValue("PORT");
+        if (names[n].length > 1) t = "Two devices are called " + n + ". Rename one.";
+        else if (p && ports[KINDS[kindOf(b)].bus + p].length > 1)
+          t = "Port " + p + " is used by " + ports[KINDS[kindOf(b)].bus + p]
+              .map(devName).join(" and ") + ".";
+      }
+      if (!t) b.inputList.forEach(function (inp) {
+        inp.fieldRow.forEach(function (f) {
+          if (t || !(f instanceof FieldDevice)) return;
+          var v = f.getValue();
+          if (!v) t = "Pick a device. Add one in Set up first.";
+          else if (!declared(v, f.kinds))
+            t = "“" + v + "” is not in Set up.";
+        });
+      });
+      warn(b, t);
+    });
+  }
+
+  Object.keys(KINDS).forEach(function (k) {
+    if (k !== "drive") defineDevice(k);
+  });
+  py.forBlock["pb_dev_drive"] = function () { return ""; };
+
+  var devs, refs, needs, usesEv3, brickName, theWs, funcs;
+
+  /* The declarations are read straight off the blocks here, not as the
+     program is walked: blocks are visited top to bottom on the page, and a
+     program dragged above its Set up would otherwise be written first. */
+  py.init = function (w) {
+    theWs = w; funcs = []; refs = [];
+    needs = { Port: true };
+    usesEv3 = false; brickName = "ev3"; devs = [];
+    w.getAllBlocks(true).forEach(function (b) {
+      if (!isDev(b)) return;
+      var d = { kind: kindOf(b), name: ident(devName(b)),
+                port: b.getFieldValue("PORT") || "" };
+      if (d.kind === "drive") {
+        d.left = ident(b.getFieldValue("LEFT") || "");
+        d.right = ident(b.getFieldValue("RIGHT") || "");
+        d.wheel = Number(b.getFieldValue("WHEEL"));
+        d.axle = Number(b.getFieldValue("AXLE"));
+      }
+      devs.push(d);
+    });
+    for (var i = 0; i < devs.length; i++)
+      if (devs[i].kind === "brick") { brickName = devs[i].name; break; }
+  };
+
+  function need(x) { needs[x] = true; }
+  function ev3() { usesEv3 = true; return brickName; }
+  /* The name a block picks its device by. Whether that name is really in
+     Set up is checked at the end, once every block has been read. */
+  function ref(b) {
+    var f = b.getField("DEV"), raw = String(b.getFieldValue("DEV") || "");
+    refs.push({ raw: raw, kinds: f.kinds });
+    return raw ? ident(raw) : "no_device";
+  }
+
+  py.finish = function (code) {
+    var i, errors = [];
+    function err(m) { if (errors.indexOf(m) < 0) errors.push(m); }
+
+    /* The brick is the one device that can be left out: there is only one
+       it can be, so if a block needs it and none is declared it is added. */
+    var list = devs.slice();
+    var bricks = list.filter(function (x) { return x.kind === "brick"; });
+    if (!bricks.length && usesEv3)
+      list.push({ kind: "brick", name: "ev3", port: "" });
+    if (bricks.length > 1) err("there is more than one EV3 brick in Set up.");
+
+    var byName = {}, byPort = {};
+    list.forEach(function (x) {
+      (byName[x.name] = byName[x.name] || []).push(x);
+      if (RESERVED[x.name])
+        err(x.name + " cannot be a device name. Python or Pybricks uses it.");
+      var bus = KINDS[x.kind].bus;
+      if (bus && x.port) {
+        var k = bus + ":" + x.port;
+        (byPort[k] = byPort[k] || []).push(x.name);
+      }
+    });
+    Object.keys(byName).forEach(function (n) {
+      if (byName[n].length > 1)
+        err("two devices are called " + n + ". Rename one.");
+    });
+    Object.keys(byPort).forEach(function (k) {
+      if (byPort[k].length > 1)
+        err("port " + k.split(":")[1] + " is used by " + byPort[k].join(" and ") + ".");
+    });
+    refs.forEach(function (r) {
+      if (!r.raw) { err("a block has no device chosen. Add one in Set up, then pick it."); return; }
+      var n = ident(r.raw);
+      if (!list.some(function (x) { return x.name === n && r.kinds.indexOf(x.kind) >= 0; }))
+        err(n + " is not in Set up, or is the wrong kind of device.");
+    });
+    var driveOk = {};
+    list.forEach(function (x) {
+      if (x.kind !== "drive") return;
+      function isMotor(n) {
+        return list.some(function (m) { return m.kind === "motor" && m.name === n; }); }
+      if (!isMotor(x.left) || !isMotor(x.right))
+        err("drive base " + x.name + " needs two motors that are in Set up.");
+      else if (x.left === x.right)
+        err("drive base " + x.name + " needs two different motors.");
+      else driveOk[x.name] = true;
+    });
+
+    /* imports, each one only if something below actually uses it */
+    var imp = {};
+    list.forEach(function (x) {
+      var K = KINDS[x.kind];
+      (imp[K.mod] = imp[K.mod] || {})[K.alias ? K.cls + " as " + K.alias : K.cls] = true;
+    });
+    var head = "#!/usr/bin/env pybricks-micropython\n" +
+               "# Written with Pybricks Blocks.\n\n";
+    ["ev3devices", "nxtdevices", "hubs"].forEach(function (m) {
+      if (imp[m]) head += "from pybricks." + m + " import " +
+                          Object.keys(imp[m]).sort().join(", ") + "\n";
+    });
+    var par = ["Port"];
+    ["Stop", "Color", "Button", "Direction"].forEach(function (k) {
+      if (needs[k]) par.push(k);
+    });
+    head += "from pybricks.parameters import " + par.join(", ") + "\n";
+    if (needs.wait) head += "from pybricks.tools import wait\n";
+    if (imp.robotics) head += "from pybricks.robotics import DriveBase\n";
+    if (needs.random) head += "from urandom import randint\n";
+    head += "\n";
+
+    var setup = [];
+    errors.forEach(function (e) { setup.push("# ERROR: " + e); });
+    KIND_ORDER.forEach(function (kind) {
+      list.forEach(function (x) {
+        if (x.kind !== kind) return;
+        var K = KINDS[kind];
+        if (kind === "brick") setup.push(x.name + " = EV3Brick()");
+        else if (kind === "drive") {
+          if (driveOk[x.name])
+            setup.push(x.name + " = DriveBase(" + x.left + ", " + x.right +
+                       ", wheel_diameter=" + x.wheel + ", axle_track=" + x.axle + ")");
+        } else if (x.port)
+          setup.push(x.name + " = " + (K.alias || K.cls) + "(Port." + x.port + ")");
+      });
+    });
+
+    /* Every variable starts at 0, so a program that reads one before
+       writing it runs instead of dying on NameError. */
+    var names = [];
+    try {
+      var models = (Blockly.Variables && Blockly.Variables.allUsedVarModels)
+        ? Blockly.Variables.allUsedVarModels(theWs) : theWs.getAllVariables();
+      for (i = 0; i < models.length; i++) names.push(ident(models[i].name));
+    } catch (e) { names = []; }
+    if (names.length) {
+      setup.push("");
+      for (i = 0; i < names.length; i++) setup.push(names[i] + " = 0");
+    }
+    if (setup.length) head += "# Set up.\n" + setup.join("\n") + "\n\n";
+
+    /* Python runs the file top to bottom, so a function has to be defined
+       above the line that calls it. */
+    if (funcs.length) head += funcs.join("\n") + "\n";
+    if (code || funcs.length) head += "# The main program starts here.\n";
+    return head + code;
+  };
+
+  py.scrub_ = function (block, code, thisOnly) {
+    var next = block.nextConnection && block.nextConnection.targetBlock();
+    if (next && !thisOnly) return code + py.blockToCode(next);
+    return code;
+  };
+
+  function ident(name) {
+    var s = String(name).trim().replace(/[^A-Za-z0-9_]/g, "_");
+    if (!s || /^[0-9]/.test(s)) s = "v_" + s;
+    return s;
+  }
+  function num(b, g, name, dflt) {
+    var v = g.valueToCode(b, name, py.ORDER_NONE);
+    return (v === "" || v === null) ? String(dflt) : v;
+  }
+  function val(b, g, name, dflt) {
+    var v = g.valueToCode(b, name, py.ORDER_NONE);
+    return (v === "" || v === null) ? dflt : v;
+  }
+  function then(b) { need("Stop"); return ", then=Stop." + b.getFieldValue("THEN"); }
+  function body(b, g, name) {
+    return g.statementToCode(b, name) || py.INDENT + "pass\n";
+  }
+
+  /* ---- Events ---- */
+  py.forBlock["pb_setup"] = function () {
+    /* The devices were read in init; nothing is written where this sits. */
+    return "";
+  };
+  py.forBlock["pb_program"] = function (b, g) {
+    /* statementToCode indents one level, which a loop body wants and the
+       top of a Python file cannot have. Take that level back off. */
+    return g.statementToCode(b, "DO").replace(/^ {4}/gm, "");
+  };
+  py.forBlock["pb_button"] = function (b) {
+    need("Button");
+    return ["(Button." + b.getFieldValue("BTN") + " in " + ev3() +
+            ".buttons.pressed())", py.ORDER_ATOMIC];
+  };
+  py.forBlock["pb_wait_until"] = function (b, g) {
+    need("wait");
+    return "while not (" + val(b, g, "COND", "True") + "):\n" +
+           py.INDENT + "wait(10)\n";
+  };
+
+  /* ---- Motors ---- */
+  function M(b) { return ref(b); }
+  py.forBlock["pb_run"] = function (b, g) {
+    return M(b) + ".run(" + num(b, g, "SPEED", 360) + ")\n"; };
+  py.forBlock["pb_run_time"] = function (b, g) {
+    return M(b) + ".run_time(" + num(b, g, "SPEED", 360) + ", " +
+           num(b, g, "TIME", 1000) + then(b) + ")\n"; };
+  py.forBlock["pb_run_angle"] = function (b, g) {
+    return M(b) + ".run_angle(" + num(b, g, "SPEED", 360) + ", " +
+           num(b, g, "ANGLE", 90) + then(b) + ")\n"; };
+  py.forBlock["pb_run_target"] = function (b, g) {
+    return M(b) + ".run_target(" + num(b, g, "SPEED", 360) + ", " +
+           num(b, g, "TARGET", 0) + then(b) + ")\n"; };
+  py.forBlock["pb_run_until_stalled"] = function (b, g) {
+    return M(b) + ".run_until_stalled(" + num(b, g, "SPEED", 200) +
+           then(b) + ")\n"; };
+  py.forBlock["pb_dc"] = function (b, g) {
+    return M(b) + ".dc(" + num(b, g, "DUTY", 50) + ")\n"; };
+  py.forBlock["pb_stop"] = function (b) {
+    return M(b) + "." + b.getFieldValue("HOW") + "()\n"; };
+  py.forBlock["pb_reset_angle"] = function (b, g) {
+    return M(b) + ".reset_angle(" + num(b, g, "ANGLE", 0) + ")\n"; };
+  py.forBlock["pb_angle"] = function (b) {
+    return [M(b) + ".angle()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_speed"] = function (b) {
+    return [M(b) + ".speed()", py.ORDER_ATOMIC]; };
+
+  /* ---- Movement ---- */
+  py.forBlock["pb_straight"] = function (b, g) {
+    return ref(b) + ".straight(" + num(b, g, "DIST", 100) + then(b) + ")\n"; };
+  py.forBlock["pb_turn"] = function (b, g) {
+    return ref(b) + ".turn(" + num(b, g, "ANGLE", 90) + then(b) + ")\n"; };
+  py.forBlock["pb_drive"] = function (b, g) {
+    return ref(b) + ".drive(" + num(b, g, "SPEED", 100) + ", " +
+           num(b, g, "RATE", 0) + ")\n"; };
+  py.forBlock["pb_drive_stop"] = function (b) {
+    return ref(b) + "." + b.getFieldValue("HOW") + "()\n"; };
+  py.forBlock["pb_drive_reset"] = function (b) { return ref(b) + ".reset()\n"; };
+  py.forBlock["pb_distance"] = function (b) {
+    return [ref(b) + ".distance()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_heading"] = function (b) {
+    return [ref(b) + ".angle()", py.ORDER_ATOMIC]; };
+
+  /* ---- Display ---- */
+  py.forBlock["pb_screen_clear"] = function () {
+    return ev3() + ".screen.clear()\n"; };
+  py.forBlock["pb_screen_print"] = function (b, g) {
+    return ev3() + ".screen.print(" + val(b, g, "WHAT", '""') + ")\n"; };
+  py.forBlock["pb_screen_text"] = function (b, g) {
+    return ev3() + ".screen.draw_text(" + num(b, g, "X", 0) + ", " +
+           num(b, g, "Y", 0) + ", " + val(b, g, "WHAT", '""') + ")\n"; };
+  py.forBlock["pb_screen_box"] = function (b, g) {
+    return ev3() + ".screen.draw_box(" + num(b, g, "X1", 0) + ", " +
+           num(b, g, "Y1", 0) + ", " + num(b, g, "X2", 50) + ", " +
+           num(b, g, "Y2", 50) + ", fill=" +
+           (b.getFieldValue("FILL") === "TRUE" ? "True" : "False") + ")\n"; };
+  py.forBlock["pb_screen_circle"] = function (b, g) {
+    return ev3() + ".screen.draw_circle(" + num(b, g, "X", 50) + ", " +
+           num(b, g, "Y", 50) + ", " + num(b, g, "R", 20) + ", fill=" +
+           (b.getFieldValue("FILL") === "TRUE" ? "True" : "False") + ")\n"; };
+  py.forBlock["pb_screen_line"] = function (b, g) {
+    return ev3() + ".screen.draw_line(" + num(b, g, "X1", 0) + ", " +
+           num(b, g, "Y1", 0) + ", " + num(b, g, "X2", 100) + ", " +
+           num(b, g, "Y2", 100) + ")\n"; };
+  py.forBlock["pb_light"] = function (b) {
+    var c = b.getFieldValue("COLOR");
+    if (c === "OFF") return ev3() + ".light.off()\n";
+    need("Color");
+    return ev3() + ".light.on(Color." + c + ")\n";
+  };
+
+  /* ---- Sound ---- */
+  py.forBlock["pb_beep"] = function (b, g) {
+    return ev3() + ".speaker.beep(" + num(b, g, "FREQ", 500) + ", " +
+           num(b, g, "MS", 100) + ")\n"; };
+  py.forBlock["pb_notes"] = function (b, g) {
+    var raw = String(b.getFieldValue("NOTES") || "").trim().split(/\s+/);
+    var list = raw.filter(function (s) { return s; })
+                  .map(function (s) { return '"' + s.replace(/"/g, "") + '"'; });
+    return ev3() + ".speaker.play_notes([" + list.join(", ") + "], " +
+           num(b, g, "TEMPO", 120) + ")\n"; };
+  py.forBlock["pb_volume"] = function (b, g) {
+    return ev3() + ".speaker.volume(" + num(b, g, "VOL", 70) + ")\n"; };
+
+  /* ---- Sensors ---- */
+  py.forBlock["pb_touch"] = function (b) {
+    return [ref(b) + ".pressed()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_color"] = function (b) {
+    need("Color");
+    return ["(" + ref(b) + ".color() == Color." +
+            b.getFieldValue("COLOR") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_reflection"] = function (b) {
+    return [ref(b) + ".reflection()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_ambient"] = function (b) {
+    return [ref(b) + ".ambient()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_ultra"] = function (b) {
+    return [ref(b) + ".distance()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_gyro_angle"] = function (b) {
+    return [ref(b) + ".angle()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_gyro_speed"] = function (b) {
+    return [ref(b) + ".speed()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_gyro_reset"] = function (b, g) {
+    return ref(b) + ".reset_angle(" + num(b, g, "ANGLE", 0) + ")\n"; };
+  py.forBlock["pb_infra"] = function (b) {
+    return [ref(b) + ".distance()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_sound_level"] = function (b) {
+    return [ref(b) + ".intensity()", py.ORDER_ATOMIC]; };
+
+  /* ---- Control ---- */
+  py.forBlock["pb_wait"] = function (b, g) {
+    need("wait");
+    return "wait(" + num(b, g, "MS", 1000) + ")\n"; };
+  py.forBlock["pb_forever"] = function (b, g) {
+    return "while True:\n" + body(b, g, "DO"); };
+  py.forBlock["pb_exit"] = function () { return "raise SystemExit\n"; };
+
+  /* ---- the blocks that replace Blockly's own ---- */
+  py.forBlock["pb_number"] = function (b) {
+    return [String(Number(b.getFieldValue("NUM"))), py.ORDER_ATOMIC]; };
+  py.forBlock["pb_text"] = function (b) {
+    return ['"' + String(b.getFieldValue("TEXT")).replace(/(["\\])/g, "\\$1") + '"',
+            py.ORDER_ATOMIC]; };
+  py.forBlock["pb_bool"] = function (b) {
+    return [b.getFieldValue("B"), py.ORDER_ATOMIC]; };
+  py.forBlock["pb_repeat"] = function (b, g) {
+    return "for _ in range(" + num(b, g, "TIMES", 10) + "):\n" +
+           body(b, g, "DO"); };
+  py.forBlock["pb_while"] = function (b, g) {
+    return "while " + val(b, g, "COND", "True") + ":\n" + body(b, g, "DO"); };
+  py.forBlock["pb_until"] = function (b, g) {
+    return "while not (" + val(b, g, "COND", "True") + "):\n" +
+           body(b, g, "DO"); };
+  py.forBlock["pb_if"] = function (b, g) {
+    return "if " + val(b, g, "COND", "False") + ":\n" + body(b, g, "DO"); };
+  py.forBlock["pb_if_else"] = function (b, g) {
+    return "if " + val(b, g, "COND", "False") + ":\n" + body(b, g, "DO") +
+           "else:\n" + body(b, g, "ELSE"); };
+  py.forBlock["pb_compare"] = function (b, g) {
+    return ["(" + val(b, g, "A", "0") + " " + b.getFieldValue("OP") + " " +
+            val(b, g, "B", "0") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_arith"] = function (b, g) {
+    return ["(" + val(b, g, "A", "0") + " " + b.getFieldValue("OP") + " " +
+            val(b, g, "B", "0") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_and"] = function (b, g) {
+    return ["(" + val(b, g, "A", "False") + " and " +
+            val(b, g, "B", "False") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_or"] = function (b, g) {
+    return ["(" + val(b, g, "A", "False") + " or " +
+            val(b, g, "B", "False") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_not"] = function (b, g) {
+    return ["(not " + val(b, g, "BOOL", "False") + ")", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_random"] = function (b, g) {
+    need("random");
+    return ["randint(" + num(b, g, "LO", 1) + ", " + num(b, g, "HI", 10) + ")",
+            py.ORDER_ATOMIC]; };
+
+  /* ---- Variables ---- */
+  py.forBlock["variables_get"] = function (b) {
+    return [ident(b.getField("VAR").getText()), py.ORDER_ATOMIC]; };
+  py.forBlock["variables_set"] = function (b, g) {
+    return ident(b.getField("VAR").getText()) + " = " +
+           val(b, g, "VALUE", "0") + "\n"; };
+  py.forBlock["math_change"] = function (b, g) {
+    var v = ident(b.getField("VAR").getText());
+    return v + " = " + v + " + " + num(b, g, "DELTA", 1) + "\n"; };
+
+  /* ---- My Blocks ---- */
+  function defFn(b, g, hasReturn) {
+    var name = ident(b.getFieldValue("NAME") || "do_something");
+    var args = [], i;
+    var vars = b.getVars ? b.getVars() : [];
+    for (i = 0; i < vars.length; i++) args.push(ident(vars[i]));
+    var inner = g.statementToCode(b, "STACK");
+    if (hasReturn) {
+      var r = val(b, g, "RETURN", "");
+      if (r) inner += py.INDENT + "return " + r + "\n";
+    }
+    if (!inner) inner = py.INDENT + "pass\n";
+    funcs.push("def " + name + "(" + args.join(", ") + "):\n" + inner);
+    return null;      /* the definition is hoisted, nothing inline */
+  }
+  py.forBlock["procedures_defnoreturn"] = function (b, g) { return defFn(b, g, false); };
+  py.forBlock["procedures_defreturn"]   = function (b, g) { return defFn(b, g, true); };
+  function callFn(b, g) {
+    var name = ident(b.getFieldValue("NAME") || "do_something");
+    var args = [], i = 0;
+    while (b.getInput("ARG" + i)) { args.push(val(b, g, "ARG" + i, "0")); i++; }
+    return name + "(" + args.join(", ") + ")";
+  }
+  py.forBlock["procedures_callnoreturn"] = function (b, g) {
+    return callFn(b, g) + "\n"; };
+  py.forBlock["procedures_callreturn"] = function (b, g) {
+    return [callFn(b, g), py.ORDER_ATOMIC]; };
+  py.forBlock["procedures_ifreturn"] = function (b, g) {
+    var r = val(b, g, "VALUE", "");
+    return "if " + val(b, g, "CONDITION", "False") + ":\n" +
+           py.INDENT + "return" + (r ? " " + r : "") + "\n"; };
+
+  /* in toolbox order, for the dots */
+  var CATS = [C_SETUP, C_MOTOR, C_MOVE, C_DISP, C_SOUND, C_EVENT, C_CTRL,
+              C_SENSE, C_OPS, C_VAR, C_MYB];
+
+  /* ----------------------------------------------------------- the palette */
+  function sh(n) { return { shadow: { type: "pb_number", fields: { NUM: n } } }; }
+  function st(t) { return { shadow: { type: "pb_text", fields: { TEXT: t } } }; }
+
+  function blk(t) { return { kind: "block", type: t }; }
+  var toolbox = { kind: "categoryToolbox", contents: [
+    { kind: "category", name: "Setup", colour: C_SETUP, contents: [
+      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"),
+      { kind: "label", text: "Set up EV3 sensors" },
+      blk("pb_dev_touch"), blk("pb_dev_color"), blk("pb_dev_gyro"),
+      blk("pb_dev_ultra"), blk("pb_dev_infra"),
+      { kind: "label", text: "Set up NXT sensors" },
+      blk("pb_dev_ntouch"), blk("pb_dev_nlight"), blk("pb_dev_ncolor"),
+      blk("pb_dev_nsound"), blk("pb_dev_nultra")
+    ]},
+    { kind: "category", name: "Motors", colour: C_MOTOR, contents: [
+      { kind: "block", type: "pb_run_angle", inputs: { ANGLE: sh(90), SPEED: sh(360) } },
+      { kind: "block", type: "pb_run_time", inputs: { SPEED: sh(360), TIME: sh(1000) } },
+      { kind: "block", type: "pb_run_target", inputs: { TARGET: sh(0), SPEED: sh(360) } },
+      { kind: "block", type: "pb_run", inputs: { SPEED: sh(360) } },
+      { kind: "block", type: "pb_run_until_stalled", inputs: { SPEED: sh(200) } },
+      { kind: "block", type: "pb_dc", inputs: { DUTY: sh(50) } },
+      { kind: "block", type: "pb_stop" },
+      { kind: "block", type: "pb_reset_angle", inputs: { ANGLE: sh(0) } },
+      { kind: "block", type: "pb_angle" },
+      { kind: "block", type: "pb_speed" }
+    ]},
+    { kind: "category", name: "Movement", colour: C_MOVE, contents: [
+      { kind: "block", type: "pb_straight", inputs: { DIST: sh(200) } },
+      { kind: "block", type: "pb_turn", inputs: { ANGLE: sh(90) } },
+      { kind: "block", type: "pb_drive", inputs: { SPEED: sh(100), RATE: sh(0) } },
+      { kind: "block", type: "pb_drive_stop" },
+      { kind: "block", type: "pb_drive_reset" },
+      { kind: "block", type: "pb_distance" },
+      { kind: "block", type: "pb_heading" }
+    ]},
+    { kind: "category", name: "Display", colour: C_DISP, contents: [
+      { kind: "block", type: "pb_screen_print", inputs: { WHAT: st("Hello") } },
+      { kind: "block", type: "pb_screen_text",
+        inputs: { WHAT: st("Hello"), X: sh(10), Y: sh(50) } },
+      { kind: "block", type: "pb_screen_clear" },
+      { kind: "block", type: "pb_screen_box",
+        inputs: { X1: sh(10), Y1: sh(10), X2: sh(80), Y2: sh(60) } },
+      { kind: "block", type: "pb_screen_circle",
+        inputs: { X: sh(89), Y: sh(64), R: sh(30) } },
+      { kind: "block", type: "pb_screen_line",
+        inputs: { X1: sh(0), Y1: sh(0), X2: sh(177), Y2: sh(127) } },
+      { kind: "block", type: "pb_light" }
+    ]},
+    { kind: "category", name: "Sound", colour: C_SOUND, contents: [
+      { kind: "block", type: "pb_beep", inputs: { FREQ: sh(500), MS: sh(100) } },
+      { kind: "block", type: "pb_notes", inputs: { TEMPO: sh(120) } },
+      { kind: "block", type: "pb_volume", inputs: { VOL: sh(70) } }
+    ]},
+    { kind: "category", name: "Events", colour: C_EVENT, contents: [
+      { kind: "block", type: "pb_program" },
+      { kind: "block", type: "pb_button" },
+      { kind: "block", type: "pb_wait_until" }
+    ]},
+    { kind: "category", name: "Control", colour: C_CTRL, contents: [
+      { kind: "block", type: "pb_wait", inputs: { MS: sh(1000) } },
+      { kind: "block", type: "pb_repeat", inputs: { TIMES: sh(4) } },
+      { kind: "block", type: "pb_forever" },
+      { kind: "block", type: "pb_if" },
+      { kind: "block", type: "pb_if_else" },
+      { kind: "block", type: "pb_while" },
+      { kind: "block", type: "pb_until" },
+      { kind: "block", type: "pb_exit" }
+    ]},
+    { kind: "category", name: "Sensors", colour: C_SENSE, contents: [
+      { kind: "block", type: "pb_touch" },
+      { kind: "block", type: "pb_color" },
+      { kind: "block", type: "pb_reflection" },
+      { kind: "block", type: "pb_ambient" },
+      { kind: "block", type: "pb_ultra" },
+      { kind: "block", type: "pb_gyro_angle" },
+      { kind: "block", type: "pb_gyro_speed" },
+      { kind: "block", type: "pb_gyro_reset", inputs: { ANGLE: sh(0) } },
+      { kind: "block", type: "pb_infra" },
+      { kind: "block", type: "pb_sound_level" }
+    ]},
+    { kind: "category", name: "Operators", colour: C_OPS, contents: [
+      { kind: "block", type: "pb_number" },
+      { kind: "block", type: "pb_arith", inputs: { A: sh(1), B: sh(1) } },
+      { kind: "block", type: "pb_compare", inputs: { A: sh(0), B: sh(0) } },
+      { kind: "block", type: "pb_and" },
+      { kind: "block", type: "pb_or" },
+      { kind: "block", type: "pb_not" },
+      { kind: "block", type: "pb_bool" },
+      { kind: "block", type: "pb_random", inputs: { LO: sh(1), HI: sh(10) } },
+      { kind: "block", type: "pb_text" }
+    ]},
+    { kind: "category", name: "Variables", colour: C_VAR, custom: "VARIABLE" },
+    { kind: "category", name: "My Blocks", colour: C_MYB, custom: "PROCEDURE" }
+  ]};
+
+  /* ------------------------------------------------------------- wiring */
+  ws = Blockly.inject("blocklyDiv", {
+    toolbox: toolbox, theme: themeDark, renderer: "zelos",
+    zoom: { controls: true, wheel: true, startScale: 0.8, minScale: 0.3, maxScale: 2 },
+    trashcan: true, sounds: false, media: "./"
+  });
+
+  /* The toolbox rows get their colour dot painted in, the way the
+     NQC/NXC editor does it: Blockly draws a square icon, CSS rounds it
+     and this fills it with the category colour. */
+  function dots() {
+    var rows = document.querySelectorAll(".blocklyToolboxCategory");
+    for (var i = 0; i < rows.length && i < CATS.length; i++) {
+      rows[i].style.borderLeft = "0";
+      var icon = rows[i].querySelector(".blocklyToolboxCategoryIcon");
+      if (icon) icon.style.backgroundColor = CATS[i];
+    }
+    Blockly.svgResize(ws);
+  }
+
+  var KEYWORDS = /\b(import|from|def|return|if|elif|else|while|for|in|not|and|or|True|False|None|raise|pass|break|continue)\b/g;
+  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|on|off|SystemExit)\b/g;
+  var CONSTS = /\b(Port|Stop|Color|Button|Direction)\.[A-Z_0-9]+|\b(Port|Stop|Color|Button|Direction)\b/g;
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function paint(code) {
+    var h = esc(code);
+    /* comments and strings are hidden first, so a keyword inside one is
+       not painted as code */
+    h = h.replace(/#[^\n]*/g, function (m) { return "\u0001" + m + "\u0002"; });
+    h = h.replace(/"[^"\n]*"/g, function (m) { return "\u0003" + m + "\u0004"; });
+    h = h.replace(CONSTS, '<span class="bi">$&</span>');
+    h = h.replace(BUILTINS, '<span class="bi">$1</span>');
+    h = h.replace(KEYWORDS, '<span class="kw">$1</span>');
+    h = h.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+    h = h.replace(/\u0003([^\u0004]*)\u0004/g, '<span class="str">$1</span>');
+    h = h.replace(/\u0001([^\u0002]*)\u0002/g, '<span class="com">$1</span>');
+    return h;
+  }
+
+  var out = document.getElementById("out");
+  var lastCode = "";
+  function regenerate() {
+    try { audit(); } catch (e) { /* a warning is never worth losing the code */ }
+    try { lastCode = py.workspaceToCode(ws); }
+    catch (e) { lastCode = "# " + e; }
+    out.innerHTML = paint(lastCode);
+    var n = lastCode ? lastCode.replace(/\n$/, "").split("\n").length : 0;
+    document.getElementById("lines").textContent =
+      n + (n === 1 ? " line" : " lines");
+    var b = ws.getAllBlocks(false).length;
+    document.getElementById("count").textContent =
+      b + (b === 1 ? " block" : " blocks");
+  }
+  ws.addChangeListener(function (ev) {
+    if (ev.isUiEvent) return;
+    if (ev.type === Blockly.Events.BLOCK_CHANGE && ev.element === "field" &&
+        ev.name === "NAME") {
+      var src = ws.getBlockById(ev.blockId);
+      if (src && isDev(src)) renamed(ev.oldValue, ev.newValue);
+    }
+    regenerate();
+  });
+
+  function dev(kind, name, port, rest) {
+    return '<block type="pb_dev_' + kind + '"><field name="NAME">' + name +
+           '</field>' + (port ? '<field name="PORT">' + port + '</field>' : "") +
+           (rest || "") + "</block>";
+  }
+  var EXAMPLE =
+    '<xml xmlns="https://developers.google.com/blockly/xml">' +
+    '<block type="pb_setup" x="40" y="30"><statement name="DO">' +
+      dev("brick", "ev3", "", "<next>" +
+      dev("motor", "left", "B", "<next>" +
+      dev("motor", "right", "C", "<next>" +
+      dev("touch", "bumper", "S1", "<next>" +
+      '<block type="pb_dev_drive"><field name="NAME">robot</field>' +
+        '<field name="LEFT">left</field><field name="RIGHT">right</field>' +
+        '<field name="WHEEL">56</field><field name="AXLE">114</field></block>' +
+      "</next>") + "</next>") + "</next>") + "</next>") +
+    '</statement></block>' +
+    '<block type="pb_program" x="40" y="400"><statement name="DO">' +
+      '<block type="pb_screen_print">' +
+        '<value name="WHAT"><shadow type="pb_text"><field name="TEXT">Hello</field></shadow></value>' +
+      '<next><block type="pb_forever"><statement name="DO">' +
+        '<block type="pb_if">' +
+          '<value name="COND"><block type="pb_touch"><field name="DEV">bumper</field></block></value>' +
+          '<statement name="DO">' +
+            '<block type="pb_drive_stop"><field name="DEV">robot</field><field name="HOW">brake</field>' +
+            '<next><block type="pb_beep">' +
+              '<value name="FREQ"><shadow type="pb_number"><field name="NUM">800</field></shadow></value>' +
+              '<value name="MS"><shadow type="pb_number"><field name="NUM">200</field></shadow></value>' +
+            '</block></next></block>' +
+          '</statement>' +
+        '<next><block type="pb_straight"><field name="DEV">robot</field>' +
+          '<value name="DIST"><shadow type="pb_number"><field name="NUM">200</field></shadow></value>' +
+          '<field name="THEN">HOLD</field>' +
+        '</block></next></block>' +
+      '</statement></block></next></block>' +
+    '</statement></block></xml>';
+
+  /* Loading is not editing: names read from a file are taken as they are,
+     not checked against the devices already on the page. */
+  function loadXml(xml) {
+    loading = true;
+    try {
+      ws.clear();
+      Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xml), ws);
+    } finally { loading = false; }
+    regenerate();
+  }
+  function loadExample() { loadXml(EXAMPLE); }
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.hidden = false;
+    setTimeout(function () { t.hidden = true; }, 1800);
+  }
+
+  document.getElementById("btnExample").onclick = loadExample;
+  document.getElementById("btnClear").onclick = function () {
+    ws.clear(); regenerate(); };
+  document.getElementById("btnCopy").onclick = function () {
+    var done = function () { toast("Python copied. Paste it into Pybricks."); };
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = lastCode; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(lastCode).then(done, fallback);
+    else fallback();
+  };
+
+  /* Light is the same switch the other editor has, and it repaints the
+     workspace as well as the page. */
+  var light = false;
+  document.getElementById("btnTheme").onclick = function () {
+    light = !light;
+    document.body.setAttribute("data-theme", light ? "light" : "dark");
+    this.textContent = light ? "Dark" : "Light";
+    ws.setTheme(light ? themeLight : themeDark);
+    setTimeout(dots, 0);
+  };
+
+  window.addEventListener("resize", function () { Blockly.svgResize(ws); });
+  loadExample();
+  dots();
+  setTimeout(dots, 400);
+
+  window.__code = function () { return lastCode; };
+  window.__load = function (xml) { loadXml(xml); return lastCode; };
+  /* Rename the way typing in the field does, so the test exercises the
+     same path a person does. */
+  window.__rename = function (from, to) {
+    var b = allDevices().filter(function (x) { return devName(x) === from; })[0];
+    if (!b) return "no such device: " + from;
+    b.getField("NAME").setValue(to);
+    return true;      /* the change event does the rest, a tick later */
+  };
+  window.__warnings = function () {
+    return ws.getAllBlocks(false).filter(function (b) { return b.__warn; })
+      .map(function (b) { return b.type + ": " + b.__warn; });
+  };
+  window.__ready = true;
+})();
+</script>
+</body>
+</html>

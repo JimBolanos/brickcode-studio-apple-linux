@@ -2,6 +2,44 @@
 
 All notable changes to BrickCode Studio. Dates are release dates.
 
+## 2.4.0 — 2026-11-06
+
+### Added
+- **A block editor for the EV3**, in `pybricks/`. It writes Pybricks Python:
+  nothing is compiled or sent from the app, you copy the code and paste it
+  into Pybricks. It opens from a fourth card on the dashboard, or from
+  **File → Pybricks block editor (EV3)…**.
+  - **Devices are set up once, by name,** the way Pybricks' own editor does
+    it: a **set up** block names the brick, each motor and sensor with its
+    port, and a drive base, and every other block picks one from a list of
+    those names. The output reads like a program written by hand
+    (`arm1 = Motor(Port.B)`, `arm1.run_angle(...)`), not `motor_b`.
+    Renaming a device carries every block that uses it.
+  - EV3 sensors (touch, colour, gyro, ultrasonic, infrared) and NXT sensors
+    (touch, light, colour, sound, ultrasonic). The NXT classes are imported
+    as `NXTTouchSensor` and so on, because three of them share a name with an
+    EV3 class and both can sit in one program.
+  - A block pointing at a missing device, two devices on one port or two with
+    one name get a warning triangle, and the file says so in an `# ERROR:`
+    line at the top.
+  - Same palette, category order and look as the NQC/NXC editor. It shares
+    that editor's copy of Blockly rather than carrying a second one.
+  - Verified by running every generated program against stub `pybricks`
+    modules that check their own arguments and record each call (there is no
+    compiler to hand a Pybricks program to): `cd pybricks/test && python3 gen.py`.
+- **The EV3 on the dashboard**, drawn in Cairo like the other three, from a
+  photograph for the proportions and with no logo on it.
+
+### Fixed
+- **Run from the source tree, the app could not open the block editor.** It
+  found the page by a relative path, and a `file://` address has to be
+  absolute, so the click only logged an error. Installed copies were never
+  affected.
+
+### Changed
+- The dashboard screenshot in the README was stale; it is regenerated, with the
+  current RCX and the new card.
+
 ## 2.3.3 — 2026-11-02
 
 ### Fixed

@@ -17,6 +17,7 @@ install: brickcode-studio
 	install -Dm644 brickcode-studio.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/brickcode-studio.svg
 	for f in ../firmware/*.lgo; do install -Dm644 $$f $(DESTDIR)$(PREFIX)/share/brickcode-studio/firmware/$$(basename $$f); done
 	install -Dm644 ../blocks/brickcode-blocks.html $(DESTDIR)$(PREFIX)/share/brickcode-studio/blocks/brickcode-blocks.html
+	install -Dm644 ../pybricks/pybricks-blocks.html $(DESTDIR)$(PREFIX)/share/brickcode-studio/blocks/pybricks-blocks.html
 	install -Dm644 Orbitron-ExtraBold.ttf $(DESTDIR)$(PREFIX)/share/brickcode-studio/fonts/Orbitron-ExtraBold.ttf
 	install -Dm644 Orbitron-OFL.txt $(DESTDIR)$(PREFIX)/share/brickcode-studio/fonts/Orbitron-OFL.txt
 	for f in ../docs/USER_GUIDE.*.md; do install -Dm644 $$f $(DESTDIR)$(PREFIX)/share/brickcode-studio/docs/$$(basename $$f); done

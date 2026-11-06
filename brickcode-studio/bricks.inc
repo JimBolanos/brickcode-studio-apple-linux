@@ -1,4 +1,4 @@
-/* The three bricks, drawn with Cairo.
+/* The four bricks, drawn with Cairo.
  *
  * Drawn from photographs of the real hardware, not from memory:
  *   RCX   - yellow, portrait. Grey input pads (1 2 3) above, black output
@@ -11,6 +11,12 @@
  *   NXT   - white, portrait. Dark port strips top (A B C, USB) and bottom
  *           (1 2 3 4), the orange enter button between two grey arrows, the
  *           back button below it and the speaker grille on the right.
+ *   EV3   - white and grey, portrait. The screen in a black window up in the
+ *           grey bezel, four tabs on the LCD, then the cluster of buttons:
+ *           up and down as one octagon, a pill either side and a square in
+ *           the middle, lit red from underneath. Grey foot with the name.
+ *           Drawn from a photograph for the proportions only; there is no
+ *           logo on it, the LEGO one is not ours to draw.
  *
  * Cairo rather than SVG on purpose: loading SVG into GTK4 would mean
  * librsvg as a new dependency on both Linux and macOS, and this program
@@ -328,6 +334,180 @@ static void bk_draw_nxt(cairo_t *cr, int w, int h) {
     bk_text(cr, "#2E3034", 76,  257, 9, TRUE, FALSE, "2");
     bk_text(cr, "#2E3034", 112, 257, 9, TRUE, FALSE, "3");
     bk_text(cr, "#2E3034", 148, 257, 9, TRUE, FALSE, "4");
+
+    cairo_restore(cr);
+}
+
+/* ------------------------------------------------------------------ EV3 */
+
+/* A rounded rectangle filled top to bottom, for the bezel and the foot. */
+static void bk_vgrad(cairo_t *cr, const char *top, const char *bottom,
+                     double x, double y, double w, double h, double r) {
+    unsigned int a[3] = {0, 0, 0}, b[3] = {0, 0, 0};
+    sscanf(top + 1, "%02x%02x%02x", &a[0], &a[1], &a[2]);
+    sscanf(bottom + 1, "%02x%02x%02x", &b[0], &b[1], &b[2]);
+    cairo_pattern_t *p = cairo_pattern_create_linear(0, y, 0, y + h);
+    cairo_pattern_add_color_stop_rgb(p, 0, a[0] / 255.0, a[1] / 255.0, a[2] / 255.0);
+    cairo_pattern_add_color_stop_rgb(p, 1, b[0] / 255.0, b[1] / 255.0, b[2] / 255.0);
+    cairo_set_source(cr, p);
+    bk_rrect(cr, x, y, w, h, r);
+    cairo_fill(cr);
+    cairo_pattern_destroy(p);
+}
+
+/* A closed polygon from x,y pairs. */
+static void bk_poly(cairo_t *cr, const char *hex, const double *pt, int n) {
+    bk_hex(cr, hex);
+    cairo_new_path(cr);
+    cairo_move_to(cr, pt[0], pt[1]);
+    for (int i = 1; i < n; i++) cairo_line_to(cr, pt[i * 2], pt[i * 2 + 1]);
+    cairo_close_path(cr);
+    cairo_fill(cr);
+}
+
+/* The red the buttons glow with: bright in the middle, gone at the edge. */
+static void bk_glow(cairo_t *cr, double cx, double cy, double r) {
+    cairo_pattern_t *p = cairo_pattern_create_radial(cx, cy, 0, cx, cy, r);
+    cairo_pattern_add_color_stop_rgba(p, 0.00, 1.00, 0.945, 0.933, 1.0);
+    cairo_pattern_add_color_stop_rgba(p, 0.25, 1.00, 0.294, 0.243, 0.95);
+    cairo_pattern_add_color_stop_rgba(p, 1.00, 0.898, 0.188, 0.169, 0.0);
+    cairo_set_source(cr, p);
+    cairo_new_path(cr);
+    cairo_arc(cr, cx, cy, r, 0, 2 * G_PI);
+    cairo_fill(cr);
+    cairo_pattern_destroy(p);
+}
+
+static void bk_draw_ev3(cairo_t *cr, int w, int h) {
+    cairo_save(cr);
+    bk_begin(cr, w, h, 176, 254);
+
+    /* the ridges either side, behind the body */
+    bk_fill(cr, "#E4E5E7", 6,   49, 14, 159, 3);
+    bk_fill(cr, "#E4E5E7", 156, 49, 14, 159, 3);
+
+    bk_fill(cr, "#B9BABD", 15, 3, 142, 251, 9);      /* the edge below */
+
+    /* the body: white, a grey bezel over the screen, a darker foot */
+    cairo_save(cr);
+    bk_rrect(cr, 15, 0, 142, 252, 9);
+    cairo_clip(cr);
+    bk_vgrad(cr, "#F7F7F8", "#ECECEE", 15, 0,   142, 252, 0);
+    bk_vgrad(cr, "#E2E3E5", "#C9CACD", 15, 0,   142, 118, 0);
+    bk_fill(cr, "#C3C4C7", 15, 112, 142, 6, 0);
+    bk_vgrad(cr, "#B2B3B6", "#9FA0A4", 15, 218, 142, 34, 0);
+    bk_fill(cr, "#A5A6A9", 15, 218, 142, 1.6, 0);
+    cairo_restore(cr);
+
+    /* the screen: a black window with a grey LCD in it */
+    bk_fill(cr, "#1A1A1B", 28, 22, 116, 70, 6);
+    bk_fill(cr, "#3E4041", 37, 26, 98, 62, 1.5);
+    bk_fill(cr, "#575A5B", 38, 27, 96, 60, 1);
+    bk_text(cr, "#1C1E1E", 86, 31.6, 5.6, TRUE, TRUE, "EV3");
+    cairo_new_path(cr);
+    bk_hex(cr, "#1C1E1E");                           /* battery and rules */
+    cairo_set_line_width(cr, 0.7);
+    bk_rrect(cr, 120, 28.2, 12, 4.4, 1);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+    cairo_rectangle(cr, 121.2, 29.3, 8.4, 2.2);
+    cairo_fill(cr);
+    cairo_move_to(cr, 38, 34);   cairo_line_to(cr, 134, 34);
+    cairo_move_to(cr, 38, 46);   cairo_line_to(cr, 121, 46);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+    bk_rrect(cr, 123, 47.5, 6, 38, 1);               /* scroll bar */
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+    cairo_rectangle(cr, 124, 48.6, 4, 3.4);
+    cairo_fill(cr);
+
+    /* the four tabs: run, files, apps, settings */
+    cairo_set_line_width(cr, 0.9);
+    cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_new_path(cr);                              /* the open one, run */
+    cairo_move_to(cr, 44, 45.5);  cairo_line_to(cr, 44, 39);
+    cairo_arc(cr, 46, 39, 2, G_PI, 3 * G_PI / 2);
+    cairo_line_to(cr, 59, 37);
+    cairo_arc(cr, 59, 39, 2, -G_PI / 2, 0);
+    cairo_line_to(cr, 61, 45.5);
+    cairo_stroke(cr);
+    for (int i = 0; i < 3; i++) {
+        cairo_new_path(cr);
+        bk_rrect(cr, 66 + i * 20, 37, 15, 8.5, 2);
+        cairo_stroke(cr);
+    }
+    cairo_new_path(cr);
+    cairo_arc(cr, 52.5, 41.4, 3, 0, 2 * G_PI);       /* run: circle + triangle */
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+    cairo_move_to(cr, 51.6, 39.9); cairo_line_to(cr, 54.4, 41.4);
+    cairo_line_to(cr, 51.6, 42.9); cairo_close_path(cr);
+    cairo_fill(cr);
+    cairo_new_path(cr);                              /* files: a page */
+    cairo_move_to(cr, 71, 39);     cairo_line_to(cr, 75.2, 39);
+    cairo_line_to(cr, 77, 40.8);   cairo_line_to(cr, 77, 44);
+    cairo_line_to(cr, 71, 44);     cairo_close_path(cr);
+    cairo_stroke(cr);
+    cairo_new_path(cr);                              /* apps: a grid */
+    for (int r = 0; r < 2; r++)
+        for (int c = 0; c < 3; c++) {
+            cairo_move_to(cr, 91 + c * 3,     39.4 + r * 3.5);
+            cairo_line_to(cr, 92.6 + c * 3,   39.4 + r * 3.5);
+        }
+    cairo_stroke(cr);
+    cairo_new_path(cr);                              /* settings: a wrench */
+    cairo_move_to(cr, 109.6, 43.6); cairo_line_to(cr, 116, 38.4);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+    cairo_arc(cr, 117.2, 38.2, 1.5, 0, 2 * G_PI);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+
+    /* the little grey tab, with a corner cut off it */
+    {
+        const double tab[] = { 24, 122,  58, 122,  58, 133,  54, 137,  24, 137 };
+        bk_poly(cr, "#C7C8CB", tab, 5);
+    }
+
+    /* the buttons: an octagon of up and down, a pill either side, a square
+     * in the middle */
+    {
+        const double out[] = { 71,130, 77,128, 95,128, 101,130, 109,138,
+                               109,190, 101,198, 95,200, 77,200, 71,198,
+                               63,190, 63,138 };
+        const double in[]  = { 72,132, 78,130, 94,130, 100,132, 107,139,
+                               107,189, 100,196, 94,198, 78,198, 72,196,
+                               65,189, 65,139 };
+        bk_poly(cr, "#3A3A3D", out, 12);
+        bk_poly(cr, "#C5C6C9", in, 12);
+    }
+    bk_fill(cr, "#3A3A3D", 39,  152, 37, 24, 12);
+    bk_fill(cr, "#C5C6C9", 41,  154, 33, 20, 10);
+    bk_fill(cr, "#3A3A3D", 104, 152, 31, 24, 12);
+    bk_fill(cr, "#C5C6C9", 106, 154, 27, 20, 10);
+    bk_fill(cr, "#3A3A3D", 76,  152.5, 24, 24, 5);
+    bk_fill(cr, "#E9EAEC", 78,  154.5, 20, 20, 3.4);
+    bk_fill(cr, "#B7B8BB", 79.4, 155.9, 17.2, 17.2, 2);
+
+    /* lit red from underneath, in the gaps either side of the middle */
+    bk_glow(cr, 66.5, 163.5, 9);
+    bk_glow(cr, 105.5, 163.5, 9);
+    bk_hex(cr, "#FF5A4D");
+    cairo_set_line_width(cr, 1.1);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_new_path(cr);
+    cairo_move_to(cr, 63, 163.5);  cairo_line_to(cr, 77, 163.5);
+    cairo_move_to(cr, 99, 163.5);  cairo_line_to(cr, 113, 163.5);
+    cairo_stroke(cr);
+    cairo_new_path(cr);
+
+    /* the name, pressed into the foot: a shade under, a highlight over */
+    bk_text(cr, "#8F9094", 23, 236.5, 14.5, TRUE, FALSE, "EV3");
+    cairo_new_path(cr);
+    bk_text(cr, "#E1E2E4", 23, 235.4, 14.5, TRUE, FALSE, "EV3");
+    cairo_new_path(cr);
 
     cairo_restore(cr);
 }

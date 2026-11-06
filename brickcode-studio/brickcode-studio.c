@@ -41,8 +41,9 @@
 #include <stdlib.h>
 
 #define APP_NAME     "BrickCode Studio"
-#define APP_VERSION  "2.3.3"
+#define APP_VERSION  "2.4.0"
 #define BLOCKS_HTML  "brickcode-blocks.html"
+#define PYBRICKS_HTML "pybricks-blocks.html"
 #define APP_FONT_FILE "Orbitron-ExtraBold.ttf"
 /* fontconfig exposes the typographic family, not the file name: the
  * ExtraBold face reports family "Orbitron" with style "ExtraBold",
@@ -707,8 +708,12 @@ static char *find_data_file(const char *subdir, const char *name,
     return found;
 }
 
-static char *blocks_html_path(void) {
-    return find_data_file("blocks", BLOCKS_HTML, "BRICKCODE_BLOCKS");
+static char *blocks_html_path(const char *file) {
+    char *p = find_data_file("blocks", file, "BRICKCODE_BLOCKS");
+    /* Installed, both editors sit in blocks/. In the source tree the EV3 one
+     * lives in its own folder beside it. */
+    if (!p) p = find_data_file("pybricks", file, NULL);
+    return p;
 }
 
 /* Orbitron, for the wordmark. Added to this process only, so it never
@@ -740,15 +745,28 @@ static void open_uri_cb(GtkButton *btn, gpointer user_data) {
     launch_uri(st, g_object_get_data(G_OBJECT(btn), "uri"));
 }
 
-static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
-    AppState *st = user_data;
-    char *path = blocks_html_path();
+/* Both editors are pages that ship beside the app and open in the browser;
+ * what differs is the file, a fragment the page can read, and what to tell
+ * the person once it is open. */
+static void open_editor(AppState *st, const char *file, const char *fragment,
+                        const char *opened) {
+    char *path = blocks_html_path(file);
     if (!path) {
-        log_output(st, "Block editor not found. It installs next to the app, "
-                       "as share/brickcode-studio/blocks/" BLOCKS_HTML
-                       " - or point BRICKCODE_BLOCKS at the folder holding it.",
-                   "err");
+        char *msg = g_strdup_printf(
+            "Block editor not found. It installs next to the app, as "
+            "share/brickcode-studio/blocks/%s - or point BRICKCODE_BLOCKS at "
+            "the folder holding it.", file);
+        log_output(st, msg, "err");
+        g_free(msg);
         return;
+    }
+
+    /* Running from the source tree the page is found by a relative path, and
+     * a file URI has to be absolute. */
+    if (!g_path_is_absolute(path)) {
+        char *abs = g_canonicalize_filename(path, NULL);
+        g_free(path);
+        path = abs;
     }
 
     GError *error = NULL;
@@ -760,10 +778,11 @@ static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
         g_free(path);
         return;
     }
-    /* The page reads this and comes up on the same language as the toolbar.
-     * If an opener ever drops the fragment the editor simply starts on NQC
-     * and its own switch still works, so this can only ever be a nicety. */
-    char *full = g_strconcat(uri, st->mode == MODE_NQC ? "#nqc" : "#nxc", NULL);
+    /* The NQC/NXC page reads the fragment and comes up on the same language
+     * as the toolbar. If an opener ever drops it the editor simply starts on
+     * NQC and its own switch still works, so this can only ever be a
+     * nicety. */
+    char *full = g_strconcat(uri, fragment ? fragment : "", NULL);
 
 #ifdef __APPLE__
     char *argv[] = { "open", full, NULL };
@@ -772,8 +791,7 @@ static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
 #endif
     if (g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
                       NULL, NULL, NULL, &error)) {
-        log_output(st, "Block editor opened in your browser. Build the program "
-                       "there, press Save, then open the file here.", "info");
+        log_output(st, opened, "info");
     } else {
         log_output(st, error ? error->message
                              : "Could not launch a browser for the block editor.",
@@ -783,6 +801,24 @@ static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
     g_free(full);
     g_free(uri);
     g_free(path);
+}
+
+static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    (void) btn;
+    open_editor(st, BLOCKS_HTML, st->mode == MODE_NQC ? "#nqc" : "#nxc",
+                "Block editor opened in your browser. Build the program "
+                "there, press Save, then open the file here.");
+}
+
+/* The EV3 editor only writes Python. Getting it onto the brick is done in
+ * Pybricks, so there is nothing to save and open back here. */
+static void open_pybricks_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    (void) btn;
+    open_editor(st, PYBRICKS_HTML, NULL,
+                "Pybricks block editor opened in your browser. Build the "
+                "program there, press Copy Python, then paste it into Pybricks.");
 }
 
 static void open_file_cb(GtkButton *btn, gpointer user_data) {
@@ -2370,6 +2406,7 @@ static void apply_omarchy_style(AppState *st) {
         ".bcard-rcx   { background-image: linear-gradient(160deg, #7C369A, #501836); }"
         ".bcard-scout { background-image: linear-gradient(160deg, #5C355E, #671646); }"
         ".bcard-nxt   { background-image: linear-gradient(160deg, #0F9C93, #331528); }"
+        ".bcard-ev3   { background-image: linear-gradient(160deg, #C4502C, #4A1B2A); }"
         ".bc-lang { color: alpha(#FFFFFF,0.80); font-size: 11px; font-weight: bold; letter-spacing: 2px; }"
         ".bc-name { font-family: \"" APP_FONT "\", sans-serif; color: #FFFFFF; "
 "  font-size: 26px; font-weight: bold; letter-spacing: 1px; }"
@@ -4108,8 +4145,12 @@ static void nav_clicked_cb(GtkButton *b, gpointer user_data) {
 
 typedef struct { AppState *st; int mode; int target; } BrickPick;
 
+/* The EV3 has no code screen here: its card goes straight to the editor. */
+#define BRICK_PYBRICKS 99
+
 static void brick_picked_cb(GtkButton *b, gpointer data) {
     BrickPick *p = data;
+    if (p->mode == BRICK_PYBRICKS) { open_pybricks_cb(b, p->st); return; }
     /* One click answers what the toolbar switch and the Target dropdown
      * used to ask separately. */
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(p->st->seg_btn[p->mode]), TRUE);
@@ -4201,6 +4242,9 @@ static GtkWidget *home_screen(AppState *st) {
         "Built-in light sensor  ·  stand-alone", bk_draw_scout, MODE_NQC, 3));
     gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-nxt", "NXC", "NXT",
         "USB or Bluetooth  ·  encoders", bk_draw_nxt, MODE_NXC, -1));
+    gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-ev3", "PYBRICKS", "EV3",
+        "Blocks only  ·  paste the Python into Pybricks", bk_draw_ev3,
+        BRICK_PYBRICKS, -1));
     gtk_box_append(GTK_BOX(page), row);
     return page;
 }
@@ -4592,6 +4636,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(file_list), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
     gtk_box_append(GTK_BOX(file_list), menu_item("Block editor…",
                                                  G_CALLBACK(open_blocks_cb), st, file_pop));
+    gtk_box_append(GTK_BOX(file_list), menu_item("Pybricks block editor (EV3)…",
+                                                 G_CALLBACK(open_pybricks_cb), st, file_pop));
     gtk_popover_set_child(GTK_POPOVER(file_pop), file_list);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(kebab), file_pop);
     gtk_box_append(GTK_BOX(tab), st->badge_label);

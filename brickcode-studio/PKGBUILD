@@ -1,6 +1,6 @@
 # Maintainer: Jim Bolaños
 pkgname=brickcode-studio
-pkgver=2.3.3
+pkgver=2.4.0
 pkgrel=1
 pkgdesc="Native GTK4 editor for NQC (RCX/Scout) and NXC (NXT) programming"
 arch=('x86_64')
@@ -12,12 +12,12 @@ optdepends=('nqc: needed for NQC mode (RCX, Scout, Spybotics)')
 conflicts=('lego-brick-ide' 'nxc-ide' 'classicbrick-studio')
 replaces=('lego-brick-ide' 'nxc-ide' 'classicbrick-studio')
 source=("brickcode-studio.c" "nqc_tables.inc" "i18n_es.inc"
-        "../blocks/brickcode-blocks.html"
+        "../blocks/brickcode-blocks.html" "../pybricks/pybricks-blocks.html"
         "Orbitron-ExtraBold.ttf" "Orbitron-OFL.txt"
         "brickcode-studio.desktop" "brickcode-studio.svg"
         icon-48.png icon-64.png icon-128.png icon-256.png icon-512.png)
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP')
+            'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 build() {
     cd "$srcdir"
@@ -41,6 +41,8 @@ package() {
     install -Dm644 icon-128.png "$pkgdir/usr/share/pixmaps/brickcode-studio.png"
     install -Dm644 brickcode-blocks.html \
         "$pkgdir/usr/share/brickcode-studio/blocks/brickcode-blocks.html"
+    install -Dm644 pybricks-blocks.html \
+        "$pkgdir/usr/share/brickcode-studio/blocks/pybricks-blocks.html"
     install -Dm644 Orbitron-ExtraBold.ttf \
         "$pkgdir/usr/share/brickcode-studio/fonts/Orbitron-ExtraBold.ttf"
     install -Dm644 Orbitron-OFL.txt \

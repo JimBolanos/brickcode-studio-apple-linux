@@ -334,3 +334,14 @@ It writes **NQC** for the RCX and Scout or **NXC** for the NXT, and the switch a
 **Programs keep their blocks.** Saving writes the workspace into the file as a comment at the end, and **Open** reads it back, so a program made here opens again as blocks and you carry on where you left off. A `.nqc` or `.nxc` written anywhere else is shown as code, with the page saying so: blocks cannot be rebuilt from text, since the same code can come from many different arrangements.
 
 Both compilers ignore that comment. Measured: the `.rcx` and `.rxe` they produce are byte for byte the same with and without it.
+
+
+### The EV3 editor
+
+The fourth card on the dashboard is the **EV3**, and it works differently from the other three: there is no code screen and nothing is compiled or sent from here. Its card (or **File → Pybricks block editor (EV3)…**) opens a second block editor in your browser, `pybricks-blocks.html`, that writes **Pybricks Python** for the EV3. You copy the Python with **Copy Python** and paste it into Pybricks yourself.
+
+It is laid out the way Pybricks' own editor is. A **set up** block at the top names every device once (the brick, each motor with its port, each sensor with its port, a drive base), and every other block then picks a device from a list of those names, so `arm1.run_angle(...)` says what it does and two motors of one kind cannot be mixed up. Rename a device and every block that uses it follows. The EV3 sensors (touch, colour, gyro, ultrasonic, infrared) and the NXT ones (touch, light, colour, sound, ultrasonic) are both there.
+
+A block that points at a device that is not in the set up, two devices on one port, or two with one name get a warning triangle, and the generated file says so in an `# ERROR:` line at the top.
+
+The EV3 is not supported by code.pybricks.com. Paste the Python into **labs.pybricks.com** over USB, or save it as `main.py` for the ev3dev build. The editor is English only for now.
