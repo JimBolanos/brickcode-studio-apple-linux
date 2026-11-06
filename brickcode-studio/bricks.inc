@@ -82,6 +82,21 @@ static void bk_begin(cairo_t *cr, int w, int h, double dw, double dh) {
     cairo_scale(cr, s, s);
 }
 
+/* The four bricks are different shapes, so fitting each one to the card by
+ * its own box made them different sizes: the EV3 (tall and narrow) came out
+ * the biggest and the NXT the smallest. This scales each drawing so its
+ * height is the same, BK_H design units, whatever the shape, and centres it.
+ * x0..x1 and y0..y1 are what the drawing actually covers, measured, not the
+ * round numbers it was laid out in. */
+#define BK_H 266.0
+static void bk_begin_n(cairo_t *cr, int w, int h,
+                       double x0, double x1, double y0, double y1) {
+    double s = MIN(w / 210.0, h / 272.0) * BK_SCALE * (BK_H / (y1 - y0));
+    cairo_translate(cr, w / 2.0, h / 2.0);
+    cairo_scale(cr, s, s);
+    cairo_translate(cr, -(x0 + x1) / 2, -(y0 + y1) / 2);
+}
+
 /* The app's own icon, the same shapes as brickcode-studio.svg, drawn here
  * so the masthead needs neither librsvg nor an installed image file. */
 static void bk_ellipse(cairo_t *cr, const char *hex,
@@ -140,7 +155,7 @@ static void bk_draw_logo(cairo_t *cr, int w, int h) {
 /* ------------------------------------------------------------------ RCX */
 static void bk_draw_rcx(cairo_t *cr, int w, int h) {
     cairo_save(cr);
-    bk_begin(cr, w, h, 210, 272);
+    bk_begin_n(cr, w, h, 6, 204, 1.9, 266);
 
     bk_fill(cr, "#C9A510", 6, 6, 198, 260, 13);      /* the edge below */
     bk_fill(cr, "#F4C81B", 6, 2, 198, 260, 13);      /* the yellow face */
@@ -214,7 +229,7 @@ static void bk_draw_rcx(cairo_t *cr, int w, int h) {
 /* ---------------------------------------------------------------- Scout */
 static void bk_draw_scout(cairo_t *cr, int w, int h) {
     cairo_save(cr);
-    bk_begin(cr, w, h, 214, 290);
+    bk_begin_n(cr, w, h, 5.8, 208.2, 0, 286.2);
 
     bk_fill(cr, "#123A7A", 6, 10, 202, 276, 14);
     bk_fill(cr, "#1B50AE", 6, 6,  202, 276, 14);
@@ -298,7 +313,7 @@ static void bk_draw_scout(cairo_t *cr, int w, int h) {
 /* ------------------------------------------------------------------ NXT */
 static void bk_draw_nxt(cairo_t *cr, int w, int h) {
     cairo_save(cr);
-    bk_begin(cr, w, h, 206, 268);
+    bk_begin_n(cr, w, h, 3.8, 202.2, 0, 266.1);
 
     bk_fill(cr, "#86888C", 20, 0, 166, 26, 5);       /* A B C and USB */
     bk_text(cr, "#2E3034", 42,  16, 9, TRUE, FALSE, "A");
@@ -380,12 +395,7 @@ static void bk_glow(cairo_t *cr, double cx, double cy, double r) {
 
 static void bk_draw_ev3(cairo_t *cr, int w, int h) {
     cairo_save(cr);
-    /* The brick is taller and narrower than the other three, so fitting it
-     * to the card by its own width left it about 11% taller than them. The
-     * design box is padded to 196 x 283 and the drawing is set back in its
-     * middle, which puts its height level with the NXT's. */
-    bk_begin(cr, w, h, 196, 283);
-    cairo_translate(cr, 10, 14.5);
+    bk_begin_n(cr, w, h, 6, 170, 0, 254);
 
     /* the ridges either side, behind the body */
     bk_fill(cr, "#E4E5E7", 6,   49, 14, 159, 3);
