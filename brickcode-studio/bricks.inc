@@ -380,7 +380,12 @@ static void bk_glow(cairo_t *cr, double cx, double cy, double r) {
 
 static void bk_draw_ev3(cairo_t *cr, int w, int h) {
     cairo_save(cr);
-    bk_begin(cr, w, h, 176, 254);
+    /* The brick is taller and narrower than the other three, so fitting it
+     * to the card by its own width left it about 11% taller than them. The
+     * design box is padded to 196 x 283 and the drawing is set back in its
+     * middle, which puts its height level with the NXT's. */
+    bk_begin(cr, w, h, 196, 283);
+    cairo_translate(cr, 10, 14.5);
 
     /* the ridges either side, behind the body */
     bk_fill(cr, "#E4E5E7", 6,   49, 14, 159, 3);

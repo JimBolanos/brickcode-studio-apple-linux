@@ -35,6 +35,9 @@ All notable changes to BrickCode Studio. Dates are release dates.
   found the page by a relative path, and a `file://` address has to be
   absolute, so the click only logged an error. Installed copies were never
   affected.
+- **The EV3 on the dashboard was about 11% taller than the other three
+  bricks.** It is a taller, narrower brick, and fitting it to the card by its
+  own width let it grow. Its drawing now stands level with the NXT's.
 
 ### Changed
 - The dashboard screenshot in the README was stale; it is regenerated, with the
