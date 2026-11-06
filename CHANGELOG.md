@@ -41,8 +41,9 @@ All notable changes to BrickCode Studio. Dates are release dates.
   height, whatever the shape of the card, and the widths stay natural. The
   cards were also different widths (the EV3 footer line is the longest), and
   the drawing grows with the card, so the row is now homogeneous.
-- The EV3 card uses the NXT card's kind of gradient, a bright colour fading
-  to the same deep wine at the bottom.
+- The dashboard cards use blended gradients of three or four colours (violet to
+  magenta to wine, teal to indigo, red to magenta to purple) instead of two-colour
+  fades, which is closer to the look of the original MINDSTORMS home screen.
 
 ### Changed
 - The dashboard screenshot in the README was stale; it is regenerated, with the
