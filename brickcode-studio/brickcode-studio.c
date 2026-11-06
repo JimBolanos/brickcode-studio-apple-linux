@@ -2406,7 +2406,7 @@ static void apply_omarchy_style(AppState *st) {
         ".bcard-rcx   { background-image: linear-gradient(160deg, #7C369A, #501836); }"
         ".bcard-scout { background-image: linear-gradient(160deg, #5C355E, #671646); }"
         ".bcard-nxt   { background-image: linear-gradient(160deg, #0F9C93, #331528); }"
-        ".bcard-ev3   { background-image: linear-gradient(160deg, #C4502C, #4A1B2A); }"
+        ".bcard-ev3   { background-image: linear-gradient(160deg, #D14A2E, #331528); }"
         ".bc-lang { color: alpha(#FFFFFF,0.80); font-size: 11px; font-weight: bold; letter-spacing: 2px; }"
         ".bc-name { font-family: \"" APP_FONT "\", sans-serif; color: #FFFFFF; "
 "  font-size: 26px; font-weight: bold; letter-spacing: 1px; }"
@@ -4236,6 +4236,10 @@ static GtkWidget *home_screen(AppState *st) {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
     gtk_widget_add_css_class(row, "home-row");
     gtk_widget_set_vexpand(row, TRUE);
+    /* Without this each card is as wide as its footer line wants, the EV3's
+     * being the longest, and the drawing inside grows with the card's width:
+     * the four bricks came out four different sizes. */
+    gtk_box_set_homogeneous(GTK_BOX(row), TRUE);
     gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-rcx", "NQC", "RCX",
         "USB tower  ·  3 sensors, 3 motors", bk_draw_rcx, MODE_NQC, 0));
     gtk_box_append(GTK_BOX(row), brick_card(st, "bcard-scout", "NQC", "SCOUT",

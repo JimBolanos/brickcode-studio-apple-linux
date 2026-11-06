@@ -38,7 +38,11 @@ All notable changes to BrickCode Studio. Dates are release dates.
 - **The four bricks on the dashboard were not the same size.** Each drawing
   was fitted to the card by its own box, so the EV3 (tall and narrow) came
   out biggest and the NXT smallest. All four are now scaled to the same
-  height, whatever the shape of the card, and the widths stay natural.
+  height, whatever the shape of the card, and the widths stay natural. The
+  cards were also different widths (the EV3 footer line is the longest), and
+  the drawing grows with the card, so the row is now homogeneous.
+- The EV3 card uses the NXT card's kind of gradient, a bright colour fading
+  to the same deep wine at the bottom.
 
 ### Changed
 - The dashboard screenshot in the README was stale; it is regenerated, with the
