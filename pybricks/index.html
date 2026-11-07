@@ -208,7 +208,7 @@
   /* The MINDSTORMS Robot Inventor palette, the same values the NQC/NXC
      editor uses, so the two look like one family. */
   var C_EVENT = "#F3BC00", C_MOTOR = "#0085F3", C_MOVE  = "#FA4FC7",
-      C_SOUND = "#B765E3", C_CTRL  = "#FFAC15", C_SENSE = "#1BC5EE",
+      C_SOUND = "#B765E3", C_CTRL  = "#FFAC15", C_SENSE = "#1BC5EE", C_BT = "#14B8A6",
       C_OPS   = "#00B044", C_VAR   = "#FF8D2F", C_MYB   = "#FD4B52",
       C_DISP  = "#8B49FC", C_SETUP = "#6E7B91";
 
@@ -258,6 +258,7 @@
   var COLORS = [["black", "BLACK"], ["blue", "BLUE"], ["green", "GREEN"],
                 ["yellow", "YELLOW"], ["red", "RED"], ["white", "WHITE"],
                 ["brown", "BROWN"], ["none", "NONE"]];
+  var BT_CHANNELS = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"]];
   var BUTTONS = [["centre", "CENTER"], ["left", "LEFT"], ["right", "RIGHT"],
                  ["up", "UP"], ["down", "DOWN"]];
 
@@ -699,6 +700,28 @@
       output: "Number", colour: C_SENSE,
       tooltip: "0 is closest, 100 is farthest. Not millimetres." },
 
+    /* ------------------------------------------------------- Bluetooth */
+    { type: "pb_bt_wait", message0: "wait for the other EV3 to connect",
+      previousStatement: null, nextStatement: null, colour: C_BT,
+      tooltip: "Use this on the EV3 that starts first. The two EV3s have to be paired in Bluetooth beforehand (not connected)." },
+    { type: "pb_bt_join", message0: "connect to the EV3 named %1",
+      args0: [{ type: "field_input", name: "NAME", text: "ev3dev" }],
+      previousStatement: null, nextStatement: null, colour: C_BT,
+      tooltip: "Use this on the second EV3, after the first one is already waiting. ev3dev is the usual name of an EV3." },
+    { type: "pb_bt_send", message0: "send number %1 on channel %2",
+      args0: [{ type: "input_value", name: "NUM", check: "Number" },
+              { type: "field_dropdown", name: "CH", options: BT_CHANNELS }],
+      inputsInline: true, previousStatement: null, nextStatement: null, colour: C_BT,
+      tooltip: "The other EV3 reads it on the same channel. Connect first." },
+    { type: "pb_bt_last", message0: "last number received on channel %1",
+      args0: [{ type: "field_dropdown", name: "CH", options: BT_CHANNELS }],
+      output: "Number", colour: C_BT,
+      tooltip: "The newest number the other EV3 sent on this channel, or 0 if nothing has arrived yet." },
+    { type: "pb_bt_new", message0: "wait for a new number on channel %1",
+      args0: [{ type: "field_dropdown", name: "CH", options: BT_CHANNELS }],
+      output: "Number", colour: C_BT,
+      tooltip: "Holds the program until the other EV3 sends a number different from the last one, then gives that number." },
+
     /* --------------------------------------------------------- Control */
     { type: "pb_wait_s", message0: "wait %1 seconds",
       args0: [{ type: "input_value", name: "SEC", check: "Number" }],
@@ -845,7 +868,8 @@
    "float abs min max move_speed Motor DriveBase Car EV3Brick TouchSensor ColorSensor " +
    "UltrasonicSensor GyroSensor InfraredSensor LightSensor SoundSensor " +
    "NXTTouchSensor NXTLightSensor NXTColorSensor NXTSoundSensor " +
-   "NXTUltrasonicSensor").split(" ").forEach(function (w) { RESERVED[w] = true; });
+   "NXTUltrasonicSensor bt_link bt_boxes bt_box bt_last BluetoothMailboxServer " +
+   "BluetoothMailboxClient NumericMailbox").split(" ").forEach(function (w) { RESERVED[w] = true; });
 
   function isDev(b) { return /^pb_dev_/.test(b.type); }
   function kindOf(b) { return b.type.slice(7); }
@@ -1062,7 +1086,7 @@
   });
 
   var devs, refs, needs, usesEv3, brickName, theWs, funcs;
-  var autoPorts, base, baseUsed, setupBase, picsDone, hasSpeed;
+  var autoPorts, base, baseUsed, setupBase, picsDone, hasSpeed, btUsed, btLinked, btHelpers;
 
   /* The declarations are read straight off the blocks here, not as the
      program is walked: blocks are visited top to bottom on the page, and a
@@ -1072,6 +1096,7 @@
     needs = { Port: true };
     usesEv3 = false; brickName = "ev3"; devs = [];
     autoPorts = {}; baseUsed = false; picsDone = {}; hasSpeed = false;
+    btUsed = false; btLinked = false; btHelpers = false;
     base = { pair: "BC", wheel: 56, axle: 114, name: "robot" };
     var setBase = false;
     w.getAllBlocks(true).forEach(function (b) {
@@ -1206,6 +1231,9 @@
       else carOk[x.name] = true;
     });
 
+    if (btUsed && !btLinked)
+      err("the Bluetooth blocks need \u201cwait for the other EV3 to connect\u201d or \u201cconnect to the EV3 named\u201d first.");
+
     /* imports, each one only if something below actually uses it */
     var imp = {};
     list.forEach(function (x) {
@@ -1225,6 +1253,11 @@
     head += "from pybricks.parameters import " + par.join(", ") + "\n";
     if (needs.ImageFile) head += "from pybricks.media.ev3dev import ImageFile\n";
     if (needs.wait) head += "from pybricks.tools import wait\n";
+    var msg = [];
+    if (needs.btServer) msg.push("BluetoothMailboxServer");
+    if (needs.btClient) msg.push("BluetoothMailboxClient");
+    if (needs.btBox) msg.push("NumericMailbox");
+    if (msg.length) head += "from pybricks.messaging import " + msg.join(", ") + "\n";
     if (imp.robotics) head += "from pybricks.robotics import " +
                               Object.keys(imp.robotics).sort().join(", ") + "\n";
     if (needs.random) head += "from urandom import randint\n";
@@ -1758,6 +1791,44 @@
     return [ref(b) + ".speed()", py.ORDER_ATOMIC]; };
   py.forBlock["pb_gyro_reset"] = function (b, g) {
     return ref(b) + ".reset_angle(" + num(b, g, "ANGLE", 0) + ")\n"; };
+  /* ---- Bluetooth: the Pybricks mailboxes, numbers only ---- */
+  function btHelpers_() {
+    btUsed = true; need("btBox");
+    if (btHelpers) return;
+    btHelpers = true;
+    funcs.push("bt_boxes = {}\n" +
+      "def bt_box(channel):\n" +
+      py.INDENT + "if channel not in bt_boxes:\n" +
+      py.INDENT + py.INDENT + "bt_boxes[channel] = NumericMailbox(\"channel\" + str(channel), bt_link)\n" +
+      py.INDENT + "return bt_boxes[channel]\n" +
+      "def bt_last(channel):\n" +
+      py.INDENT + "value = bt_box(channel).read()\n" +
+      py.INDENT + "if value is None:\n" +
+      py.INDENT + py.INDENT + "return 0\n" +
+      py.INDENT + "return value\n");
+  }
+  py.forBlock["pb_bt_wait"] = function () {
+    need("btServer"); btLinked = true;
+    return "bt_link = BluetoothMailboxServer()\nbt_link.wait_for_connection()\n";
+  };
+  py.forBlock["pb_bt_join"] = function (b) {
+    need("btClient"); btLinked = true;
+    var name = String(b.getFieldValue("NAME") || "ev3dev")
+                 .replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return "bt_link = BluetoothMailboxClient()\nbt_link.connect(\"" + name + "\")\n";
+  };
+  py.forBlock["pb_bt_send"] = function (b, g) {
+    btHelpers_();
+    return "bt_box(" + b.getFieldValue("CH") + ").send(" + num(b, g, "NUM", 0) + ")\n";
+  };
+  py.forBlock["pb_bt_last"] = function (b) {
+    btHelpers_();
+    return ["bt_last(" + b.getFieldValue("CH") + ")", py.ORDER_ATOMIC];
+  };
+  py.forBlock["pb_bt_new"] = function (b) {
+    btHelpers_();
+    return ["bt_box(" + b.getFieldValue("CH") + ").wait_new()", py.ORDER_ATOMIC];
+  };
   py.forBlock["pb_infra"] = function (b) {
     return [ref(b) + ".distance()", py.ORDER_ATOMIC]; };
   py.forBlock["pb_sound_level"] = function (b) {
@@ -1953,6 +2024,16 @@
       { kind: "block", type: "pb_gyro_reset", inputs: { ANGLE: sh(0) } },
       { kind: "block", type: "pb_infra" },
       { kind: "block", type: "pb_sound_level" }
+    ]},
+    { kind: "category", name: "Bluetooth", colour: C_BT, contents: [
+      { kind: "label", text: "first EV3" },
+      { kind: "block", type: "pb_bt_wait" },
+      { kind: "label", text: "second EV3" },
+      { kind: "block", type: "pb_bt_join" },
+      { kind: "label", text: "both" },
+      { kind: "block", type: "pb_bt_send", inputs: { NUM: sh(42) } },
+      { kind: "block", type: "pb_bt_last" },
+      { kind: "block", type: "pb_bt_new" }
     ]},
     { kind: "category", name: "Operators", colour: C_OPS, contents: [
       { kind: "block", type: "pb_number" },

@@ -418,6 +418,26 @@ CASES = [
       ["rgb", "S3"], ["screen_print", "0"],
       ["nxt_rgb", "S1"], ["screen_print", "0"]]),
 
+    ("bluetooth server",
+     [dev("brick", "ev3")],
+     chain(blk("pb_bt_wait"),
+           blk("pb_bt_send", {"CH": "2"}, {"NUM": 42}),
+           pr(blk("pb_bt_last", {"CH": "2"})),
+           pr(blk("pb_bt_last", {"CH": "3"})),
+           pr(blk("pb_bt_new", {"CH": "2"}))),
+     [["EV3Brick"], ["BluetoothMailboxServer"], ["wait_for_connection", 1],
+      ["NumericMailbox", "channel2"], ["mbox_send", "channel2", 42],
+      ["mbox_read", "channel2"], ["screen_print", "42"],
+      ["NumericMailbox", "channel3"], ["mbox_read", "channel3"], ["screen_print", "0"],
+      ["mbox_wait_new", "channel2"], ["screen_print", "42"]]),
+
+    ("bluetooth client",
+     [dev("brick", "ev3")],
+     chain(blk("pb_bt_join", {"NAME": "ev3dev"}),
+           blk("pb_bt_send", {"CH": "1"}, {"NUM": 7})),
+     [["EV3Brick"], ["BluetoothMailboxClient"], ["connect", "ev3dev"],
+      ["NumericMailbox", "channel1"], ["mbox_send", "channel1", 7]]),
+
     ("EV3 and NXT touch together",
      [dev("brick", "ev3"), dev("touch", "front", "S1"),
       dev("ntouch", "back", "S2")],
@@ -433,6 +453,20 @@ CASES = [
 # Running these against the stubs would hang, so the source is read instead.
 # (name, devices, body, must contain, must not contain)
 TEXT_CASES = [
+    ("bluetooth imports and names", [dev("brick", "ev3")],
+     chain(blk("pb_bt_wait"), blk("pb_bt_send", {"CH": "1"}, {"NUM": 3})),
+     ["from pybricks.messaging import BluetoothMailboxServer, NumericMailbox",
+      "bt_link = BluetoothMailboxServer()", "bt_link.wait_for_connection()",
+      "bt_box(1).send(3)"], ["BluetoothMailboxClient"]),
+
+    ("bluetooth without connecting", [dev("brick", "ev3")],
+     blk("pb_bt_send", {"CH": "1"}, {"NUM": 3}),
+     ["# ERROR: the Bluetooth blocks need"], []),
+
+    ("bluetooth name with a quote", [dev("brick", "ev3")],
+     blk("pb_bt_join", {"NAME": 'my "bot"'}),
+     ['bt_link.connect("my \\"bot\\"")'], []),
+
     # A sum in the speed stays a sum, without doubled brackets.
     ("speed from a sum", [],
      '<block type="pb_motor_on"><field name="PORT">B</field><value name="PCT">'

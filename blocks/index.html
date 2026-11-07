@@ -249,7 +249,7 @@
       C_MOTOR = "#0085F3",   // Motors
       C_MOVE  = "#FA4FC7",   // Movement
       C_SOUND = "#B765E3",   // Sound
-      C_IR    = "#14B8A6",   // IR Messages (RCX)
+      C_IR    = "#14B8A6",   // IR Messages (RCX) and Bluetooth (NXT)
       C_CTRL  = "#FFAC15",   // Control
       C_SENSE = "#1BC5EE",   // Sensors
       C_OPS   = "#00B044",   // Operators
@@ -298,6 +298,8 @@
     ["green", "INPUT_GREENCOLOR"], ["yellow", "INPUT_YELLOWCOLOR"],
     ["red", "INPUT_REDCOLOR"], ["white", "INPUT_WHITECOLOR"]
   ];
+  var NXT_CHANNELS = [["1", "MAILBOX1"], ["2", "MAILBOX2"], ["3", "MAILBOX3"],
+                      ["4", "MAILBOX4"], ["5", "MAILBOX5"]];
   var NXT_UNITS = [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]];
   var NXT_LINES = (function () {
     var a = [];
@@ -663,6 +665,28 @@
     { type: "nxt_sound_stop", message0: "stop all sounds",
       previousStatement: null, nextStatement: null, colour: C_SOUND },
 
+    // ---- Bluetooth (NXT to NXT) ----
+    { type: "nxt_bt_role", message0: "Bluetooth: this NXT is the %1",
+      args0: [{ type: "field_dropdown", name: "ROLE",
+                options: [["leader", "LEADER"], ["follower", "FOLLOWER"]] }],
+      previousStatement: null, nextStatement: null, colour: C_IR,
+      tooltip: "Put this block once in the program. The leader is the NXT that makes the connection: on its screen open Bluetooth, search for the other NXT and connect it on line 1. The other NXT is the follower and waits." },
+
+    { type: "nxt_bt_connected", message0: "Bluetooth connected?",
+      output: "Boolean", colour: C_IR,
+      tooltip: "True while the two NXTs are connected" },
+
+    { type: "nxt_bt_send", message0: "send number %1 on channel %2",
+      args0: [{ type: "input_value", name: "NUM", check: "Number" },
+              { type: "field_dropdown", name: "CH", options: NXT_CHANNELS }],
+      inputsInline: true, previousStatement: null, nextStatement: null, colour: C_IR,
+      tooltip: "The other NXT reads it on the same channel. A follower should answer only after the leader asked, a few at a time." },
+
+    { type: "nxt_bt_last", message0: "last number received on channel %1",
+      args0: [{ type: "field_dropdown", name: "CH", options: NXT_CHANNELS }],
+      output: "Number", colour: C_IR,
+      tooltip: "The newest number from the other NXT on this channel, or 0 if none has come yet. Ask for it again every little while (with a short wait): it does not arrive by itself." },
+
     // ---- Sensors: only what came in the NXT set ----
     { type: "nxt_setsensor", message0: "set sensor %1 as %2",
       args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS },
@@ -992,10 +1016,13 @@
     return code;
   };
 
-  var usedTimer = false, picsDone = {};
+  var usedTimer = false, picsDone = {}, btRole = "LEADER", btNumbers = false;
   nxc.init = function (w) {
     theWs = w; extraTasks = []; taskSeq = 0; nxtPair = "BC"; usedTimer = false;
-    picsDone = {};
+    picsDone = {}; btNumbers = false; btRole = "LEADER";
+    // the first Bluetooth role block on the page decides, wherever it sits
+    var roles = w.getBlocksByType ? w.getBlocksByType("nxt_bt_role", false) : [];
+    if (roles.length) btRole = roles[0].getFieldValue("ROLE");
   };
   nxc.finish = function (code) {
     var names = [], i;
@@ -1008,6 +1035,7 @@
     var head = "";
     // The NXT has room for far more than the RCX's 32, so no warning here.
     if (usedTimer) head += "long __t0;   // the timer block measures from here\n";
+    if (btNumbers) head += "long __btNum[10];   // the last number received on each Bluetooth channel\n";
     for (i = 0; i < names.length; i++) head += "int " + names[i] + ";\n";
     if (head) head += "\n";
     // Measured against nbc: NXC wants a function defined before it is called
@@ -1341,6 +1369,30 @@
   };
   nxc.forBlock["nxt_sound_stop"] = function () { return "StopSound();\n"; };
 
+  // ---- Bluetooth ----
+  // The leader writes to connection 1 and reads what the follower queued; the
+  // follower answers in a response mailbox and reads what the leader wrote.
+  nxc.forBlock["nxt_bt_role"] = function (b) {
+    return "// Bluetooth: this NXT is the " + b.getFieldValue("ROLE").toLowerCase() + "\n";
+  };
+  nxc.forBlock["nxt_bt_connected"] = function () {
+    return ["(BluetoothStatus(" + (btRole === "LEADER" ? 1 : 0) + ") == NO_ERR)", NONE];
+  };
+  nxc.forBlock["nxt_bt_send"] = function (b, g) {
+    var v = g.valueToCode(b, "NUM", NONE) || "0", q = b.getFieldValue("CH");
+    return (btRole === "LEADER" ? "SendRemoteNumber(1, " + q + ", " + v + ");\n"
+                                : "SendResponseNumber(" + q + ", " + v + ");\n");
+  };
+  nxc.forBlock["nxt_bt_last"] = function (b) {
+    if (!btNumbers) {
+      btNumbers = true;
+      extraTasks.push("long __btLast(byte q)\n{\n    long v;\n" +
+        "    if (ReceiveRemoteNumber(q, true, v) == NO_ERR) __btNum[q] = v;\n" +
+        "    return __btNum[q];\n}\n");
+    }
+    return ["__btLast(" + b.getFieldValue("CH") + ")", ATOMIC];
+  };
+
   // ---- Sensors ----
   nxc.forBlock["nxt_setsensor"] = function (b) {
     var n = b.getFieldValue("S"), t = b.getFieldValue("T");
@@ -1496,6 +1548,12 @@
       { kind: "label", text: "Draw your own" },
       { kind: "block", type: "nxt_draw_pixel" }, { kind: "block", type: "nxt_draw_line" },
       { kind: "block", type: "nxt_draw_box" }, { kind: "block", type: "nxt_draw_circle" } ] },
+    { name: "Bluetooth", colour: C_IR, contents: [
+      { kind: "block", type: "nxt_bt_role" }, SEP,
+      { kind: "block", type: "nxt_bt_connected" }, SEP,
+      { kind: "block", type: "nxt_bt_send", inputs: {
+          NUM: { shadow: { type: "math_number", fields: { NUM: 42 } } } } },
+      { kind: "block", type: "nxt_bt_last" } ] },
     { name: "Sound", colour: C_SOUND, contents: [
       { kind: "block", type: "nxt_note" }, { kind: "block", type: "nxt_tone" }, SEP,
       { kind: "block", type: "nxt_sound_stop" } ] },
@@ -1527,7 +1585,7 @@
   // The order Robot Inventor lists them in: the hardware first, Events in
   // the middle, then the programming blocks. Any category not named here keeps
   // its place at the end, so adding one later cannot silently drop it.
-  var ORDER = ["Motors", "Movement", "Display", "Sound", "IR Messages", "Events", "Control",
+  var ORDER = ["Motors", "Movement", "Display", "Sound", "IR Messages", "Bluetooth", "Events", "Control",
                "Sensors", "Operators", "Variables", "My Blocks"];
   function inOrder(cats) {
     var out = [], i, j;
@@ -1670,7 +1728,7 @@
 
   // ---- output -------------------------------------------------------------
   var KEYWORDS = /\b(task|repeat|while|until|if|else|true|int|void|sub|start|stop|return)\b/g;
-  var BUILTINS = /\b(OnFwd|OnRev|Off|Coast|SetPower|Wait|PlaySound|PlayTone|StopSound|SetSensor|SetSensorTouch|SetSensorLight|SetSensorSound|SetSensorLowspeed|SetSensorColorFull|SetSensorColorRed|SetSensorType|SetSensorMode|ClearSensor|Sensor|SensorUS|Random|SensorValueRaw|StopAllTasks|RotateMotor|ResetTachoCount|MotorTachoCount|TextOut|NumOut|ClearScreen|LineOut|CircleOut|RectOut|PointOut|ButtonPressed|CurrentTick|Float|On)\b/g;
+  var BUILTINS = /\b(OnFwd|OnRev|Off|Coast|SetPower|Wait|PlaySound|PlayTone|StopSound|SetSensor|SetSensorTouch|SetSensorLight|SetSensorSound|SetSensorLowspeed|SetSensorColorFull|SetSensorColorRed|SendRemoteNumber|SendResponseNumber|ReceiveRemoteNumber|BluetoothStatus|SetSensorType|SetSensorMode|ClearSensor|Sensor|SensorUS|Random|SensorValueRaw|StopAllTasks|RotateMotor|ResetTachoCount|MotorTachoCount|TextOut|NumOut|ClearScreen|LineOut|CircleOut|RectOut|PointOut|ButtonPressed|CurrentTick|Float|On)\b/g;
   var CONSTS = /\b(OUT_[A-Z]+|IN_[0-9]|SOUND_[A-Z_]+|SENSOR_[A-Z0-9_]+|LCD_LINE[0-9]|TONE_[A-Z]+[0-9]|BTN[A-Z]+)\b/g;
 
   function esc(s) {

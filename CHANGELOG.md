@@ -6,6 +6,19 @@ All notable changes to BrickCode Studio. Dates are release dates.
 
 ### Added
 
+- **Bluetooth blocks to make two bricks talk, numbers only.**
+  - EV3 (Pybricks): a Bluetooth category with "wait for the other EV3 to
+    connect" (server), "connect to the EV3 named" (client), "send number on
+    channel" , "last number received on channel" and "wait for a new number
+    on channel" (`pybricks.messaging` mailboxes). The generator adds a warning
+    when sending is used before either connect block.
+  - NXT (NXC): a Bluetooth category with "this NXT is the leader / follower",
+    "Bluetooth connected?", "send number on channel" and "last number received
+    on channel" (`SendRemoteNumber` / `SendResponseNumber` / `ReceiveRemoteNumber`
+    behind a small helper). The leader makes the connection from the NXT's own
+    Bluetooth menu. Compiled with nbc (`nxt_bt`) and run against the Pybricks
+    stubs, but not tried on two real bricks yet.
+
 - **NXT colour, light and sound blocks.** "set sensor as" gains "colour, sees
   colours" (`SetSensorColorFull`) and "colour, as a light sensor"
   (`SetSensorColorRed`). New blocks: "sensor N sees [colour] ?", "light sensor
