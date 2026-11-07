@@ -772,38 +772,42 @@ def main():
         else:
             fail("save and open", "antes:\n%s\ndespues:\n%s" % (before, after))
 
-        # Dropping a Movement block puts the robot in Set up (what the person
-        # sees), once, and not while a program loads
+        # Movement blocks leave Set up alone: the robot is written for you
+        # from "set movement motors" (B+C when the block is left out).
         def drop(types):
             page.evaluate("""(ts) => { ts.forEach(t => {
                 const b = Blockly.getMainWorkspace().newBlock(t); b.initSvg(); b.render(); }); }""", types)
             page.wait_for_timeout(150)
             return page.evaluate("window.__code()")
         load('<xml xmlns="https://developers.google.com/blockly/xml"></xml>')
-        c1 = drop(["pb_go_for"])
-        c2 = drop(["pb_spin_for", "pb_go_start"])
-        if ("left_motor = Motor(Port.B)" in c1 and "right_motor = Motor(Port.C)" in c1
-                and "robot = DriveBase(left_motor, right_motor" in c1
-                and c2.count("DriveBase(") == 1 and c2.count("Motor(Port.B)") == 1):
-            print("%-26s OK     Set up con los dos motores y el drive base, una sola vez" % "movement fills Set up")
+        setups = page.evaluate("""() => Blockly.getMainWorkspace().getAllBlocks(false)
+            .filter(b => b.type === 'pb_setup' || /^pb_dev_/.test(b.type)).length""")
+        c1 = drop(["pb_go_for", "pb_spin_for"])
+        setups2 = page.evaluate("""() => Blockly.getMainWorkspace().getAllBlocks(false)
+            .filter(b => b.type === 'pb_setup' || /^pb_dev_/.test(b.type)).length""")
+        if (setups == 0 and setups2 == 0 and c1.count("DriveBase(") == 1
+                and "motor_b = Motor(Port.B)" in c1 and "motor_c = Motor(Port.C)" in c1):
+            print("%-26s OK     no toca Set up; el robot sale de B+C" % "movement leaves Set up")
         else:
-            fail("movement fills Set up", c1 + "\n----\n" + c2)
-        # an existing Setup block gets it appended; the motors already on B and C are reused
-        load(xml('', [dev("brick", "ev3"), dev("motor", "wheel_l", "B")]))
-        c3 = drop(["pb_move_stop"])
-        if ("wheel_l = Motor(Port.B)" in c3 and "right_motor = Motor(Port.C)" in c3
-                and "DriveBase(wheel_l, right_motor" in c3 and c3.count("Motor(Port.B)") == 1):
-            print("%-26s OK     reusa el motor que ya estaba en B" % "Set up reuses a motor")
+            fail("movement leaves Set up", c1)
+        # the pair chosen in "set movement motors" is the one used
+        load(xml(chain(blk("pb_base_set", {"PAIR": "AD"}),
+                       blk("pb_go_for", {"DIR": "FWD", "UNIT": "SEC"}, {"AMT": 1})),
+                 [dev("brick", "ev3")]))
+        c3 = page.evaluate("window.__code()")
+        if ("motor_a = Motor(Port.A)" in c3 and "motor_d = Motor(Port.D)" in c3
+                and "DriveBase(motor_a, motor_d" in c3 and "Port.B" not in c3):
+            print("%-26s OK     set movement motors A+D" % "set movement motors")
         else:
-            fail("Set up reuses a motor", c3)
-        # nothing is added when a drive base is already there
+            fail("set movement motors", c3)
+        # a drive base from an old project in Set up is still the robot
         load(xml('', [dev("motor", "l", "A"), dev("motor", "r", "D"),
                       dev("drive", "chassis", LEFT="l", RIGHT="r")]))
         c4 = drop(["pb_go_for"])
-        if c4.count("DriveBase(") == 1 and "chassis = DriveBase(l, r" in c4 and "left_motor" not in c4:
-            print("%-26s OK     no agrega otro si ya hay drive base" % "Set up left alone")
+        if c4.count("DriveBase(") == 1 and "chassis = DriveBase(l, r" in c4 and "motor_b" not in c4:
+            print("%-26s OK     un drive base viejo en Set up sigue mandando" % "old drive base kept")
         else:
-            fail("Set up left alone", c4)
+            fail("old drive base kept", c4)
 
         # ---- renaming a device carries every block that picks it ----
         two = xml(chain(blk("pb_run", {"DEV": "arm"}, {"SPEED": 100}),

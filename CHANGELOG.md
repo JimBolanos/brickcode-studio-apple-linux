@@ -110,22 +110,21 @@ All notable changes to BrickCode Studio. Dates are release dates.
     program can be kept and edited later. Ctrl/Cmd+S and Ctrl/Cmd+O work too.
     Chrome and Edge show their own Save dialog with a folder; Safari and
     Firefox get a small dialog for the name and kind, and download the file.
-  - **Movement puts the robot in Set up for you.** Dropping the first
-    Movement block (move, turn, start moving, stop moving, set movement speed,
-    tank) adds, in Set up, the two wheel motors (`left_motor` on B and
-    `right_motor` on C, or the ones already on those ports) and a drive base
-    `robot`, so the setup is there to see and edit instead of being written
-    behind the scenes. Nothing is added if a drive base is already there, and
-    nothing while a program loads. `set movement motors` is gone from the
-    palette (programs that have it still work); to change the wheels, change
-    the motors in the drive base. The example shows the same Set up.
+  - **Movement works like the RCX and NXT editors: `set movement motors to
+    B+C` (A+D, A+B, C+D too) is back at the top of Movement and the drive
+    base is gone from Set up.** The first letter is the left wheel; the
+    program writes the two motors and `robot = DriveBase(...)` for you
+    (B+C when the block is left out). Dropping a Movement block no longer
+    touches Set up. A drive base saved in an older project still loads and is
+    still the robot the movement blocks drive. The example uses the block.
   - **wait is in seconds.** The Control block reads `wait 1 seconds` (a
     decimal like 0.5 works) and writes `wait(1000)`, since Pybricks counts in
     milliseconds. The old `wait … ms` block is still read from saved
     programs, it is just not in the palette any more.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
-    ↺), `drive base named … left motor … right motor …`. A motor block
+    ↺), `drive base named … left motor … right motor …` (not in the palette any
+    more, programs that have it still run). A motor block
     on a port Set up already has uses that motor; the movement blocks drive
     the drive base declared in Set up when there is one, and otherwise the
     robot from `set movement motors`. The car blocks (`car named …`,
