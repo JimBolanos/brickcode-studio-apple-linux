@@ -7,14 +7,15 @@ Eleven categories: Setup first, then the ten of the NQC/NXC editor beside
 it, in the MINDSTORMS Robot Inventor palette: Motors, Movement, Display,
 Sound, Events, Control, Sensors, Operators, Variables and My Blocks.
 
-## Motors and the robot: no Set up needed
+## Motors and the robot
 
-The Motors and Movement blocks work like the NXT editor's. A motor block
+The Motors and Movement blocks work like the NXT editor's. Dropping a
+Movement block adds the robot to Set up for you: the motors on B and C and a
+drive base called `robot`, which you can then change. A motor block
 has a port (A, B, C or D) and the program declares that motor for you
-(`motor_a = Motor(Port.A)`); `set movement motors to B+C` says which two
-motors are the wheels, and the movement blocks write
-`robot = DriveBase(motor_b, motor_c, ...)` for the EV3 kit's 56 mm wheels,
-114 mm apart (the two numbers are in the Python if yours differ). A motor
+(`motor_a = Motor(Port.A)`). The drive base is written as
+`robot = DriveBase(left_motor, right_motor, ...)` for the EV3 kit's 56 mm
+wheels, 114 mm apart (the two numbers are in the Python if yours differ). A motor
 block has its own speed in per cent; the robot's speed is set once with
 `set movement speed to 50 %` and used by `move`, `turn` and `start moving`
 (50 % when the block is left out). 100 % is 1000 °/s for a motor, 500 mm/s

@@ -727,6 +727,39 @@ def main():
         else:
             fail("save and open", "antes:\n%s\ndespues:\n%s" % (before, after))
 
+        # Dropping a Movement block puts the robot in Set up (what the person
+        # sees), once, and not while a program loads
+        def drop(types):
+            page.evaluate("""(ts) => { ts.forEach(t => {
+                const b = Blockly.getMainWorkspace().newBlock(t); b.initSvg(); b.render(); }); }""", types)
+            page.wait_for_timeout(150)
+            return page.evaluate("window.__code()")
+        load('<xml xmlns="https://developers.google.com/blockly/xml"></xml>')
+        c1 = drop(["pb_go_for"])
+        c2 = drop(["pb_spin_for", "pb_go_start"])
+        if ("left_motor = Motor(Port.B)" in c1 and "right_motor = Motor(Port.C)" in c1
+                and "robot = DriveBase(left_motor, right_motor" in c1
+                and c2.count("DriveBase(") == 1 and c2.count("Motor(Port.B)") == 1):
+            print("%-26s OK     Set up con los dos motores y el drive base, una sola vez" % "movement fills Set up")
+        else:
+            fail("movement fills Set up", c1 + "\n----\n" + c2)
+        # an existing Setup block gets it appended; the motors already on B and C are reused
+        load(xml('', [dev("brick", "ev3"), dev("motor", "wheel_l", "B")]))
+        c3 = drop(["pb_move_stop"])
+        if ("wheel_l = Motor(Port.B)" in c3 and "right_motor = Motor(Port.C)" in c3
+                and "DriveBase(wheel_l, right_motor" in c3 and c3.count("Motor(Port.B)") == 1):
+            print("%-26s OK     reusa el motor que ya estaba en B" % "Set up reuses a motor")
+        else:
+            fail("Set up reuses a motor", c3)
+        # nothing is added when a drive base is already there
+        load(xml('', [dev("motor", "l", "A"), dev("motor", "r", "D"),
+                      dev("drive", "chassis", LEFT="l", RIGHT="r")]))
+        c4 = drop(["pb_go_for"])
+        if c4.count("DriveBase(") == 1 and "chassis = DriveBase(l, r" in c4 and "left_motor" not in c4:
+            print("%-26s OK     no agrega otro si ya hay drive base" % "Set up left alone")
+        else:
+            fail("Set up left alone", c4)
+
         # ---- renaming a device carries every block that picks it ----
         two = xml(chain(blk("pb_run", {"DEV": "arm"}, {"SPEED": 100}),
                         blk("pb_run", {"DEV": "elbow"}, {"SPEED": 50}),

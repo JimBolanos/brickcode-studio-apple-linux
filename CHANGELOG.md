@@ -80,6 +80,15 @@ All notable changes to BrickCode Studio. Dates are release dates.
     program can be kept and edited later. Ctrl/Cmd+S and Ctrl/Cmd+O work too.
     Chrome and Edge show their own Save dialog with a folder; Safari and
     Firefox get a small dialog for the name and kind, and download the file.
+  - **Movement puts the robot in Set up for you.** Dropping the first
+    Movement block (move, turn, start moving, stop moving, set movement speed,
+    tank) adds, in Set up, the two wheel motors (`left_motor` on B and
+    `right_motor` on C, or the ones already on those ports) and a drive base
+    `robot`, so the setup is there to see and edit instead of being written
+    behind the scenes. Nothing is added if a drive base is already there, and
+    nothing while a program loads. `set movement motors` is gone from the
+    palette (programs that have it still work); to change the wheels, change
+    the motors in the drive base. The example shows the same Set up.
   - **wait is in seconds.** The Control block reads `wait 1 seconds` (a
     decimal like 0.5 works) and writes `wait(1000)`, since Pybricks counts in
     milliseconds. The old `wait … ms` block is still read from saved

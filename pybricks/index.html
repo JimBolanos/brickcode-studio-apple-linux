@@ -1887,7 +1887,6 @@
       { kind: "block", type: "pb_move_stop" },
       { kind: "sep", gap: 24 },
       { kind: "block", type: "pb_move_speed", inputs: { PCT: sh(50) } },
-      { kind: "block", type: "pb_base_set" },
       { kind: "sep", gap: 24 },
       { kind: "label", text: "Each wheel on its own" },
       { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } }
@@ -2016,8 +2015,71 @@
     document.getElementById("count").textContent =
       b + (b === 1 ? " block" : " blocks");
   }
+  /* Dropping a Movement block puts the robot in Set up for you: the two
+     motors and a drive base, so the setup is there to see and change instead
+     of being written behind the scenes. Done once: nothing happens when a
+     drive base is already there, or while a program is being loaded. */
+  var MOVE_BLOCKS = { pb_go_for: 1, pb_spin_for: 1, pb_go_start: 1, pb_move_stop: 1,
+                      pb_move_speed: 1, pb_tank: 1, pb_move_for: 1, pb_move_start: 1,
+                      pb_turn_for: 1 };
+  function uniqueName(want) {
+    var used = {};
+    allDevices().forEach(function (b) { used[devName(b)] = true; });
+    if (!used[want] && !RESERVED[want]) return want;
+    for (var i = 2; used[want + i]; i++) { /* count up to a free one */ }
+    return want + i;
+  }
+  function ensureRobotSetup() {
+    if (loading) return;
+    var devsNow = allDevices();
+    if (devsNow.some(function (b) { return b.type === "pb_dev_drive"; })) return;
+    /* the two wheel motors: those of a "set movement motors" block if there
+       is one, otherwise B and C */
+    var pair = "BC";
+    ws.getAllBlocks(true).some(function (b) {
+      if (b.type !== "pb_base_set") return false;
+      pair = b.getFieldValue("PAIR") || "BC"; return true; });
+    var chain = "", names = [];
+    [pair.charAt(0), pair.charAt(1)].forEach(function (port, i) {
+      var have = devsNow.filter(function (b) {
+        return b.type === "pb_dev_motor" && b.getFieldValue("PORT") === port; })[0];
+      if (have) { names.push(devName(have)); return; }
+      var nm = uniqueName(i === 0 ? "left_motor" : "right_motor");
+      names.push(nm);
+      chain += '<block type="pb_dev_motor"><field name="NAME">' + nm + '</field>' +
+               '<field name="PORT">' + port + '</field><next>';
+    });
+    var open = (chain.match(/<next>/g) || []).length;
+    chain += '<block type="pb_dev_drive"><field name="NAME">' + uniqueName("robot") +
+             '</field><field name="LEFT">' + names[0] + '</field>' +
+             '<field name="RIGHT">' + names[1] + '</field></block>';
+    for (var k = 0; k < open; k++) chain += "</next></block>";
+    var setup = ws.getTopBlocks(false).filter(function (b) { return b.type === "pb_setup"; })[0];
+    loading = true;
+    Blockly.Events.setGroup(true);
+    try {
+      var xml = setup ? chain
+        : '<block type="pb_setup" x="40" y="30"><statement name="DO">' + chain +
+          '</statement></block>';
+      var made = Blockly.Xml.domToBlock(Blockly.utils.xml.textToDom(
+        '<xml xmlns="https://developers.google.com/blockly/xml">' + xml + "</xml>").firstElementChild, ws);
+      if (setup) {
+        var last = setup.getInputTargetBlock("DO");
+        if (!last) setup.getInput("DO").connection.connect(made.previousConnection);
+        else {
+          while (last.getNextBlock()) last = last.getNextBlock();
+          last.nextConnection.connect(made.previousConnection);
+        }
+      }
+    } finally { Blockly.Events.setGroup(false); loading = false; }
+    regenerate();
+  }
   ws.addChangeListener(function (ev) {
     if (ev.isUiEvent) return;
+    if (ev.type === Blockly.Events.BLOCK_CREATE && !loading && ev.recordUndo !== false &&
+        (ev.ids || []).some(function (id) {
+          var b = ws.getBlockById(id); return b && MOVE_BLOCKS[b.type]; }))
+      setTimeout(ensureRobotSetup, 0);
     if (ev.type === Blockly.Events.BLOCK_CHANGE && ev.element === "field" &&
         ev.name === "NAME") {
       var src = ws.getBlockById(ev.blockId);
@@ -2039,11 +2101,14 @@
     '<xml xmlns="https://developers.google.com/blockly/xml">' +
     '<block type="pb_setup" x="40" y="30"><statement name="DO">' +
       dev("brick", "ev3", "", "<next>" +
-      dev("touch", "bumper", "S1") + "</next>") +
+      dev("motor", "left_motor", "B", "<next>" +
+      dev("motor", "right_motor", "C", "<next>" +
+      dev("drive", "robot", "", '<field name="LEFT">left_motor</field>' +
+                                 '<field name="RIGHT">right_motor</field><next>' +
+      dev("touch", "bumper", "S1") + "</next>") + "</next>") + "</next>") + "</next>") +
     '</statement></block>' +
     '<block type="pb_program" x="40" y="260"><statement name="DO">' +
-      '<block type="pb_base_set"><field name="PAIR">BC</field>' +
-      '<next><block type="pb_move_speed">' + numv("PCT", 50) +
+      '<block type="pb_move_speed">' + numv("PCT", 50) +
       '<next><block type="pb_screen_print">' +
         '<value name="WHAT"><shadow type="pb_text"><field name="TEXT">Hello</field></shadow></value>' +
       '<next><block type="pb_forever"><statement name="DO">' +
@@ -2062,7 +2127,7 @@
             '<block type="pb_go_start"><field name="DIR">FWD</field></block>' +
           '</statement>' +
         '</block>' +
-      '</statement></block></next></block></next></block></next></block>' +
+      '</statement></block></next></block></next></block>' +
     '</statement></block></xml>';
 
   /* Loading is not editing: names read from a file are taken as they are,
