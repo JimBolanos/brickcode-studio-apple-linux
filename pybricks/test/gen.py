@@ -407,6 +407,17 @@ CASES = [
       ["nxt_color", "S1"], ["screen_print", "False"],
       ["nxt_color_reflection", "S1"], ["screen_print", "0"]]),
 
+    ("colour sensor red green blue",
+     [dev("brick", "ev3"), dev("color", "floor", "S3"),
+      dev("ncolor", "paint", "S1")],
+     chain(pr(blk("pb_rgb", {"DEV": "floor", "CH": "0"})),
+           pr(blk("pb_rgb", {"DEV": "floor", "CH": "2"})),
+           pr(blk("pb_rgb", {"DEV": "paint", "CH": "1"}))),
+     [["EV3Brick"], ["ColorSensor", "S3"], ["NXTColorSensor", "S1"],
+      ["rgb", "S3"], ["screen_print", "0"],
+      ["rgb", "S3"], ["screen_print", "0"],
+      ["nxt_rgb", "S1"], ["screen_print", "0"]]),
+
     ("EV3 and NXT touch together",
      [dev("brick", "ev3"), dev("touch", "front", "S1"),
       dev("ntouch", "back", "S2")],

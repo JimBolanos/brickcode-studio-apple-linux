@@ -671,6 +671,12 @@
     { type: "pb_ambient", message0: "colour sensor %1 ambient light %%",
       args0: [{ type: "field_device", name: "DEV", kinds: ["color", "ncolor", "nlight"] }],
       output: "Number", colour: C_SENSE },
+    { type: "pb_rgb", message0: "colour sensor %1 amount of %2 %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["color", "ncolor"] },
+              { type: "field_dropdown", name: "CH",
+                options: [["red", "0"], ["green", "1"], ["blue", "2"]] }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "How much red, green or blue the sensor sees, 0 to 100." },
     { type: "pb_ultra", message0: "ultrasonic sensor %1 distance mm",
       args0: [{ type: "field_device", name: "DEV", kinds: ["ultra", "nultra"] }],
       output: "Number", colour: C_SENSE },
@@ -1742,6 +1748,8 @@
     return [ref(b) + ".reflection()", py.ORDER_ATOMIC]; };
   py.forBlock["pb_ambient"] = function (b) {
     return [ref(b) + ".ambient()", py.ORDER_ATOMIC]; };
+  py.forBlock["pb_rgb"] = function (b) {
+    return [ref(b) + ".rgb()[" + b.getFieldValue("CH") + "]", py.ORDER_ATOMIC]; };
   py.forBlock["pb_ultra"] = function (b) {
     return [ref(b) + ".distance()", py.ORDER_ATOMIC]; };
   py.forBlock["pb_gyro_angle"] = function (b) {
@@ -1937,6 +1945,7 @@
       { kind: "block", type: "pb_color" },
       { kind: "block", type: "pb_reflection" },
       { kind: "block", type: "pb_ambient" },
+      { kind: "block", type: "pb_rgb" },
       { kind: "block", type: "pb_ultra" },
       { kind: "block", type: "pb_gyro_angle" },
       { kind: "block", type: "pb_gyro_speed" },

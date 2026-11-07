@@ -289,7 +289,14 @@
     ["light, reflected", "LIGHT"],       // the sensor's own lamp is on
     ["light, ambient", "LIGHT_AMB"],     // lamp off, reads the room
     ["sound", "SOUND"],
-    ["ultrasonic", "US"]                 // the only digital sensor in the NXT set
+    ["ultrasonic", "US"],                // the only digital sensor in the NXT set
+    ["colour, sees colours", "COLOR"],   // the colour sensor of the NXT 2.0 set
+    ["colour, as a light sensor", "COLOR_LIGHT"]
+  ];
+  var NXT_COLORS = [
+    ["black", "INPUT_BLACKCOLOR"], ["blue", "INPUT_BLUECOLOR"],
+    ["green", "INPUT_GREENCOLOR"], ["yellow", "INPUT_YELLOWCOLOR"],
+    ["red", "INPUT_REDCOLOR"], ["white", "INPUT_WHITECOLOR"]
   ];
   var NXT_UNITS = [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]];
   var NXT_LINES = (function () {
@@ -671,6 +678,22 @@
       args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
       output: "Number", colour: C_SENSE,
       tooltip: "Light and sound read 0 to 100, touch reads 0 or 1" },
+
+    { type: "nxt_color_is", message0: "sensor %1 sees %2 ?",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS },
+              { type: "field_dropdown", name: "COLOR", options: NXT_COLORS }],
+      output: "Boolean", colour: C_SENSE,
+      tooltip: "Needs that port set as \u201ccolour, sees colours\u201d first. Hold the sensor close to the colour." },
+
+    { type: "nxt_light_level", message0: "light sensor %1 level %%",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 is dark, 100 is bright. Set the port as light (or colour as a light sensor) first." },
+
+    { type: "nxt_sound_level", message0: "sound sensor %1 loudness %%",
+      args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
+      output: "Number", colour: C_SENSE,
+      tooltip: "0 is quiet, 100 is loud. Set the port as sound first." },
 
     { type: "nxt_distance", message0: "sensor %1 distance in cm",
       args0: [{ type: "field_dropdown", name: "S", options: NXT_PORTS }],
@@ -1326,6 +1349,8 @@
     if (t === "LIGHT") return "SetSensorLight(" + port + ");\n";
     if (t === "SOUND") return "SetSensorSound(" + port + ");\n";
     if (t === "US")    return "SetSensorLowspeed(" + port + ");\n";
+    if (t === "COLOR") return "SetSensorColorFull(" + port + ");\n";
+    if (t === "COLOR_LIGHT") return "SetSensorColorRed(" + port + ");\n";
     // Ambient light is the lamp switched off, which is a type plus a mode.
     return "SetSensorType(" + port + ", SENSOR_TYPE_LIGHT_INACTIVE);\n" +
            "SetSensorMode(" + port + ", SENSOR_MODE_PERCENT);\n";
@@ -1334,6 +1359,15 @@
     return ["SENSOR_" + b.getFieldValue("S") + " == 1", NONE];
   };
   nxc.forBlock["nxt_sensor_value"] = function (b) {
+    return ["Sensor(IN_" + b.getFieldValue("S") + ")", ATOMIC];
+  };
+  nxc.forBlock["nxt_color_is"] = function (b) {
+    return ["Sensor(IN_" + b.getFieldValue("S") + ") == " + b.getFieldValue("COLOR"), NONE];
+  };
+  nxc.forBlock["nxt_light_level"] = function (b) {
+    return ["Sensor(IN_" + b.getFieldValue("S") + ")", ATOMIC];
+  };
+  nxc.forBlock["nxt_sound_level"] = function (b) {
     return ["Sensor(IN_" + b.getFieldValue("S") + ")", ATOMIC];
   };
   nxc.forBlock["nxt_distance"] = function (b) {
@@ -1474,8 +1508,10 @@
       { kind: "block", type: "rcx_stop" } ] },
     { name: "Sensors", colour: C_SENSE, contents: [
       { kind: "block", type: "nxt_setsensor" }, SEP,
-      { kind: "block", type: "nxt_touched" }, { kind: "block", type: "nxt_sensor_value" },
+      { kind: "block", type: "nxt_touched" }, { kind: "block", type: "nxt_color_is" }, SEP,
+      { kind: "block", type: "nxt_light_level" }, { kind: "block", type: "nxt_sound_level" },
       { kind: "block", type: "nxt_distance" }, SEP,
+      { kind: "block", type: "nxt_sensor_value" }, SEP,
       { kind: "block", type: "nxt_button" }, SEP,
       { kind: "block", type: "nxt_timer" }, { kind: "block", type: "nxt_timer_reset" } ] },
     { name: "Operators", colour: C_OPS, contents: [
@@ -1634,7 +1670,7 @@
 
   // ---- output -------------------------------------------------------------
   var KEYWORDS = /\b(task|repeat|while|until|if|else|true|int|void|sub|start|stop|return)\b/g;
-  var BUILTINS = /\b(OnFwd|OnRev|Off|Coast|SetPower|Wait|PlaySound|PlayTone|StopSound|SetSensor|SetSensorTouch|SetSensorLight|SetSensorSound|SetSensorLowspeed|SetSensorType|SetSensorMode|ClearSensor|Sensor|SensorUS|Random|SensorValueRaw|StopAllTasks|RotateMotor|ResetTachoCount|MotorTachoCount|TextOut|NumOut|ClearScreen|LineOut|CircleOut|RectOut|PointOut|ButtonPressed|CurrentTick|Float|On)\b/g;
+  var BUILTINS = /\b(OnFwd|OnRev|Off|Coast|SetPower|Wait|PlaySound|PlayTone|StopSound|SetSensor|SetSensorTouch|SetSensorLight|SetSensorSound|SetSensorLowspeed|SetSensorColorFull|SetSensorColorRed|SetSensorType|SetSensorMode|ClearSensor|Sensor|SensorUS|Random|SensorValueRaw|StopAllTasks|RotateMotor|ResetTachoCount|MotorTachoCount|TextOut|NumOut|ClearScreen|LineOut|CircleOut|RectOut|PointOut|ButtonPressed|CurrentTick|Float|On)\b/g;
   var CONSTS = /\b(OUT_[A-Z]+|IN_[0-9]|SOUND_[A-Z_]+|SENSOR_[A-Z0-9_]+|LCD_LINE[0-9]|TONE_[A-Z]+[0-9]|BTN[A-Z]+)\b/g;
 
   function esc(s) {

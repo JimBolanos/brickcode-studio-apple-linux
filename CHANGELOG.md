@@ -6,6 +6,15 @@ All notable changes to BrickCode Studio. Dates are release dates.
 
 ### Added
 
+- **NXT colour, light and sound blocks.** "set sensor as" gains "colour, sees
+  colours" (`SetSensorColorFull`) and "colour, as a light sensor"
+  (`SetSensorColorRed`). New blocks: "sensor N sees [colour] ?", "light sensor
+  N level %" and "sound sensor N loudness %". Compiled with nbc in the new
+  test `nxt_sensors`; not tried on a real NXT yet.
+- **EV3: "colour sensor amount of red/green/blue %"** (`rgb()`), for the EV3
+  and the NXT colour sensor. The EV3 already had colour, reflection, ambient
+  light and sound loudness.
+
 - **IR Messages in the RCX block editor.** A new category after Sound with
   four blocks: "set IR transmitter power to low/high" (`SetTxPower`), "send IR
   message" (`SendMessage`, 42 by default), "clear last received IR message"
