@@ -56,9 +56,10 @@ editor. It only writes code: copy it and paste it into Pybricks.
 sets the language *and* the target together — until now those were two separate
 controls in two different places — and drops you in the editor ready to type.
 
-**A visual block editor.** **BLOCKS** in the bottom bar, or the button in the
-drawer, opens it in your browser. It writes NQC for the RCX and Scout or NXC for
-the NXT, with the MINDSTORMS palette, and it works offline. Saved programs carry
+**A visual block editor.** **BLOCKS** in the bottom bar opens a small menu to pick
+which one (RCX / Scout NQC, NXT NXC, or EV3 Pybricks); the button in the drawer
+opens the one for the current mode. It opens in your browser. It writes NQC for the
+RCX and Scout or NXC for the NXT, with the MINDSTORMS palette, and it works offline. Saved programs carry
 their blocks inside a trailing comment, so you can open one again and keep
 building where you left off — and both compilers ignore that comment, so the
 program you send to the brick is byte for byte the same.

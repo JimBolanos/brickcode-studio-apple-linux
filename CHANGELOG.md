@@ -132,7 +132,9 @@ All notable changes to BrickCode Studio. Dates are release dates.
     them still load and run.
 
 ### Fixed
--- **About screen cut off on a short window.** The three columns now sit in
+-- **Docs say what BLOCKS does now.** README and the user guide (English and Spanish)
+  describe the BLOCKS menu in the bottom bar.
+- **About screen cut off on a short window.** The three columns now sit in
   a scrolled window, so the author card (the "JB" one) is reachable however
   small the window is. The documentation rows wrap their text so the middle
   column can narrow.

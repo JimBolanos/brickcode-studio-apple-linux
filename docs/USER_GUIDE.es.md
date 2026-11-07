@@ -107,7 +107,7 @@ Abajo hay cuatro entradas:
 | --- | --- |
 | **HOME** | El panel. Elige un ladrillo. |
 | **CODE** | El editor. Es la ventana que se describe abajo. |
-| **BLOCKS** | Abre el editor visual de bloques en el navegador. Es una puerta, no una pantalla: te quedas donde estabas. Ver la sección 11. |
+| **BLOCKS** | Abre un menú pequeño para elegir el editor de bloques (RCX / Scout NQC, NXT NXC o EV3 Pybricks) y luego lo abre en el navegador. Es una puerta, no una pantalla: te quedas donde estabas. Ver la sección 11. |
 | **ABOUT** | Qué es la app, qué usa, la documentación y los enlaces. |
 
 La pantalla del editor tiene una barra lateral, el editor, la consola y, cuando la pides, un panel de ajustes a la derecha. Se trabaja con un programa a la vez; para trabajar en otro, cierra la ventana (la app pregunta si hay cambios sin guardar) y ábrela de nuevo.
@@ -315,7 +315,7 @@ BrickCode Studio no está afiliado a LEGO. LEGO, Mindstorms, RCX, Scout y NXT so
 
 ## 11. El editor de bloques
 
-¿Prefieres arrastrar bloques a escribir? **BLOCKS** en la barra inferior, o el botón **Block editor** del cajón de ajustes, lo abre en tu navegador. Es una sola página autocontenida: Blockly, la paleta y los iconos van dentro, así que funciona sin red.
+¿Prefieres arrastrar bloques a escribir? **BLOCKS** en la barra inferior te deja elegir cuál editor (RCX / Scout, NXT o EV3), y el botón **Block editor** del cajón de ajustes abre el del modo actual; los dos lo abren en tu navegador. Es una sola página autocontenida: Blockly, la paleta y los iconos van dentro, así que funciona sin red.
 
 Escribe **NQC** para el RCX y el Scout o **NXC** para el NXT, y el conmutador de arriba a la derecha elige cuál. La app le pasa el lenguaje en el que ya está, así que normalmente abre en el correcto.
 
