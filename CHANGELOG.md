@@ -38,8 +38,7 @@ All notable changes to BrickCode Studio. Dates are release dates.
     from the wheel size. A number typed in is calculated in the Python
     (`run_time(750, 1000)`); a variable stays an expression.
   - **Display and Light & Sound** are separate categories. Light & Sound has
-    the brick light, beep, play notes, the new **say** (`speaker.say()`) and
-    volume. Display gains **dot at x y** (`draw_pixel()`) and, under
+    the brick light, beep, play notes and volume. Display gains **dot at x y** (`draw_pixel()`) and, under
     "Terminal", **print in the terminal** (`print()`, which goes to the
     computer's terminal and not to the EV3 screen).
   - **Set up can still declare the devices, as in Pybricks' own editor**:

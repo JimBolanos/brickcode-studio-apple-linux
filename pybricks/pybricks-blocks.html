@@ -3429,11 +3429,6 @@ return $.__chunk_javascript;
               { type: "input_value", name: "TEMPO", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_SOUND,
       tooltip: "Note then length, like C4/4. R is a rest." },
-    { type: "pb_say", message0: "say %1",
-      args0: [{ type: "input_value", name: "WHAT" }],
-      previousStatement: null, nextStatement: null, colour: C_SOUND,
-      tooltip: "The brick speaks the text. Waits until it has finished. " +
-               "speaker.say()." },
     { type: "pb_volume", message0: "set volume to %1 %%",
       args0: [{ type: "input_value", name: "VOL", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_SOUND },
@@ -4280,8 +4275,6 @@ return $.__chunk_javascript;
            num(b, g, "Y", 0) + ")\n"; };
   py.forBlock["pb_print_term"] = function (b, g) {
     return "print(" + val(b, g, "WHAT", '""') + ")\n"; };
-  py.forBlock["pb_say"] = function (b, g) {
-    return ev3() + ".speaker.say(" + val(b, g, "WHAT", '""') + ")\n"; };
   py.forBlock["pb_light"] = function (b) {
     var c = b.getFieldValue("COLOR");
     if (c === "OFF") return ev3() + ".light.off()\n";
@@ -4479,7 +4472,6 @@ return $.__chunk_javascript;
       { kind: "block", type: "pb_light" },
       { kind: "block", type: "pb_beep", inputs: { FREQ: sh(500), MS: sh(100) } },
       { kind: "block", type: "pb_notes", inputs: { TEMPO: sh(120) } },
-      { kind: "block", type: "pb_say", inputs: { WHAT: st("Hello") } },
       { kind: "block", type: "pb_volume", inputs: { VOL: sh(70) } }
     ]},
     { kind: "category", name: "Events", colour: C_EVENT, contents: [
@@ -4545,7 +4537,7 @@ return $.__chunk_javascript;
   }
 
   var KEYWORDS = /\b(import|from|def|return|if|elif|else|while|for|in|not|and|or|True|False|None|raise|pass|break|continue)\b/g;
-  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|track_target|control|limits|settings|steer|drive_power|drive_speed|Car|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|draw_pixel|say|on|off|SystemExit)\b/g;
+  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|track_target|control|limits|settings|steer|drive_power|drive_speed|Car|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|draw_pixel|on|off|SystemExit)\b/g;
   var CONSTS = /\b(Port|Stop|Color|Button|Direction)\.[A-Z_0-9]+|\b(Port|Stop|Color|Button|Direction)\b/g;
 
   function esc(s) {

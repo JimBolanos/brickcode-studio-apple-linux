@@ -333,9 +333,9 @@ CASES = [
      [["EV3Brick"], ["volume", 60], ["beep", 800, 200],
       ["play_notes", ["C4/4", "E4/4", "G4/2"], 120]]),
 
-    ("say, dot", [dev("brick", "ev3")],
-     blk("pb_say", nxt=blk("pb_screen_pixel", values={"X": 20, "Y": 30})),
-     [["EV3Brick"], ["say", ""], ["draw_pixel", 20, 30]]),
+    ("dot", [dev("brick", "ev3")],
+     blk("pb_screen_pixel", values={"X": 20, "Y": 30}),
+     [["EV3Brick"], ["draw_pixel", 20, 30]]),
 
     # ----------------------------------------------------------- Sensors
     ("sensors read", [dev("brick", "ev3"), dev("gyro", "spin", "S2")],
