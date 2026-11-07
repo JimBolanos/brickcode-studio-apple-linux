@@ -7,6 +7,16 @@ Eleven categories: Setup first, then the ten of the NQC/NXC editor beside
 it, in the MINDSTORMS Robot Inventor palette: Motors, Movement, Display,
 Sound, Events, Control, Sensors, Operators, Variables and My Blocks.
 
+## Motors and the robot: no Set up needed
+
+The Motors and Movement blocks work like the NXT editor's. A motor block
+has a port (A, B, C or D) and the program declares that motor for you
+(`motor_a = Motor(Port.A)`); `set movement motors to B+C wheel 56 mm axle
+track 114 mm` says which two motors are the wheels, and the movement blocks
+write `robot = DriveBase(motor_b, motor_c, ...)`. Speeds are in per cent
+(100 % is 1000 °/s for a motor, 500 mm/s for a robot, 300 °/s for a turn).
+A motor already in Set up on the same port keeps its own name.
+
 ## Set up
 
 Devices are declared the way Pybricks' own editor does it. A **set up**

@@ -159,66 +159,77 @@ CASES = [
      [["Motor", "A"]] + [["run_angle", "A", 180, 45, "Stop.HOLD"]] * 3),
 
     # ------------------------------------------- NXT-style motor blocks
-    ("motor run for seconds", [dev("motor", "arm", "B")],
-     blk("pb_motor_for", {"DEV": "arm", "UNIT": "SEC"}, {"AMT": 2, "PCT": 75}),
+    # No Set up: the motor is chosen by its port and declared for you.
+    ("motor run for seconds", [],
+     blk("pb_motor_for", {"PORT": "B", "UNIT": "SEC"}, {"AMT": 2, "PCT": 75}),
      [["Motor", "B"], ["run_time", "B", 750, 2000, "Stop.HOLD"]]),
 
-    ("motor run for rotations", [dev("motor", "arm", "B")],
-     blk("pb_motor_for", {"DEV": "arm", "UNIT": "ROT"}, {"AMT": 2, "PCT": 50}),
-     [["Motor", "B"], ["run_angle", "B", 500, 720, "Stop.HOLD"]]),
+    ("motor run for rotations", [],
+     blk("pb_motor_for", {"PORT": "A", "UNIT": "ROT"}, {"AMT": 2, "PCT": 50}),
+     [["Motor", "A"], ["run_angle", "A", 500, 720, "Stop.HOLD"]]),
 
-    ("motor run for degrees, backwards", [dev("motor", "arm", "B")],
-     blk("pb_motor_for", {"DEV": "arm", "UNIT": "DEG"}, {"AMT": 90, "PCT": -50}),
-     [["Motor", "B"], ["run_angle", "B", 500, -90, "Stop.HOLD"]]),
+    ("motor run for degrees, backwards", [],
+     blk("pb_motor_for", {"PORT": "C", "UNIT": "DEG"}, {"AMT": 90, "PCT": -50}),
+     [["Motor", "C"], ["run_angle", "C", 500, -90, "Stop.HOLD"]]),
 
-    ("start motor, stop, reset", [dev("motor", "arm", "B")],
-     blk("pb_motor_on", {"DEV": "arm"}, {"PCT": 100},
-         nxt=blk("pb_stop", {"DEV": "arm", "HOW": "brake"},
-                 nxt=blk("pb_motor_reset", {"DEV": "arm"},
-                         nxt=pr(blk("pb_angle", {"DEV": "arm"}))))),
+    ("start motor, stop, reset, count", [],
+     blk("pb_motor_on", {"PORT": "B"}, {"PCT": 100},
+         nxt=blk("pb_m_stop", {"PORT": "B", "HOW": "brake"},
+                 nxt=blk("pb_motor_reset", {"PORT": "B"},
+                         nxt=pr(blk("pb_m_angle", {"PORT": "B"}))))),
      [["EV3Brick"], ["Motor", "B"], ["run", "B", 1000], ["brake", "B"],
       ["reset_angle", "B", 0], ["angle", "B"], ["screen_print", "0"]]),
 
-    ("motor 0 percent is stop", [dev("motor", "arm", "B")],
-     blk("pb_motor_for", {"DEV": "arm", "UNIT": "SEC"}, {"AMT": 2, "PCT": 0}),
+    ("motor 0 percent is stop", [],
+     blk("pb_motor_for", {"PORT": "B", "UNIT": "SEC"}, {"AMT": 2, "PCT": 0}),
      [["Motor", "B"], ["stop", "B"]]),
 
-    # ------------------------------------ NXT-style movement blocks
-    ("move for seconds",
-     [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
-     blk("pb_move_for", {"DEV": "robot", "DIR": "FWD", "UNIT": "SEC"},
-         {"AMT": 1, "PCT": 75}),
+    ("stop all, reset all", [],
+     blk("pb_motor_on", {"PORT": "A"}, {"PCT": 10},
+         nxt=blk("pb_motor_on", {"PORT": "C"}, {"PCT": 10},
+                 nxt=blk("pb_m_stop_all", nxt=blk("pb_m_reset_all")))),
+     [["Motor", "A"], ["Motor", "C"], ["run", "A", 100], ["run", "C", 100],
+      ["stop", "A"], ["stop", "C"], ["reset_angle", "A", 0],
+      ["reset_angle", "C", 0]]),
+
+    # A motor that Set up already has on that port keeps its own name and
+    # is not made twice.
+    ("port uses the motor from Set up", [dev("motor", "arm", "B")],
+     blk("pb_motor_on", {"PORT": "B"}, {"PCT": 75}),
+     [["Motor", "B"], ["run", "B", 750]]),
+
+    # ------------------------------------ the two-wheel robot
+    ("move for seconds", [],
+     blk("pb_move_for", {"DIR": "FWD", "UNIT": "SEC"}, {"AMT": 1, "PCT": 75}),
      [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
       ["drive", 375, 0], ["wait", 1000], ["drive_brake"]]),
 
-    # one rotation of a 56 mm wheel is 175.93 mm
-    ("move for rotations, backwards",
-     [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
-     blk("pb_move_for", {"DEV": "robot", "DIR": "REV", "UNIT": "ROT"},
-         {"AMT": 1, "PCT": 50}),
-     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
-      ["drive_settings", 250, None, None, None], ["straight", -176, "Stop.HOLD"]]),
+    # A+D wheels of 43 mm: one rotation is 135.09 mm
+    ("set movement motors, rotations backwards", [],
+     blk("pb_base_set", {"PAIR": "AD", "WHEEL": 43, "AXLE": 100},
+         nxt=blk("pb_move_for", {"DIR": "REV", "UNIT": "ROT"},
+                 {"AMT": 1, "PCT": 50})),
+     [["Motor", "A"], ["Motor", "D"], ["DriveBase", "A", "D", 43, 100],
+      ["drive_settings", 250, None, None, None], ["straight", -135, "Stop.HOLD"]]),
 
-    ("turn right for seconds, left for degrees",
-     [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
-     blk("pb_turn_for", {"DEV": "robot", "SIDE": "R", "UNIT": "SEC"},
-         {"AMT": 2, "PCT": 50},
-         nxt=blk("pb_turn_for", {"DEV": "robot", "SIDE": "L", "UNIT": "DEG"},
+    ("turn right for seconds, left for degrees", [],
+     blk("pb_turn_for", {"SIDE": "R", "UNIT": "SEC"}, {"AMT": 2, "PCT": 50},
+         nxt=blk("pb_turn_for", {"SIDE": "L", "UNIT": "DEG"},
                  {"AMT": 90, "PCT": 50})),
      [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
       ["drive", 0, 150], ["wait", 2000], ["drive_brake"],
       ["drive_settings", None, None, 150, None], ["turn", -90, "Stop.HOLD"]]),
 
-    ("start moving backwards, stop moving",
-     [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
-     blk("pb_move_start", {"DEV": "robot", "DIR": "REV"}, {"PCT": 40},
-         nxt=blk("pb_move_stop", {"DEV": "robot"})),
+    ("start moving backwards, stop moving", [],
+     blk("pb_move_start", {"DIR": "REV"}, {"PCT": 40},
+         nxt=blk("pb_move_stop")),
      [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
       ["drive", -200, 0], ["drive_brake"]]),
+
+    # tank runs the two wheel motors directly, no drive base
+    ("tank", [],
+     blk("pb_tank", values={"L": 50, "R": -30}),
+     [["Motor", "B"], ["Motor", "C"], ["run", "B", 500], ["run", "C", -300]]),
 
     ("track target", [dev("motor", "arm", "A")],
      blk("pb_track_target", {"DEV": "arm"}, {"TARGET": 90}),
@@ -371,11 +382,11 @@ CASES = [
 # (name, devices, body, must contain, must not contain)
 TEXT_CASES = [
     # A sum in the speed stays a sum, without doubled brackets.
-    ("speed from a sum", [dev("motor", "arm", "B")],
-     '<block type="pb_motor_on"><field name="DEV">arm</field><value name="PCT">'
+    ("speed from a sum", [],
+     '<block type="pb_motor_on"><field name="PORT">B</field><value name="PCT">'
      '<block type="pb_arith"><field name="OP">+</field><value name="A">%s</value>'
      '<value name="B">%s</value></block></value></block>' % (n(50), n(25)),
-     ["arm.run((50 + 25) * 10)"], ["((50 + 25))"]),
+     ["motor_b.run((50 + 25) * 10)"], ["((50 + 25))"]),
 
     ("forever", [],
      '<block type="pb_forever"><statement name="DO">%s</statement></block>'

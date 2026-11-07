@@ -24,23 +24,21 @@ All notable changes to BrickCode Studio. Dates are release dates.
     line at the top.
   - Same palette, category order and look as the NQC/NXC editor. It shares
     that editor's copy of Blockly rather than carrying a second one.
-  - **Motors and Movement laid out like the NXT editor**, with the speed in
-    per cent and the amount in seconds, degrees or rotations:
-    `motor A run for 1 seconds at 75 % speed`, `start motor A at 75 % speed`,
-    `stop motor A coast`, `reset motor A degrees counted`; and for a drive
-    base `move forward for 1 seconds at 75 % speed`, `turn right for 1 seconds
-    at 75 % speed` (seconds or degrees), `start moving forward`, `stop moving`.
-    100 % is 1000 °/s for a motor, 500 mm/s for a drive base and 300 °/s for a
-    turn. Degrees and rotations of a drive base are worked out from the wheel
-    size in Set up. A number typed in is calculated in the Python
+  - **Motors and Movement work like the NXT editor**, with no Set up for
+    them. A motor block has a port, A to D, and the program declares the
+    motor itself; the speed is in per cent and the amount in seconds,
+    degrees or rotations: `motor A run for 1 seconds at 75 % speed`,
+    `start motor A at 75 % speed`, `stop motor A brake`, `stop all motors`,
+    `reset motor A degrees counted`, `reset all motors`. Movement is the
+    two-wheel robot: `set movement motors to B+C wheel 56 mm axle track
+    114 mm` (B+C, 56 and 114 when left out), `move forward for 1 seconds at
+    75 % speed`, `turn right for 90 degrees at 50 % speed`, `start moving`,
+    `stop moving` and `tank`. 100 % is 1000 °/s for a motor, 500 mm/s for the
+    robot and 300 °/s for a turn. Degrees and rotations of the robot come
+    from the wheel size. A number typed in is calculated in the Python
     (`run_time(750, 1000)`); a variable stays an expression.
-  - **Below them, "More, as Pybricks has them"**: the blocks worded as in
-    Pybricks' own editor (`run at 500 °/s by 360 ° then hold`, `track`,
-    `configure acceleration`, `power at 50 % duty cycle`, `drive straight for
-    250 mm`, `configure drive speed`, `start at 100 mm/s and 0 °/s`) and a
-    **car** device with `drive at power 50 %` and `steer by 0 %`. They write
-    `track_target()`, `control.limits()`, `DriveBase.settings()` and `Car`.
-    The unit after a number follows its dropdown.
+  - Set up keeps the brick and the sensors. Programs saved with named
+    motors, a drive base or a car in Set up still load and run.
 
 ### Fixed
 - **Run from the source tree, the app could not open the block editor.** It
