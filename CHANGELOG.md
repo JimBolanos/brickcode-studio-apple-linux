@@ -37,8 +37,14 @@ All notable changes to BrickCode Studio. Dates are release dates.
     robot and 300 °/s for a turn. Degrees and rotations of the robot come
     from the wheel size. A number typed in is calculated in the Python
     (`run_time(750, 1000)`); a variable stays an expression.
-  - Set up keeps the brick and the sensors. Programs saved with named
-    motors, a drive base or a car in Set up still load and run.
+  - **Set up can still declare the devices, as in Pybricks' own editor**:
+    `motor named … on port A with forward clockwise ↻` (or counterclockwise
+    ↺), `drive base named … left motor … right motor … wheel 56 mm axle track
+    114 mm` and `car named … steering motor … drive motor …`. A motor block
+    on a port Set up already has uses that motor; the movement blocks drive
+    the drive base declared in Set up when there is one, and otherwise the
+    robot from `set movement motors`. The car has its own `drive at power` and
+    `steer by` blocks at the bottom of Movement.
 
 ### Fixed
 - **Run from the source tree, the app could not open the block editor.** It

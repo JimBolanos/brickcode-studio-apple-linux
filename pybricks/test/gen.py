@@ -231,6 +231,24 @@ CASES = [
      blk("pb_tank", values={"L": 50, "R": -30}),
      [["Motor", "B"], ["Motor", "C"], ["run", "B", 500], ["run", "C", -300]]),
 
+    # The drive base declared in Set up is the robot the movement blocks
+    # drive: no second one is made, and its name is used.
+    ("movement uses the Set up drive base",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "chassis", LEFT="left", RIGHT="right", WHEEL=43, AXLE=100)],
+     blk("pb_move_for", {"DIR": "FWD", "UNIT": "ROT"}, {"AMT": 1, "PCT": 50},
+         nxt=blk("pb_move_stop")),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 43, 100],
+      ["drive_settings", 250, None, None, None], ["straight", 135, "Stop.HOLD"],
+      ["drive_brake"]]),
+
+    ("tank on the Set up drive base motors",
+     [dev("motor", "left", "A"), dev("motor", "right", "D"),
+      dev("drive", "chassis", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_tank", values={"L": 20, "R": 40}),
+     [["Motor", "A"], ["Motor", "D"], ["DriveBase", "A", "D", 56, 114],
+      ["run", "A", 200], ["run", "D", 400]]),
+
     ("track target", [dev("motor", "arm", "A")],
      blk("pb_track_target", {"DEV": "arm"}, {"TARGET": 90}),
      [["Motor", "A"], ["track_target", "A", 90]]),
@@ -387,6 +405,13 @@ TEXT_CASES = [
      '<block type="pb_arith"><field name="OP">+</field><value name="A">%s</value>'
      '<value name="B">%s</value></block></value></block>' % (n(50), n(25)),
      ["motor_b.run((50 + 25) * 10)"], ["((50 + 25))"]),
+
+    # A motor can be declared turning the other way round, as in Pybricks.
+    ("motor with forward counterclockwise",
+     [dev("motor", "arm", "A", DIRN="COUNTERCLOCKWISE"), dev("motor", "leg", "B")],
+     blk("pb_motor_on", {"PORT": "A"}, {"PCT": 50}),
+     ["arm = Motor(Port.A, Direction.COUNTERCLOCKWISE)", "leg = Motor(Port.B)",
+      "import Port, Direction", "arm.run(500)"], ["motor_a"]),
 
     ("forever", [],
      '<block type="pb_forever"><statement name="DO">%s</statement></block>'

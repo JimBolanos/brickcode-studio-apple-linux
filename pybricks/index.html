@@ -777,6 +777,12 @@
           args.push({ type: "field_dropdown", name: "PORT",
                       options: K.bus === "M" ? BUS_M : BUS_S });
         }
+        if (kind === "motor") {
+          msg += " with forward %3";
+          args.push({ type: "field_dropdown", name: "DIRN", options:
+                      [["clockwise \u21BB", "CLOCKWISE"],
+                       ["counterclockwise \u21BA", "COUNTERCLOCKWISE"]] });
+        }
         this.jsonInit({ message0: msg, args0: args, colour: C_SETUP,
           previousStatement: "Device", nextStatement: "Device",
           tooltip: kind === "brick"
@@ -907,7 +913,7 @@
   });
 
   var devs, refs, needs, usesEv3, brickName, theWs, funcs;
-  var autoPorts, base, baseUsed;
+  var autoPorts, base, baseUsed, setupBase;
 
   /* The declarations are read straight off the blocks here, not as the
      program is walked: blocks are visited top to bottom on the page, and a
@@ -931,6 +937,10 @@
       if (!isDev(b)) return;
       var d = { kind: kindOf(b), name: ident(devName(b)),
                 port: b.getFieldValue("PORT") || "" };
+      if (d.kind === "motor") {
+        d.dir = b.getFieldValue("DIRN") || "CLOCKWISE";
+        if (d.dir === "COUNTERCLOCKWISE") needs.Direction = true;
+      }
       if (d.kind === "drive") {
         d.left = ident(b.getFieldValue("LEFT") || "");
         d.right = ident(b.getFieldValue("RIGHT") || "");
@@ -950,6 +960,12 @@
     var taken = {};
     devs.forEach(function (d) { taken[d.name] = true; });
     for (var n = 2; taken[base.name]; n++) base.name = "robot" + n;
+    /* a drive base declared in Set up is the robot the movement blocks drive:
+       its name, its wheel and its two motors */
+    setupBase = null;
+    for (var k = 0; k < devs.length; k++)
+      if (devs[k].kind === "drive") { setupBase = devs[k]; break; }
+    if (setupBase) { base.name = setupBase.name; base.wheel = setupBase.wheel; }
   };
 
   /* A block that names a motor by its port. If Set up already has a motor
@@ -962,7 +978,7 @@
     return "motor_" + port.toLowerCase();
   }
   function MP(b) { return motorOn(String(b.getFieldValue("PORT") || "A")); }
-  function theBase() { baseUsed = true; return base.name; }
+  function theBase() { if (!setupBase) baseUsed = true; return base.name; }
 
   function need(x) { needs[x] = true; }
   function ev3() { usesEv3 = true; return brickName; }
@@ -1081,7 +1097,9 @@
           if (carOk[x.name])
             setup.push(x.name + " = Car(" + x.steer + ", " + x.drive + ")");
         } else if (x.port)
-          setup.push(x.name + " = " + (K.alias || K.cls) + "(Port." + x.port + ")");
+          setup.push(x.name + " = " + (K.alias || K.cls) + "(Port." + x.port +
+                     (x.kind === "motor" && x.dir === "COUNTERCLOCKWISE"
+                        ? ", Direction.COUNTERCLOCKWISE" : "") + ")");
       });
     });
 
@@ -1264,7 +1282,8 @@
   };
   py.forBlock["pb_tank"] = function (b, g) {
     /* the two wheel motors, run directly; no drive base is made for this */
-    var l = motorOn(base.pair.charAt(0)), r = motorOn(base.pair.charAt(1));
+    var l = setupBase ? setupBase.left : motorOn(base.pair.charAt(0));
+    var r = setupBase ? setupBase.right : motorOn(base.pair.charAt(1));
     return l + ".run(" + scaled(num(b, g, "L", 50), 10) + ")\n" +
            r + ".run(" + scaled(num(b, g, "R", 50), 10) + ")\n";
   };
@@ -1479,7 +1498,7 @@
   function blk(t) { return { kind: "block", type: t }; }
   var toolbox = { kind: "categoryToolbox", contents: [
     { kind: "category", name: "Setup", colour: C_SETUP, contents: [
-      blk("pb_setup"), blk("pb_dev_brick"),
+      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"), blk("pb_dev_car"),
       { kind: "label", text: "Set up EV3 sensors" },
       blk("pb_dev_touch"), blk("pb_dev_color"), blk("pb_dev_gyro"),
       blk("pb_dev_ultra"), blk("pb_dev_infra"),
@@ -1508,6 +1527,9 @@
       { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } },
       { kind: "sep", gap: 24 },
       { kind: "block", type: "pb_base_set" },
+      { kind: "label", text: "Car (set it up first)" },
+      { kind: "block", type: "pb_car_drive", inputs: { VAL: sh(50) } },
+      { kind: "block", type: "pb_car_steer", inputs: { PCT: sh(0) } }
     ]},
     { kind: "category", name: "Display", colour: C_DISP, contents: [
       { kind: "block", type: "pb_screen_print", inputs: { WHAT: st("Hello") } },
