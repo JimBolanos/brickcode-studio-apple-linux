@@ -28,6 +28,17 @@ class DriveBase:
         _num("speed", speed); _num("turn_rate", turn_rate)
         LOG.append(("drive", speed, turn_rate))
 
+    def settings(self, straight_speed=None, straight_acceleration=None,
+                 turn_rate=None, turn_acceleration=None):
+        for k, v in (("straight_speed", straight_speed),
+                     ("straight_acceleration", straight_acceleration),
+                     ("turn_rate", turn_rate),
+                     ("turn_acceleration", turn_acceleration)):
+            if v is not None:
+                _num(k, v, 1)
+        LOG.append(("drive_settings", straight_speed, straight_acceleration,
+                    turn_rate, turn_acceleration))
+
     def stop(self):  LOG.append(("drive_stop",))
     def brake(self): LOG.append(("drive_brake",))
     def hold(self):  LOG.append(("drive_hold",))
@@ -35,3 +46,30 @@ class DriveBase:
     def distance(self): LOG.append(("drive_distance",)); return 0
     def angle(self):    LOG.append(("drive_angle",)); return 0
     def state(self):    return (0, 0, 0, 0)
+
+
+class Car:
+    """Added to Pybricks in 3.4. Two different motors: one steers, one
+    drives."""
+    def __init__(self, steer_motor, drive_motors, torque_limit=100):
+        if not isinstance(steer_motor, Motor):
+            raise TypeError("steer_motor must be a Motor, got %r" % (steer_motor,))
+        ms = drive_motors if isinstance(drive_motors, (tuple, list)) else (drive_motors,)
+        for m in ms:
+            if not isinstance(m, Motor):
+                raise TypeError("drive_motors must be Motors, got %r" % (m,))
+            if m is steer_motor:
+                raise ValueError("a car needs two different motors")
+        LOG.append(("Car", steer_motor.port, tuple(m.port for m in ms)[0]))
+
+    def steer(self, percentage):
+        _num("percentage", percentage, -100, 100)
+        LOG.append(("car_steer", percentage))
+
+    def drive_power(self, power):
+        _num("power", power, -100, 100)
+        LOG.append(("car_power", power))
+
+    def drive_speed(self, speed):
+        _num("speed", speed)
+        LOG.append(("car_speed", speed))

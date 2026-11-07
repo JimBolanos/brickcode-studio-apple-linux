@@ -244,13 +244,13 @@
       tooltip: "Holds the program here until this becomes true." },
 
     /* ---------------------------------------------------------- Motors */
-    { type: "pb_run", message0: "motor %1 run at %2 deg/s",
+    { type: "pb_run", message0: "motor %1 run at %2 \u00B0/s",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "SPEED", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Runs until something stops it. The program carries on." },
     { type: "pb_run_time",
-      message0: "motor %1 run at %2 deg/s for %3 ms then %4",
+      message0: "motor %1 run at %2 \u00B0/s for %3 ms then %4",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "SPEED", check: "Number" },
               { type: "input_value", name: "TIME", check: "Number" },
@@ -258,40 +258,56 @@
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Runs for a set time, then stops. Waits until it is done." },
     { type: "pb_run_angle",
-      message0: "motor %1 turn %2 deg at %3 deg/s then %4",
+      message0: "motor %1 run at %2 \u00B0/s by %3 \u00B0 then %4",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "SPEED", check: "Number" },
               { type: "input_value", name: "ANGLE", check: "Number" },
-              { type: "input_value", name: "SPEED", check: "Number" },
               { type: "field_dropdown", name: "THEN", options: THEN }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
-      tooltip: "Turns by an angle from where it is now." },
+      tooltip: "Turns by an angle from where it is now. run_angle()." },
     { type: "pb_run_target",
-      message0: "motor %1 turn to %2 deg at %3 deg/s then %4",
+      message0: "motor %1 run at %2 \u00B0/s to %3 \u00B0 then %4",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
-              { type: "input_value", name: "TARGET", check: "Number" },
               { type: "input_value", name: "SPEED", check: "Number" },
+              { type: "input_value", name: "TARGET", check: "Number" },
               { type: "field_dropdown", name: "THEN", options: THEN }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
-      tooltip: "Turns to an absolute angle, the shorter way round." },
+      tooltip: "Turns to an absolute angle, the shorter way round. run_target()." },
+    { type: "pb_track_target", message0: "motor %1 track %2 \u00B0",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "TARGET", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Keeps following this angle. Use it in a loop with a changing " +
+               "number, for example from a sensor. The program carries on. " +
+               "track_target()." },
+    { type: "pb_motor_config", message0: "motor %1 configure %2 %3 %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "field_dropdown", name: "WHAT", options:
+                [["acceleration", "acceleration"], ["max speed", "speed"]] },
+              { type: "input_value", name: "VAL", check: "Number" },
+              { type: "field_label", name: "UNIT", text: "\u00B0/s\u00B2" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Changes how hard this motor may accelerate or how fast it may " +
+               "go, for the run blocks after it. control.limits()." },
     { type: "pb_run_until_stalled",
-      message0: "motor %1 run at %2 deg/s until it stalls then %3",
+      message0: "motor %1 run at %2 \u00B0/s until stalled then %3",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "SPEED", check: "Number" },
               { type: "field_dropdown", name: "THEN", options: THEN }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Pushes until it cannot turn. Good for finding a hard stop." },
-    { type: "pb_dc", message0: "motor %1 power %2 %%",
+    { type: "pb_dc", message0: "motor %1 power at %2 %% duty cycle",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "DUTY", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Raw power, -100 to 100, with no speed control." },
-    { type: "pb_stop", message0: "motor %1 %2",
+    { type: "pb_stop", message0: "motor %1 stop %2",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "field_dropdown", name: "HOW", options:
                 [["coast", "stop"], ["brake", "brake"], ["hold", "hold"]] }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "coast spins free, brake slows it, hold keeps the angle." },
-    { type: "pb_reset_angle", message0: "motor %1 call this angle %2 deg",
+    { type: "pb_reset_angle", message0: "motor %1 call this angle %2 \u00B0",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "ANGLE", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
@@ -301,33 +317,45 @@
       output: "Number", colour: C_MOTOR, tooltip: "Degrees turned so far." },
     { type: "pb_speed", message0: "motor %1 speed",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
-      output: "Number", colour: C_MOTOR, tooltip: "Turning speed, deg/s." },
+      output: "Number", colour: C_MOTOR, tooltip: "Turning speed, \u00B0/s." },
 
     /* -------------------------------------------------------- Movement */
-    { type: "pb_straight", message0: "%1 drive straight %2 mm then %3",
+    { type: "pb_straight", message0: "%1 drive straight for %2 mm then %3",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
               { type: "input_value", name: "DIST", check: "Number" },
               { type: "field_dropdown", name: "THEN", options: THEN }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
       tooltip: "Forward is positive, backward negative." },
-    { type: "pb_turn", message0: "%1 turn %2 deg then %3",
+    { type: "pb_turn", message0: "%1 turn for %2 \u00B0 then %3",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
               { type: "input_value", name: "ANGLE", check: "Number" },
               { type: "field_dropdown", name: "THEN", options: THEN }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
       tooltip: "Turns on the spot. Right is positive, left negative." },
-    { type: "pb_drive", message0: "%1 drive at %2 mm/s turning %3 deg/s",
+    { type: "pb_drive", message0: "%1 start at %2 mm/s and %3 \u00B0/s",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
               { type: "input_value", name: "SPEED", check: "Number" },
               { type: "input_value", name: "RATE", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
       tooltip: "Keeps going until you stop it. The program carries on." },
-    { type: "pb_drive_stop", message0: "%1 %2",
+    { type: "pb_drive_stop", message0: "%1 stop %2",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
               { type: "field_dropdown", name: "HOW", options:
                 [["coast", "stop"], ["brake", "brake"], ["hold", "hold"]] }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
       tooltip: "Stops both wheels." },
+    { type: "pb_drive_config", message0: "%1 configure %2 %3 %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "field_dropdown", name: "WHAT", options:
+                [["drive speed", "straight_speed"],
+                 ["drive acceleration", "straight_acceleration"],
+                 ["turn rate", "turn_rate"],
+                 ["turn acceleration", "turn_acceleration"]] },
+              { type: "input_value", name: "VAL", check: "Number" },
+              { type: "field_label", name: "UNIT", text: "mm/s" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "The speeds the drive straight and turn blocks use. " +
+               "settings(). It does not change start at." },
     { type: "pb_drive_reset", message0: "%1 reset the distance and angle driven",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
@@ -338,6 +366,22 @@
     { type: "pb_heading", message0: "%1 angle turned",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
       output: "Number", colour: C_MOVE, tooltip: "In degrees, since the last reset." },
+
+    /* -------------------------------------------------------------- Car */
+    { type: "pb_car_drive", message0: "%1 drive at %2 %3 %4",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["car"] },
+              { type: "field_dropdown", name: "WHAT", options:
+                [["power", "drive_power"], ["speed", "drive_speed"]] },
+              { type: "input_value", name: "VAL", check: "Number" },
+              { type: "field_label", name: "UNIT", text: "%" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Power is -100 to 100. Speed is in \u00B0/s. Drive at power 0 " +
+               "to stop. The program carries on." },
+    { type: "pb_car_steer", message0: "%1 steer by %2 %%",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["car"] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "-100 is full left, 0 straight, 100 full right." },
 
     /* --------------------------------------------------------- Display */
     { type: "pb_screen_clear", message0: "clear the screen",
@@ -551,12 +595,13 @@
     ncolor:{ label: "NXT colour sensor",  cls: "ColorSensor",      mod: "nxtdevices", alias: "NXTColorSensor", base: "nxt_color", bus: "S" },
     nsound:{ label: "NXT sound sensor",   cls: "SoundSensor",      mod: "nxtdevices", alias: "NXTSoundSensor", base: "nxt_sound", bus: "S" },
     nultra:{ label: "NXT ultrasonic sensor", cls: "UltrasonicSensor", mod: "nxtdevices", alias: "NXTUltrasonicSensor", base: "nxt_ultrasonic", bus: "S" },
-    drive: { label: "drive base",         cls: "DriveBase",        mod: "robotics",   base: "robot" }
+    drive: { label: "drive base",         cls: "DriveBase",        mod: "robotics",   base: "robot" },
+    car:   { label: "car",                cls: "Car",              mod: "robotics",   base: "car" }
   };
   /* the order declarations are written in: a drive base needs its motors
      above it, whatever order the blocks were dragged out in */
   var KIND_ORDER = ["brick", "motor", "touch", "color", "gyro", "ultra", "infra",
-                    "ntouch", "nlight", "ncolor", "nsound", "nultra", "drive"];
+                    "ntouch", "nlight", "ncolor", "nsound", "nultra", "drive", "car"];
 
   /* Names a device cannot have: Python's own words, and every name the
      generated file already uses. */
@@ -565,7 +610,7 @@
    "elif else except finally for from global if import in is lambda " +
    "nonlocal not or pass raise return try while with yield " +
    "Port Stop Color Button Direction wait randint print range len int str " +
-   "float abs min max Motor DriveBase EV3Brick TouchSensor ColorSensor " +
+   "float abs min max Motor DriveBase Car EV3Brick TouchSensor ColorSensor " +
    "UltrasonicSensor GyroSensor InfraredSensor LightSensor SoundSensor " +
    "NXTTouchSensor NXTLightSensor NXTColorSensor NXTSoundSensor " +
    "NXTUltrasonicSensor").split(" ").forEach(function (w) { RESERVED[w] = true; });
@@ -685,6 +730,23 @@
     }
   };
 
+  Blockly.Blocks["pb_dev_car"] = {
+    init: function () {
+      this.jsonInit({
+        message0: "car named %1 steering motor %2 drive motor %3",
+        args0: [{ type: "field_input", name: "NAME", text: freshName("car") },
+                { type: "field_device", name: "STEER", kinds: ["motor"] },
+                { type: "field_device", name: "DRIVE", kinds: ["motor"] }],
+        colour: C_SETUP, previousStatement: "Device", nextStatement: "Device",
+        tooltip: "A car with one motor that steers and one that drives. " +
+                 "Pick two different motors from Set up."
+      });
+      this.getField("NAME").setValidator(nameValidator(this));
+      var m = deviceOptions(["motor"], null);
+      if (m.length > 1) this.setFieldValue(m[1][1], "DRIVE");
+    }
+  };
+
   /* Change a device's name and every block that picks it follows. Names are
      unique, so a block holding the old name can only mean this device. */
   function renamed(oldName, newName) {
@@ -740,9 +802,29 @@
   }
 
   Object.keys(KINDS).forEach(function (k) {
-    if (k !== "drive") defineDevice(k);
+    if (k !== "drive" && k !== "car") defineDevice(k);
   });
   py.forBlock["pb_dev_drive"] = function () { return ""; };
+  py.forBlock["pb_dev_car"] = function () { return ""; };
+
+  /* The unit after a number follows the dropdown before it: acceleration is
+     in deg/s squared, a speed in deg/s. Only the label changes; the code
+     is written from the dropdown. */
+  var UNITS = {
+    pb_motor_config: { acceleration: "\u00B0/s\u00B2", speed: "\u00B0/s" },
+    pb_drive_config: { straight_speed: "mm/s", straight_acceleration: "mm/s\u00B2",
+                       turn_rate: "\u00B0/s", turn_acceleration: "\u00B0/s\u00B2" },
+    pb_car_drive:    { drive_power: "%", drive_speed: "\u00B0/s" }
+  };
+  Object.keys(UNITS).forEach(function (type) {
+    var first = Blockly.Blocks[type].init;
+    Blockly.Blocks[type].init = function () {
+      first.call(this);
+      var what = this.getField("WHAT"), unit = this.getField("UNIT"), map = UNITS[type];
+      what.setValidator(function (v) { unit.setValue(map[v] || ""); return v; });
+      unit.setValue(map[what.getValue()] || "");
+    };
+  });
 
   var devs, refs, needs, usesEv3, brickName, theWs, funcs;
 
@@ -762,6 +844,10 @@
         d.right = ident(b.getFieldValue("RIGHT") || "");
         d.wheel = Number(b.getFieldValue("WHEEL"));
         d.axle = Number(b.getFieldValue("AXLE"));
+      }
+      if (d.kind === "car") {
+        d.steer = ident(b.getFieldValue("STEER") || "");
+        d.drive = ident(b.getFieldValue("DRIVE") || "");
       }
       devs.push(d);
     });
@@ -827,6 +913,17 @@
         err("drive base " + x.name + " needs two different motors.");
       else driveOk[x.name] = true;
     });
+    var carOk = {};
+    list.forEach(function (x) {
+      if (x.kind !== "car") return;
+      function isMotor(n) {
+        return list.some(function (m) { return m.kind === "motor" && m.name === n; }); }
+      if (!isMotor(x.steer) || !isMotor(x.drive))
+        err("car " + x.name + " needs two motors that are in Set up.");
+      else if (x.steer === x.drive)
+        err("car " + x.name + " needs two different motors.");
+      else carOk[x.name] = true;
+    });
 
     /* imports, each one only if something below actually uses it */
     var imp = {};
@@ -846,7 +943,8 @@
     });
     head += "from pybricks.parameters import " + par.join(", ") + "\n";
     if (needs.wait) head += "from pybricks.tools import wait\n";
-    if (imp.robotics) head += "from pybricks.robotics import DriveBase\n";
+    if (imp.robotics) head += "from pybricks.robotics import " +
+                              Object.keys(imp.robotics).sort().join(", ") + "\n";
     if (needs.random) head += "from urandom import randint\n";
     head += "\n";
 
@@ -861,6 +959,9 @@
           if (driveOk[x.name])
             setup.push(x.name + " = DriveBase(" + x.left + ", " + x.right +
                        ", wheel_diameter=" + x.wheel + ", axle_track=" + x.axle + ")");
+        } else if (kind === "car") {
+          if (carOk[x.name])
+            setup.push(x.name + " = Car(" + x.steer + ", " + x.drive + ")");
         } else if (x.port)
           setup.push(x.name + " = " + (K.alias || K.cls) + "(Port." + x.port + ")");
       });
@@ -945,6 +1046,12 @@
   py.forBlock["pb_run_target"] = function (b, g) {
     return M(b) + ".run_target(" + num(b, g, "SPEED", 360) + ", " +
            num(b, g, "TARGET", 0) + then(b) + ")\n"; };
+  py.forBlock["pb_track_target"] = function (b, g) {
+    return M(b) + ".track_target(" + num(b, g, "TARGET", 90) + ")\n"; };
+  py.forBlock["pb_motor_config"] = function (b, g) {
+    var k = b.getFieldValue("WHAT");
+    return M(b) + ".control.limits(" + k + "=" +
+           num(b, g, "VAL", k === "speed" ? 1000 : 2000) + ")\n"; };
   py.forBlock["pb_run_until_stalled"] = function (b, g) {
     return M(b) + ".run_until_stalled(" + num(b, g, "SPEED", 200) +
            then(b) + ")\n"; };
@@ -967,6 +1074,15 @@
   py.forBlock["pb_drive"] = function (b, g) {
     return ref(b) + ".drive(" + num(b, g, "SPEED", 100) + ", " +
            num(b, g, "RATE", 0) + ")\n"; };
+  py.forBlock["pb_drive_config"] = function (b, g) {
+    var k = b.getFieldValue("WHAT"), d = { straight_speed: 200,
+      straight_acceleration: 400, turn_rate: 90, turn_acceleration: 180 };
+    return ref(b) + ".settings(" + k + "=" + num(b, g, "VAL", d[k]) + ")\n"; };
+  py.forBlock["pb_car_drive"] = function (b, g) {
+    var k = b.getFieldValue("WHAT");
+    return ref(b) + "." + k + "(" + num(b, g, "VAL", k === "drive_power" ? 50 : 360) + ")\n"; };
+  py.forBlock["pb_car_steer"] = function (b, g) {
+    return ref(b) + ".steer(" + num(b, g, "PCT", 0) + ")\n"; };
   py.forBlock["pb_drive_stop"] = function (b) {
     return ref(b) + "." + b.getFieldValue("HOW") + "()\n"; };
   py.forBlock["pb_drive_reset"] = function (b) { return ref(b) + ".reset()\n"; };
@@ -1141,7 +1257,7 @@
   function blk(t) { return { kind: "block", type: t }; }
   var toolbox = { kind: "categoryToolbox", contents: [
     { kind: "category", name: "Setup", colour: C_SETUP, contents: [
-      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"),
+      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"), blk("pb_dev_car"),
       { kind: "label", text: "Set up EV3 sensors" },
       blk("pb_dev_touch"), blk("pb_dev_color"), blk("pb_dev_gyro"),
       blk("pb_dev_ultra"), blk("pb_dev_infra"),
@@ -1150,25 +1266,33 @@
       blk("pb_dev_nsound"), blk("pb_dev_nultra")
     ]},
     { kind: "category", name: "Motors", colour: C_MOTOR, contents: [
-      { kind: "block", type: "pb_run_angle", inputs: { ANGLE: sh(90), SPEED: sh(360) } },
+      { kind: "label", text: "Motor" },
+      { kind: "block", type: "pb_run_angle", inputs: { SPEED: sh(500), ANGLE: sh(360) } },
+      { kind: "block", type: "pb_track_target", inputs: { TARGET: sh(90) } },
+      { kind: "block", type: "pb_stop" },
+      { kind: "block", type: "pb_motor_config", inputs: { VAL: sh(2000) } },
+      { kind: "block", type: "pb_dc", inputs: { DUTY: sh(50) } },
       { kind: "block", type: "pb_run_time", inputs: { SPEED: sh(360), TIME: sh(1000) } },
-      { kind: "block", type: "pb_run_target", inputs: { TARGET: sh(0), SPEED: sh(360) } },
+      { kind: "block", type: "pb_run_target", inputs: { SPEED: sh(360), TARGET: sh(0) } },
       { kind: "block", type: "pb_run", inputs: { SPEED: sh(360) } },
       { kind: "block", type: "pb_run_until_stalled", inputs: { SPEED: sh(200) } },
-      { kind: "block", type: "pb_dc", inputs: { DUTY: sh(50) } },
-      { kind: "block", type: "pb_stop" },
       { kind: "block", type: "pb_reset_angle", inputs: { ANGLE: sh(0) } },
       { kind: "block", type: "pb_angle" },
       { kind: "block", type: "pb_speed" }
     ]},
     { kind: "category", name: "Movement", colour: C_MOVE, contents: [
-      { kind: "block", type: "pb_straight", inputs: { DIST: sh(200) } },
+      { kind: "label", text: "Drive Base" },
+      { kind: "block", type: "pb_straight", inputs: { DIST: sh(250) } },
       { kind: "block", type: "pb_turn", inputs: { ANGLE: sh(90) } },
+      { kind: "block", type: "pb_drive_config", inputs: { VAL: sh(200) } },
       { kind: "block", type: "pb_drive", inputs: { SPEED: sh(100), RATE: sh(0) } },
       { kind: "block", type: "pb_drive_stop" },
       { kind: "block", type: "pb_drive_reset" },
       { kind: "block", type: "pb_distance" },
-      { kind: "block", type: "pb_heading" }
+      { kind: "block", type: "pb_heading" },
+      { kind: "label", text: "Car" },
+      { kind: "block", type: "pb_car_drive", inputs: { VAL: sh(50) } },
+      { kind: "block", type: "pb_car_steer", inputs: { PCT: sh(0) } }
     ]},
     { kind: "category", name: "Display", colour: C_DISP, contents: [
       { kind: "block", type: "pb_screen_print", inputs: { WHAT: st("Hello") } },
@@ -1251,7 +1375,7 @@
   }
 
   var KEYWORDS = /\b(import|from|def|return|if|elif|else|while|for|in|not|and|or|True|False|None|raise|pass|break|continue)\b/g;
-  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|on|off|SystemExit)\b/g;
+  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|track_target|control|limits|settings|steer|drive_power|drive_speed|Car|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|on|off|SystemExit)\b/g;
   var CONSTS = /\b(Port|Stop|Color|Button|Direction)\.[A-Z_0-9]+|\b(Port|Stop|Color|Button|Direction)\b/g;
 
   function esc(s) {

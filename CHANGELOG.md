@@ -24,6 +24,15 @@ All notable changes to BrickCode Studio. Dates are release dates.
     line at the top.
   - Same palette, category order and look as the NQC/NXC editor. It shares
     that editor's copy of Blockly rather than carrying a second one.
+  - **Motor, Drive Base and Car blocks worded as in Pybricks' own editor**:
+    `motor run at 500 °/s by 360 ° then hold`, `motor track 90 °`,
+    `motor stop coast`, `motor configure acceleration 2000 °/s²`,
+    `motor power at 50 % duty cycle`, `drive straight for 250 mm then hold`,
+    `configure drive speed 200 mm/s`, `start at 100 mm/s and 0 °/s`, and for a
+    car `drive at power 50 %` and `steer by 0 %`. New blocks write
+    `track_target()`, `control.limits()`, `DriveBase.settings()` and the
+    `Car` class (a **car** device in Set up takes a steering and a drive
+    motor). The unit after a number follows its dropdown.
   - Verified by running every generated program against stub `pybricks`
     modules that check their own arguments and record each call (there is no
     compiler to hand a Pybricks program to): `cd pybricks/test && python3 gen.py`.

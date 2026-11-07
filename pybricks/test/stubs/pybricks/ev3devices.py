@@ -25,12 +25,29 @@ def _stop(v):
     return v
 
 
+class _Control:
+    """Motor.control. In the API source limits() takes speed, acceleration
+    and torque, all optional when called by keyword."""
+    def __init__(self, port):
+        self.port = port
+
+    def limits(self, speed=None, acceleration=None, torque=None):
+        if speed is not None:
+            _num("speed", speed, 1)
+        if acceleration is not None:
+            _num("acceleration", acceleration, 1)
+        if torque is not None:
+            _num("torque", torque, 0)
+        LOG.append(("limits", self.port, speed, acceleration, torque))
+
+
 class Motor:
     def __init__(self, port, positive_direction=Direction.CLOCKWISE, gears=None):
         if not isinstance(port, _Enum) or repr(port)[5:] not in Port._MOTORS:
             raise ValueError("a motor needs Port.A to Port.D, got %r" % (port,))
         self.port = repr(port)[5:]
         self._angle = 0
+        self.control = _Control(self.port)
         LOG.append(("Motor", self.port))
 
     def run(self, speed):
@@ -56,6 +73,11 @@ class Motor:
             _num("duty_limit", duty_limit, 0, 100)
         LOG.append(("run_until_stalled", self.port, speed, repr(then)))
         return self._angle
+
+    def track_target(self, target_angle):
+        _num("target_angle", target_angle)
+        self._angle = target_angle
+        LOG.append(("track_target", self.port, target_angle))
 
     def dc(self, duty):
         _num("duty", duty, -100, 100)

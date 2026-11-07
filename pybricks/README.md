@@ -24,7 +24,7 @@ Every other block then picks a device from a list of those names, so
 `arm1.run_angle(...)` reads as what it does and two motors of the same kind
 cannot be mixed up. The Setup category has the EV3 sensors (touch, colour,
 gyro, ultrasonic, infrared) and the NXT ones (touch, light, colour, sound,
-ultrasonic), a motor, a drive base and the brick.
+ultrasonic), a motor, a drive base, a car and the brick.
 
 - Rename a device and every block that picked it follows.
 - Names are unique and cannot be a Python or Pybricks word; the field
@@ -61,7 +61,7 @@ The EV3 is not supported by **code.pybricks.com**. Two routes work:
 
 The generated program suits both, because for motors the two APIs are the
 same call for call — `run_angle(speed, rotation_angle, then, wait)` either
-way, in deg/s, degrees and milliseconds.
+way, in °/s, degrees and milliseconds.
 
 ## Why there are stub modules
 

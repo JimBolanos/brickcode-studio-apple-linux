@@ -158,7 +158,38 @@ CASES = [
                              {"ANGLE": 45, "SPEED": 180})),
      [["Motor", "A"]] + [["run_angle", "A", 180, 45, "Stop.HOLD"]] * 3),
 
+    ("track target", [dev("motor", "arm", "A")],
+     blk("pb_track_target", {"DEV": "arm"}, {"TARGET": 90}),
+     [["Motor", "A"], ["track_target", "A", 90]]),
+
+    ("motor configure", [dev("motor", "arm", "A")],
+     blk("pb_motor_config", {"DEV": "arm", "WHAT": "acceleration"}, {"VAL": 2000},
+         nxt=blk("pb_motor_config", {"DEV": "arm", "WHAT": "speed"}, {"VAL": 800})),
+     [["Motor", "A"], ["limits", "A", None, 2000, None],
+      ["limits", "A", 800, None, None]]),
+
     # ---------------------------------------------------------- Movement
+    ("drive base configure",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_drive_config", {"DEV": "robot", "WHAT": "straight_speed"}, {"VAL": 200},
+         nxt=blk("pb_drive_config", {"DEV": "robot", "WHAT": "turn_rate"}, {"VAL": 90},
+                 nxt=blk("pb_drive", {"DEV": "robot"}, {"SPEED": 100, "RATE": 0},
+                         nxt=blk("pb_drive_stop", {"DEV": "robot", "HOW": "stop"})))),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive_settings", 200, None, None, None],
+      ["drive_settings", None, None, 90, None],
+      ["drive", 100, 0], ["drive_stop"]]),
+
+    ("car",
+     [dev("motor", "steering", "A"), dev("motor", "wheels", "B"),
+      dev("car", "car", STEER="steering", DRIVE="wheels")],
+     blk("pb_car_drive", {"DEV": "car", "WHAT": "drive_power"}, {"VAL": 50},
+         nxt=blk("pb_car_steer", {"DEV": "car"}, {"PCT": -30},
+                 nxt=blk("pb_car_drive", {"DEV": "car", "WHAT": "drive_speed"}, {"VAL": 360}))),
+     [["Motor", "A"], ["Motor", "B"], ["Car", "A", "B"],
+      ["car_power", 50], ["car_steer", -30], ["car_speed", 360]]),
+
     ("drive base",
      [dev("motor", "left", "B"), dev("motor", "right", "C"),
       dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
@@ -346,6 +377,17 @@ TEXT_CASES = [
     ("no device picked", MOTOR_B,
      blk("pb_run", {"DEV": ""}, {"SPEED": 10}),
      ["# ERROR: a block has no device chosen"], []),
+
+    ("car without motors",
+     [dev("car", "car", STEER="a", DRIVE="b")],
+     blk("pb_car_steer", {"DEV": "car"}, {"PCT": 0}),
+     ["# ERROR: car car needs two motors that are in Set up."],
+     ["Car(a, b"]),
+
+    ("car, same motor twice",
+     [dev("motor", "m", "A"), dev("car", "car", STEER="m", DRIVE="m")],
+     blk("pb_car_steer", {"DEV": "car"}, {"PCT": 0}),
+     ["# ERROR: car car needs two different motors."], []),
 
     ("drive base without motors",
      [dev("drive", "robot", LEFT="l", RIGHT="r", WHEEL=56, AXLE=114)],
