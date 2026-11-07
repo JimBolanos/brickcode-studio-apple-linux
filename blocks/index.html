@@ -1492,10 +1492,10 @@
       { kind: "block", type: "rcx_off" }, SEP, { kind: "block", type: "rcx_setpower" } ] },
     { name: "Movement", colour: C_MOVE, contents: [
       { kind: "label", text: "the first motor is the left wheel" },
+      { kind: "block", type: "rcx_move_motors" }, SEP,
       { kind: "block", type: "rcx_move_for" }, { kind: "block", type: "rcx_turn" }, SEP,
       { kind: "block", type: "rcx_move_start" }, { kind: "block", type: "rcx_move_stop" }, SEP,
-      { kind: "block", type: "rcx_move_speed" },
-      { kind: "block", type: "rcx_move_motors" } ] },
+      { kind: "block", type: "rcx_move_speed" } ] },
     { name: "Sound", colour: C_SOUND, contents: [
       { kind: "block", type: "rcx_playsound" } ] },
     { name: "IR Messages", colour: C_IR, contents: [
@@ -1537,9 +1537,9 @@
       { kind: "block", type: "nxt_motor_degrees" } ] },
     { name: "Movement", colour: C_MOVE, contents: [
       { kind: "label", text: "the first motor is the left wheel" },
+      { kind: "block", type: "nxt_move_motors" }, SEP,
       { kind: "block", type: "nxt_move_for" }, { kind: "block", type: "nxt_turn" }, SEP,
-      { kind: "block", type: "nxt_move_start" }, { kind: "block", type: "nxt_move_stop" }, SEP,
-      { kind: "block", type: "nxt_move_motors" } ] },
+      { kind: "block", type: "nxt_move_start" }, { kind: "block", type: "nxt_move_stop" } ] },
     { name: "Display", colour: C_DISP, contents: [
       { kind: "block", type: "nxt_disp_text" }, { kind: "block", type: "nxt_disp_num" }, SEP,
       { kind: "block", type: "nxt_disp_clear" }, SEP,

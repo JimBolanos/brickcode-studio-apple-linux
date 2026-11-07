@@ -160,6 +160,8 @@ All notable changes to BrickCode Studio. Dates are release dates.
 - **EV3: the brick button block now reads "is the [centre] button pressed?"
   and sits at the top of Sensors,** like the NXT one. Same block underneath,
   so saved projects keep working.
+- **`set movement motors` is the first block of Movement in the RCX, NXT and EV3
+  editors,** so the robot is chosen before it is moved.
 
 ## 2.3.3 — 2026-11-02
 
