@@ -5,6 +5,22 @@ All notable changes to BrickCode Studio. Dates are release dates.
 ## 2.4.0 — 2026-11-06
 
 ### Added
+- **Pictures and drawing in the NXT block editor.** Display gets **show … on
+  the screen** with the same 25 pictures as the EV3 editor (faces, hearts,
+  ZZZ, speech bubble, thumbs, cross, check, question mark, stop sign, teeth,
+  arrows), redrawn for the NXT's 100 × 64 screen, and **dot**, **line**,
+  **box** and **circle** blocks (`PointOut`, `LineOut`, `RectOut`,
+  `CircleOut`; the box and circle can be filled). x and y are counted from
+  the top left, as in the EV3 editor; the NXT counts y from the bottom, so
+  the code turns every y into `63 - y`. The standard firmware cannot fill a
+  shape, so fills are made of lines. Each picture is a small function written
+  above `task main`, and every one is compiled with `nbc` and checked pixel by
+  pixel in the tests. A program that only draws needs a final **wait**.
+- **Open, Save and Save as… are buttons in the header** of the NQC/NXC block
+  editor, beside Example and Clear, the way the EV3 editor has them, instead
+  of a File menu. Same shortcuts (Ctrl/Cmd+S, Shift+S, O). Clear now also
+  forgets the file it came from, so a later Save cannot overwrite it with an
+  empty program. *New project* is gone from the menu; Ctrl/Cmd+N still works.
 - **A block editor for the EV3**, in `pybricks/`. It writes Pybricks Python:
   nothing is compiled or sent from the app, you copy the code and paste it
   into Pybricks. It opens from a fourth card on the dashboard, or from

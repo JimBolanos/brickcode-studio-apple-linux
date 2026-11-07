@@ -121,8 +121,6 @@ def main():
                     xml)
             else:
                 page.evaluate("window.__ws.clear()")
-                page.click("#btnMenu")
-                page.wait_for_timeout(200)
                 page.click("#miExample")
             page.wait_for_timeout(120)
             code = page.evaluate("window.__code()")

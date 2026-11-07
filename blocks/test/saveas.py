@@ -92,7 +92,6 @@ def main():
 
         # plain Save after a Save as writes back without asking again
         page.evaluate("window.__written = null; window.__picked = null")
-        page.click("#btnMenu"); page.wait_for_timeout(150)
         page.click("#miSave"); page.wait_for_timeout(400)
         again = page.evaluate("window.__picked")
         wrote = page.evaluate("window.__written")
@@ -112,6 +111,9 @@ def main():
             # Chromium starts blocking automatic downloads after about ten
             # from one page, so each group gets a fresh one. Browser guard,
             # not anything the editor does.
+            ctx.close()
+            ctx = br.new_context(accept_downloads=True)
+            page = ctx.new_page()
             page.goto(PAGE)
             page.wait_for_function("window.__ready === true")
             page.evaluate("delete window.showSaveFilePicker; true")

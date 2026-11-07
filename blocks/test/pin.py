@@ -65,7 +65,7 @@ with sync_playwright() as pw:
     check("bloqueado", page.evaluate("window.__locked()"), True)
     check("conmutador oculto", page.is_hidden("#seg"), True)
     check("etiqueta", page.inner_text("#tag"), "for the RCX / Scout")
-    check("extension en el menu", page.inner_text("#miSaveExt"), ".nqc")
+    check("extension en el boton", ".nqc" in page.get_attribute("#miSave", "title"), True)
 
     # the NXC button must be unreachable, not merely invisible
     check("boton NXC no clickeable", page.is_visible("#mNxc"), False)

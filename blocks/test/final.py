@@ -10,7 +10,7 @@ with sync_playwright() as p:
     pg.screenshot(path=paths.shot("shot-claro.png"))
 
     with pg.expect_download() as dl:
-        pg.click("#btnMenu"); pg.wait_for_timeout(200); pg.click("#miSave")
+        pg.click("#miSave")
     d = dl.value
     path = "/tmp/descargado.nqc"
     d.save_as(path)

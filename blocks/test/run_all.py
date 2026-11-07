@@ -18,7 +18,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 SUITE = ["run", "net", "control", "sensors", "ops", "vars", "pal",
-         "nxc", "nxc2", "roundtrip", "saveas", "pin"]
+         "nxc", "nxc2", "nxt_pics", "roundtrip", "saveas", "pin"]
 
 
 def main(argv):
