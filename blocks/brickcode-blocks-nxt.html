@@ -3156,6 +3156,7 @@ return $.__chunk_javascript;
       C_MOTOR = "#0085F3",   // Motors
       C_MOVE  = "#FA4FC7",   // Movement
       C_SOUND = "#B765E3",   // Sound
+      C_IR    = "#14B8A6",   // IR Messages (RCX)
       C_CTRL  = "#FFAC15",   // Control
       C_SENSE = "#1BC5EE",   // Sensors
       C_OPS   = "#00B044",   // Operators
@@ -3284,6 +3285,26 @@ return $.__chunk_javascript;
     { type: "rcx_playsound", message0: "play sound %1",
       args0: [{ type: "field_dropdown", name: "SND", options: SOUNDS }],
       previousStatement: null, nextStatement: null, colour: C_SOUND },
+
+    // ---- IR Messages (RCX, RCX 2, Scout) ----
+    { type: "rcx_ir_power", message0: "set IR transmitter power to %1",
+      args0: [{ type: "field_dropdown", name: "LVL",
+                options: [["low", "TX_POWER_LO"], ["high", "TX_POWER_HI"]] }],
+      previousStatement: null, nextStatement: null, colour: C_IR,
+      tooltip: "Low power only reaches a brick close by, high power reaches farther" },
+
+    { type: "rcx_ir_send", message0: "send IR message %1",
+      args0: [{ type: "input_value", name: "MSG", check: "Number" }],
+      inputsInline: true, previousStatement: null, nextStatement: null, colour: C_IR,
+      tooltip: "Sends a number from 0 to 255 by infrared. Another brick can read it with \u201creceive IR message\u201d" },
+
+    { type: "rcx_ir_clear", message0: "clear last received IR message",
+      previousStatement: null, nextStatement: null, colour: C_IR,
+      tooltip: "Forget the last message, so \u201creceive IR message\u201d reads 0 until a new one arrives" },
+
+    { type: "rcx_ir_receive", message0: "receive IR message",
+      output: "Number", colour: C_IR,
+      tooltip: "The last IR message this brick received (0 to 255), or 0 if there is none" },
 
     // ---- Control ----
     { type: "rcx_wait", message0: "wait %1 seconds",
@@ -3685,6 +3706,15 @@ return $.__chunk_javascript;
   nqc.forBlock["rcx_playsound"] = function (b) {
     return "PlaySound(" + b.getFieldValue("SND") + ");\n";
   };
+
+  nqc.forBlock["rcx_ir_power"] = function (b) {
+    return "SetTxPower(" + b.getFieldValue("LVL") + ");\n";
+  };
+  nqc.forBlock["rcx_ir_send"] = function (b, g) {
+    return "SendMessage(" + (g.valueToCode(b, "MSG", NONE) || "0") + ");\n";
+  };
+  nqc.forBlock["rcx_ir_clear"] = function () { return "ClearMessage();\n"; };
+  nqc.forBlock["rcx_ir_receive"] = function () { return ["Message()", ATOMIC]; };
 
   nqc.forBlock["rcx_wait"] = function (b) {
     return "Wait(" + Math.round(Number(b.getFieldValue("SECS")) * 100) + ");\n";
@@ -4289,6 +4319,12 @@ return $.__chunk_javascript;
       { kind: "block", type: "rcx_move_motors" } ] },
     { name: "Sound", colour: C_SOUND, contents: [
       { kind: "block", type: "rcx_playsound" } ] },
+    { name: "IR Messages", colour: C_IR, contents: [
+      { kind: "block", type: "rcx_ir_power" }, SEP,
+      { kind: "block", type: "rcx_ir_send", inputs: {
+          MSG: { shadow: { type: "math_number", fields: { NUM: 42 } } } } },
+      { kind: "block", type: "rcx_ir_clear" }, SEP,
+      { kind: "block", type: "rcx_ir_receive" } ] },
     { name: "Control", colour: C_CTRL, contents: [
       { kind: "block", type: "rcx_wait" }, { kind: "block", type: "rcx_wait_until" }, SEP,
       { kind: "block", type: "rcx_repeat" }, { kind: "block", type: "rcx_forever" },
@@ -4362,7 +4398,7 @@ return $.__chunk_javascript;
   // The order Robot Inventor lists them in: the hardware first, Events in
   // the middle, then the programming blocks. Any category not named here keeps
   // its place at the end, so adding one later cannot silently drop it.
-  var ORDER = ["Motors", "Movement", "Display", "Sound", "Events", "Control",
+  var ORDER = ["Motors", "Movement", "Display", "Sound", "IR Messages", "Events", "Control",
                "Sensors", "Operators", "Variables", "My Blocks"];
   function inOrder(cats) {
     var out = [], i, j;

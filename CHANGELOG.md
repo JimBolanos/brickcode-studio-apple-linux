@@ -5,6 +5,14 @@ All notable changes to BrickCode Studio. Dates are release dates.
 ## 2.4.0 — 2026-11-06
 
 ### Added
+
+- **IR Messages in the RCX block editor.** A new category after Sound with
+  four blocks: "set IR transmitter power to low/high" (`SetTxPower`), "send IR
+  message" (`SendMessage`, 42 by default), "clear last received IR message"
+  (`ClearMessage`) and the round "receive IR message" (`Message()`), which
+  fits in comparisons and in "wait until". The generated NQC compiles for RCX,
+  RCX 2 and Scout (new test `ir`); it has not been tried on a real brick. The
+  NXT editor does not get them: the NXT has no IR.
 - **Pictures and drawing in the NXT block editor.** Display gets **show … on
   the screen** with the same 25 pictures as the EV3 editor (faces, hearts,
   ZZZ, speech bubble, thumbs, cross, check, question mark, stop sign, teeth,
