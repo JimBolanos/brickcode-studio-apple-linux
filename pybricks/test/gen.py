@@ -158,6 +158,68 @@ CASES = [
                              {"ANGLE": 45, "SPEED": 180})),
      [["Motor", "A"]] + [["run_angle", "A", 180, 45, "Stop.HOLD"]] * 3),
 
+    # ------------------------------------------- NXT-style motor blocks
+    ("motor run for seconds", [dev("motor", "arm", "B")],
+     blk("pb_motor_for", {"DEV": "arm", "UNIT": "SEC"}, {"AMT": 2, "PCT": 75}),
+     [["Motor", "B"], ["run_time", "B", 750, 2000, "Stop.HOLD"]]),
+
+    ("motor run for rotations", [dev("motor", "arm", "B")],
+     blk("pb_motor_for", {"DEV": "arm", "UNIT": "ROT"}, {"AMT": 2, "PCT": 50}),
+     [["Motor", "B"], ["run_angle", "B", 500, 720, "Stop.HOLD"]]),
+
+    ("motor run for degrees, backwards", [dev("motor", "arm", "B")],
+     blk("pb_motor_for", {"DEV": "arm", "UNIT": "DEG"}, {"AMT": 90, "PCT": -50}),
+     [["Motor", "B"], ["run_angle", "B", 500, -90, "Stop.HOLD"]]),
+
+    ("start motor, stop, reset", [dev("motor", "arm", "B")],
+     blk("pb_motor_on", {"DEV": "arm"}, {"PCT": 100},
+         nxt=blk("pb_stop", {"DEV": "arm", "HOW": "brake"},
+                 nxt=blk("pb_motor_reset", {"DEV": "arm"},
+                         nxt=pr(blk("pb_angle", {"DEV": "arm"}))))),
+     [["EV3Brick"], ["Motor", "B"], ["run", "B", 1000], ["brake", "B"],
+      ["reset_angle", "B", 0], ["angle", "B"], ["screen_print", "0"]]),
+
+    ("motor 0 percent is stop", [dev("motor", "arm", "B")],
+     blk("pb_motor_for", {"DEV": "arm", "UNIT": "SEC"}, {"AMT": 2, "PCT": 0}),
+     [["Motor", "B"], ["stop", "B"]]),
+
+    # ------------------------------------ NXT-style movement blocks
+    ("move for seconds",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_move_for", {"DEV": "robot", "DIR": "FWD", "UNIT": "SEC"},
+         {"AMT": 1, "PCT": 75}),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive", 375, 0], ["wait", 1000], ["drive_brake"]]),
+
+    # one rotation of a 56 mm wheel is 175.93 mm
+    ("move for rotations, backwards",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_move_for", {"DEV": "robot", "DIR": "REV", "UNIT": "ROT"},
+         {"AMT": 1, "PCT": 50}),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive_settings", 250, None, None, None], ["straight", -176, "Stop.HOLD"]]),
+
+    ("turn right for seconds, left for degrees",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_turn_for", {"DEV": "robot", "SIDE": "R", "UNIT": "SEC"},
+         {"AMT": 2, "PCT": 50},
+         nxt=blk("pb_turn_for", {"DEV": "robot", "SIDE": "L", "UNIT": "DEG"},
+                 {"AMT": 90, "PCT": 50})),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive", 0, 150], ["wait", 2000], ["drive_brake"],
+      ["drive_settings", None, None, 150, None], ["turn", -90, "Stop.HOLD"]]),
+
+    ("start moving backwards, stop moving",
+     [dev("motor", "left", "B"), dev("motor", "right", "C"),
+      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+     blk("pb_move_start", {"DEV": "robot", "DIR": "REV"}, {"PCT": 40},
+         nxt=blk("pb_move_stop", {"DEV": "robot"})),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive", -200, 0], ["drive_brake"]]),
+
     ("track target", [dev("motor", "arm", "A")],
      blk("pb_track_target", {"DEV": "arm"}, {"TARGET": 90}),
      [["Motor", "A"], ["track_target", "A", 90]]),
@@ -308,6 +370,13 @@ CASES = [
 # Running these against the stubs would hang, so the source is read instead.
 # (name, devices, body, must contain, must not contain)
 TEXT_CASES = [
+    # A sum in the speed stays a sum, without doubled brackets.
+    ("speed from a sum", [dev("motor", "arm", "B")],
+     '<block type="pb_motor_on"><field name="DEV">arm</field><value name="PCT">'
+     '<block type="pb_arith"><field name="OP">+</field><value name="A">%s</value>'
+     '<value name="B">%s</value></block></value></block>' % (n(50), n(25)),
+     ["arm.run((50 + 25) * 10)"], ["((50 + 25))"]),
+
     ("forever", [],
      '<block type="pb_forever"><statement name="DO">%s</statement></block>'
      % blk("pb_wait", values={"MS": 100}),

@@ -24,20 +24,23 @@ All notable changes to BrickCode Studio. Dates are release dates.
     line at the top.
   - Same palette, category order and look as the NQC/NXC editor. It shares
     that editor's copy of Blockly rather than carrying a second one.
-  - **Motor, Drive Base and Car blocks worded as in Pybricks' own editor**:
-    `motor run at 500 °/s by 360 ° then hold`, `motor track 90 °`,
-    `motor stop coast`, `motor configure acceleration 2000 °/s²`,
-    `motor power at 50 % duty cycle`, `drive straight for 250 mm then hold`,
-    `configure drive speed 200 mm/s`, `start at 100 mm/s and 0 °/s`, and for a
-    car `drive at power 50 %` and `steer by 0 %`. New blocks write
-    `track_target()`, `control.limits()`, `DriveBase.settings()` and the
-    `Car` class (a **car** device in Set up takes a steering and a drive
-    motor). The unit after a number follows its dropdown.
-  - Verified by running every generated program against stub `pybricks`
-    modules that check their own arguments and record each call (there is no
-    compiler to hand a Pybricks program to): `cd pybricks/test && python3 gen.py`.
-- **The EV3 on the dashboard**, drawn in Cairo like the other three, from a
-  photograph for the proportions and with no logo on it.
+  - **Motors and Movement laid out like the NXT editor**, with the speed in
+    per cent and the amount in seconds, degrees or rotations:
+    `motor A run for 1 seconds at 75 % speed`, `start motor A at 75 % speed`,
+    `stop motor A coast`, `reset motor A degrees counted`; and for a drive
+    base `move forward for 1 seconds at 75 % speed`, `turn right for 1 seconds
+    at 75 % speed` (seconds or degrees), `start moving forward`, `stop moving`.
+    100 % is 1000 °/s for a motor, 500 mm/s for a drive base and 300 °/s for a
+    turn. Degrees and rotations of a drive base are worked out from the wheel
+    size in Set up. A number typed in is calculated in the Python
+    (`run_time(750, 1000)`); a variable stays an expression.
+  - **Below them, "More, as Pybricks has them"**: the blocks worded as in
+    Pybricks' own editor (`run at 500 °/s by 360 ° then hold`, `track`,
+    `configure acceleration`, `power at 50 % duty cycle`, `drive straight for
+    250 mm`, `configure drive speed`, `start at 100 mm/s and 0 °/s`) and a
+    **car** device with `drive at power 50 %` and `steer by 0 %`. They write
+    `track_target()`, `control.limits()`, `DriveBase.settings()` and `Car`.
+    The unit after a number follows its dropdown.
 
 ### Fixed
 - **Run from the source tree, the app could not open the block editor.** It

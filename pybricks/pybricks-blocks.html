@@ -3151,6 +3151,25 @@ return $.__chunk_javascript;
       tooltip: "Holds the program here until this becomes true." },
 
     /* ---------------------------------------------------------- Motors */
+    { type: "pb_motor_for", message0: "motor %1 run for %2 %3 at %4 %% speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "AMT", check: "Number" },
+              { type: "field_dropdown", name: "UNIT", options: [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Waits until it is done. Degrees and rotations count the motor's " +
+               "own turns, so they are exact. 100 % is 1000 \u00B0/s. A negative " +
+               "speed turns the other way." },
+    { type: "pb_motor_on", message0: "start motor %1 at %2 %% speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Keeps running. The program carries on. 100 % is 1000 \u00B0/s. " +
+               "A negative speed turns the other way." },
+    { type: "pb_motor_reset", message0: "reset motor %1 degrees counted",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
+      previousStatement: null, nextStatement: null, colour: C_MOTOR,
+      tooltip: "Sets the count of degrees back to 0." },
     { type: "pb_run", message0: "motor %1 run at %2 \u00B0/s",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "input_value", name: "SPEED", check: "Number" }],
@@ -3208,7 +3227,7 @@ return $.__chunk_javascript;
               { type: "input_value", name: "DUTY", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Raw power, -100 to 100, with no speed control." },
-    { type: "pb_stop", message0: "motor %1 stop %2",
+    { type: "pb_stop", message0: "stop motor %1 %2",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] },
               { type: "field_dropdown", name: "HOW", options:
                 [["coast", "stop"], ["brake", "brake"], ["hold", "hold"]] }],
@@ -3219,14 +3238,48 @@ return $.__chunk_javascript;
               { type: "input_value", name: "ANGLE", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_MOTOR,
       tooltip: "Sets the counter, usually 0 after finding a hard stop." },
-    { type: "pb_angle", message0: "motor %1 angle",
+    { type: "pb_angle", message0: "motor %1 degrees counted",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
-      output: "Number", colour: C_MOTOR, tooltip: "Degrees turned so far." },
+      output: "Number", colour: C_MOTOR, tooltip: "The degrees counted since the last reset." },
     { type: "pb_speed", message0: "motor %1 speed",
       args0: [{ type: "field_device", name: "DEV", kinds: ["motor"] }],
       output: "Number", colour: C_MOTOR, tooltip: "Turning speed, \u00B0/s." },
 
     /* -------------------------------------------------------- Movement */
+    { type: "pb_move_for", message0: "%1 move %2 for %3 %4 at %5 %% speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "field_dropdown", name: "DIR", options:
+                [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "input_value", name: "AMT", check: "Number" },
+              { type: "field_dropdown", name: "UNIT", options: [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Waits until it is done. Degrees and rotations are turns of the " +
+               "wheels, worked out from the wheel size in Set up. " +
+               "100 % is 500 mm/s." },
+    { type: "pb_move_start", message0: "%1 start moving %2 at %3 %% speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "field_dropdown", name: "DIR", options:
+                [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Keeps going until you stop it. The program carries on. " +
+               "100 % is 500 mm/s." },
+    { type: "pb_move_stop", message0: "%1 stop moving",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Brakes both wheels." },
+    { type: "pb_turn_for", message0: "%1 turn %2 for %3 %4 at %5 %% speed",
+      args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
+              { type: "field_dropdown", name: "SIDE", options:
+                [["right \u21B7", "R"], ["left \u21B6", "L"]] },
+              { type: "input_value", name: "AMT", check: "Number" },
+              { type: "field_dropdown", name: "UNIT", options:
+                [["seconds", "SEC"], ["degrees", "DEG"]] },
+              { type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "One wheel forward and the other back, so it spins on the spot. " +
+               "Degrees are how far the whole robot turns. 100 % is 300 \u00B0/s." },
     { type: "pb_straight", message0: "%1 drive straight for %2 mm then %3",
       args0: [{ type: "field_device", name: "DEV", kinds: ["drive"] },
               { type: "input_value", name: "DIST", check: "Number" },
@@ -3953,6 +4006,91 @@ return $.__chunk_javascript;
   py.forBlock["pb_run_target"] = function (b, g) {
     return M(b) + ".run_target(" + num(b, g, "SPEED", 360) + ", " +
            num(b, g, "TARGET", 0) + then(b) + ")\n"; };
+  /* NXT-style blocks: speed in per cent, the amount in seconds, degrees or
+     rotations. A number typed in is worked out here, so the Python reads
+     run_time(750, 1000) and not 75 * 10; anything else (a variable, a
+     sum) is kept as an expression. */
+  function lit(code) { return /^-?\d+(\.\d+)?$/.test(code) ? Number(code) : null; }
+  function rnd(x) { return Math.round(x * 100) / 100; }
+  /* the code without brackets that wrap the whole of it */
+  function bare(code) {
+    if (code.charAt(0) !== "(" || code.charAt(code.length - 1) !== ")") return code;
+    for (var i = 0, d = 0; i < code.length; i++) {
+      if (code.charAt(i) === "(") d++;
+      else if (code.charAt(i) === ")" && --d === 0 && i < code.length - 1) return code;
+    }
+    return code.slice(1, -1);
+  }
+  function scaled(code, k) {
+    var n = lit(code);
+    return n === null ? "(" + bare(code) + ") * " + k : String(Math.round(n * k)); }
+  function driveInfo(b) {
+    var name = ident(String(b.getFieldValue("DEV") || ""));
+    for (var i = 0; i < devs.length; i++)
+      if (devs[i].kind === "drive" && devs[i].name === name) return devs[i];
+    return { wheel: 56 };
+  }
+  py.forBlock["pb_motor_on"] = function (b, g) {
+    return M(b) + ".run(" + scaled(num(b, g, "PCT", 75), 10) + ")\n"; };
+  py.forBlock["pb_motor_reset"] = function (b) {
+    return M(b) + ".reset_angle(0)\n"; };
+  py.forBlock["pb_motor_for"] = function (b, g) {
+    var m = M(b), u = b.getFieldValue("UNIT");
+    var amt = num(b, g, "AMT", 1), pct = num(b, g, "PCT", 75);
+    var pl = lit(pct), al = lit(amt);
+    if (pl === 0) return m + ".stop()\n";
+    if (u === "SEC")
+      return m + ".run_time(" + scaled(pct, 10) + ", " + scaled(amt, 1000) + ")\n";
+    var mult = u === "ROT" ? 360 : 1, speed, angle;
+    if (pl !== null) {
+      var sgn = pl < 0 ? -1 : 1;
+      speed = String(Math.abs(Math.round(pl * 10)));
+      angle = al !== null ? String(Math.round(al * mult) * sgn)
+            : (sgn < 0 ? "-" : "") + "(" + amt + ")" + (mult > 1 ? " * 360" : "");
+    } else {
+      speed = "abs(" + pct + ") * 10";
+      angle = "(" + amt + ")" + (mult > 1 ? " * 360" : "") +
+              " * (1 if (" + pct + ") >= 0 else -1)";
+    }
+    return m + ".run_angle(" + speed + ", " + angle + ")\n";
+  };
+  py.forBlock["pb_move_start"] = function (b, g) {
+    var neg = b.getFieldValue("DIR") === "REV", pct = num(b, g, "PCT", 75), n = lit(pct);
+    var sp = n !== null ? String(Math.round(n * 5) * (neg ? -1 : 1))
+                        : (neg ? "-" : "") + "(" + pct + ") * 5";
+    return ref(b) + ".drive(" + sp + ", 0)\n"; };
+  py.forBlock["pb_move_stop"] = function (b) { return ref(b) + ".brake()\n"; };
+  py.forBlock["pb_move_for"] = function (b, g) {
+    var r = ref(b), neg = b.getFieldValue("DIR") === "REV", u = b.getFieldValue("UNIT");
+    var amt = num(b, g, "AMT", 1), pct = num(b, g, "PCT", 75), n = lit(pct), al = lit(amt);
+    if (u === "SEC") {
+      need("wait");
+      var sp = n !== null ? String(Math.round(n * 5) * (neg ? -1 : 1))
+                          : (neg ? "-" : "") + "(" + pct + ") * 5";
+      return r + ".drive(" + sp + ", 0)\nwait(" + scaled(amt, 1000) + ")\n" +
+             r + ".brake()\n";
+    }
+    var k = rnd((u === "ROT" ? 360 : 1) * Math.PI * driveInfo(b).wheel / 360);
+    var dist = al !== null ? String((neg ? -1 : 1) * Math.round(al * k))
+             : (neg ? "-" : "") + "round((" + amt + ") * " + k + ")";
+    return r + ".settings(straight_speed=" + (n !== null ? String(Math.max(1, Math.round(Math.abs(n) * 5)))
+             : "max(1, abs(" + pct + ") * 5)") + ")\n" + r + ".straight(" + dist + ")\n";
+  };
+  py.forBlock["pb_turn_for"] = function (b, g) {
+    var r = ref(b), left = b.getFieldValue("SIDE") === "L", u = b.getFieldValue("UNIT");
+    var amt = num(b, g, "AMT", 1), pct = num(b, g, "PCT", 75), n = lit(pct), al = lit(amt);
+    if (u === "SEC") {
+      need("wait");
+      var rate = n !== null ? String(Math.round(n * 3) * (left ? -1 : 1))
+                            : (left ? "-" : "") + "(" + pct + ") * 3";
+      return r + ".drive(0, " + rate + ")\nwait(" + scaled(amt, 1000) + ")\n" +
+             r + ".brake()\n";
+    }
+    var ang = al !== null ? String((left ? -1 : 1) * Math.round(al))
+            : (left ? "-" : "") + "(" + amt + ")";
+    return r + ".settings(turn_rate=" + (n !== null ? String(Math.max(1, Math.round(Math.abs(n) * 3)))
+             : "max(1, abs(" + pct + ") * 3)") + ")\n" + r + ".turn(" + ang + ")\n";
+  };
   py.forBlock["pb_track_target"] = function (b, g) {
     return M(b) + ".track_target(" + num(b, g, "TARGET", 90) + ")\n"; };
   py.forBlock["pb_motor_config"] = function (b, g) {
@@ -4173,10 +4311,16 @@ return $.__chunk_javascript;
       blk("pb_dev_nsound"), blk("pb_dev_nultra")
     ]},
     { kind: "category", name: "Motors", colour: C_MOTOR, contents: [
-      { kind: "label", text: "Motor" },
+      { kind: "block", type: "pb_motor_for", inputs: { AMT: sh(1), PCT: sh(75) } },
+      { kind: "sep", gap: 24 },
+      { kind: "block", type: "pb_motor_on", inputs: { PCT: sh(75) } },
+      { kind: "block", type: "pb_stop" },
+      { kind: "sep", gap: 24 },
+      { kind: "block", type: "pb_motor_reset" },
+      { kind: "block", type: "pb_angle" },
+      { kind: "label", text: "More, as Pybricks has them" },
       { kind: "block", type: "pb_run_angle", inputs: { SPEED: sh(500), ANGLE: sh(360) } },
       { kind: "block", type: "pb_track_target", inputs: { TARGET: sh(90) } },
-      { kind: "block", type: "pb_stop" },
       { kind: "block", type: "pb_motor_config", inputs: { VAL: sh(2000) } },
       { kind: "block", type: "pb_dc", inputs: { DUTY: sh(50) } },
       { kind: "block", type: "pb_run_time", inputs: { SPEED: sh(360), TIME: sh(1000) } },
@@ -4184,11 +4328,16 @@ return $.__chunk_javascript;
       { kind: "block", type: "pb_run", inputs: { SPEED: sh(360) } },
       { kind: "block", type: "pb_run_until_stalled", inputs: { SPEED: sh(200) } },
       { kind: "block", type: "pb_reset_angle", inputs: { ANGLE: sh(0) } },
-      { kind: "block", type: "pb_angle" },
       { kind: "block", type: "pb_speed" }
     ]},
     { kind: "category", name: "Movement", colour: C_MOVE, contents: [
-      { kind: "label", text: "Drive Base" },
+      { kind: "label", text: "pick the drive base you set up" },
+      { kind: "block", type: "pb_move_for", inputs: { AMT: sh(1), PCT: sh(75) } },
+      { kind: "block", type: "pb_turn_for", inputs: { AMT: sh(1), PCT: sh(75) } },
+      { kind: "sep", gap: 24 },
+      { kind: "block", type: "pb_move_start", inputs: { PCT: sh(75) } },
+      { kind: "block", type: "pb_move_stop" },
+      { kind: "label", text: "More, as Pybricks has them" },
       { kind: "block", type: "pb_straight", inputs: { DIST: sh(250) } },
       { kind: "block", type: "pb_turn", inputs: { ANGLE: sh(90) } },
       { kind: "block", type: "pb_drive_config", inputs: { VAL: sh(200) } },
