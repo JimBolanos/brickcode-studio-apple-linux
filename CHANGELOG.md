@@ -47,12 +47,15 @@ All notable changes to BrickCode Studio. Dates are release dates.
     degrees or rotations: `motor A run for 1 seconds at 75 % speed`,
     `start motor A at 75 % speed`, `stop motor A brake`, `stop all motors`,
     `reset motor A degrees counted`, `reset all motors`. Movement is the
-    two-wheel robot: `set movement motors to B+C wheel 56 mm axle track
-    114 mm` (B+C, 56 and 114 when left out), `move forward for 1 seconds at
-    75 % speed`, `turn right for 90 degrees at 50 % speed`, `start moving`,
-    `stop moving` and `tank`. 100 % is 1000 °/s for a motor, 500 mm/s for the
+    two-wheel robot: `set movement motors to B+C` (B+C when left out),
+    `set movement speed to 50 %` (50 % when left out), `move forward for 1
+    seconds`, `turn right for 90 degrees`, `start moving` and `stop moving`,
+    with `tank` below. The speed is set once and the blocks use it, as in the
+    RCX and NXT editors; the program keeps it in `move_speed`. The wheel size
+    and axle track are not asked for: the Python assumes the EV3 kit (56 mm
+    wheels, 114 mm apart) and says so in a comment. 100 % is 1000 °/s for a motor, 500 mm/s for the
     robot and 300 °/s for a turn. Degrees and rotations of the robot come
-    from the wheel size. A number typed in is calculated in the Python
+    from the 56 mm wheel. A number typed in is calculated in the Python
     (`run_time(750, 1000)`); a variable stays an expression.
   - **Display and Light & Sound** are separate categories. Light & Sound has
     the brick light, beep, play notes and volume. Display gains **dot at x y** (`draw_pixel()`) and, under
@@ -83,8 +86,7 @@ All notable changes to BrickCode Studio. Dates are release dates.
     programs, it is just not in the palette any more.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
-    ↺), `drive base named … left motor … right motor … wheel 56 mm axle track
-    114 mm` and `car named … steering motor … drive motor …`. A motor block
+    ↺), `drive base named … left motor … right motor …` and `car named … steering motor … drive motor …`. A motor block
     on a port Set up already has uses that motor; the movement blocks drive
     the drive base declared in Set up when there is one, and otherwise the
     robot from `set movement motors`. The car has its own `drive at power` and

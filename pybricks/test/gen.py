@@ -199,18 +199,37 @@ CASES = [
      [["Motor", "B"], ["run", "B", 750]]),
 
     # ------------------------------------ the two-wheel robot
+    # the speed is set once, by its own block, and used by the others
+    ("set movement speed, then move", [],
+     blk("pb_move_speed", values={"PCT": 80},
+         nxt=blk("pb_go_for", {"DIR": "FWD", "UNIT": "SEC"}, {"AMT": 2},
+                 nxt=blk("pb_spin_for", {"SIDE": "R", "UNIT": "DEG"}, {"AMT": 90},
+                         nxt=blk("pb_go_start", {"DIR": "REV"},
+                                 nxt=blk("pb_move_stop"))))),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive", 400, 0], ["wait", 2000], ["drive_brake"],
+      ["drive_settings", None, None, 240, None], ["turn", 90, "Stop.HOLD"],
+      ["drive", -400, 0], ["drive_brake"]]),
+
+    ("movement without a speed block uses 50 %", [],
+     blk("pb_go_for", {"DIR": "REV", "UNIT": "ROT"}, {"AMT": 1},
+         nxt=blk("pb_spin_for", {"SIDE": "L", "UNIT": "SEC"}, {"AMT": 1})),
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive_settings", 250, None, None, None], ["straight", -176, "Stop.HOLD"],
+      ["drive", 0, -150], ["wait", 1000], ["drive_brake"]]),
+
     ("move for seconds", [],
      blk("pb_move_for", {"DIR": "FWD", "UNIT": "SEC"}, {"AMT": 1, "PCT": 75}),
      [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
       ["drive", 375, 0], ["wait", 1000], ["drive_brake"]]),
 
-    # A+D wheels of 43 mm: one rotation is 135.09 mm
+    # A+D, the kit's 56 mm wheels: one rotation is 175.93 mm
     ("set movement motors, rotations backwards", [],
-     blk("pb_base_set", {"PAIR": "AD", "WHEEL": 43, "AXLE": 100},
+     blk("pb_base_set", {"PAIR": "AD"},
          nxt=blk("pb_move_for", {"DIR": "REV", "UNIT": "ROT"},
                  {"AMT": 1, "PCT": 50})),
-     [["Motor", "A"], ["Motor", "D"], ["DriveBase", "A", "D", 43, 100],
-      ["drive_settings", 250, None, None, None], ["straight", -135, "Stop.HOLD"]]),
+     [["Motor", "A"], ["Motor", "D"], ["DriveBase", "A", "D", 56, 114],
+      ["drive_settings", 250, None, None, None], ["straight", -176, "Stop.HOLD"]]),
 
     ("turn right for seconds, left for degrees", [],
      blk("pb_turn_for", {"SIDE": "R", "UNIT": "SEC"}, {"AMT": 2, "PCT": 50},
@@ -235,16 +254,16 @@ CASES = [
     # drive: no second one is made, and its name is used.
     ("movement uses the Set up drive base",
      [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "chassis", LEFT="left", RIGHT="right", WHEEL=43, AXLE=100)],
+      dev("drive", "chassis", LEFT="left", RIGHT="right")],
      blk("pb_move_for", {"DIR": "FWD", "UNIT": "ROT"}, {"AMT": 1, "PCT": 50},
          nxt=blk("pb_move_stop")),
-     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 43, 100],
-      ["drive_settings", 250, None, None, None], ["straight", 135, "Stop.HOLD"],
+     [["Motor", "B"], ["Motor", "C"], ["DriveBase", "B", "C", 56, 114],
+      ["drive_settings", 250, None, None, None], ["straight", 176, "Stop.HOLD"],
       ["drive_brake"]]),
 
     ("tank on the Set up drive base motors",
      [dev("motor", "left", "A"), dev("motor", "right", "D"),
-      dev("drive", "chassis", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+      dev("drive", "chassis", LEFT="left", RIGHT="right")],
      blk("pb_tank", values={"L": 20, "R": 40}),
      [["Motor", "A"], ["Motor", "D"], ["DriveBase", "A", "D", 56, 114],
       ["run", "A", 200], ["run", "D", 400]]),
@@ -262,7 +281,7 @@ CASES = [
     # ---------------------------------------------------------- Movement
     ("drive base configure",
      [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+      dev("drive", "robot", LEFT="left", RIGHT="right")],
      blk("pb_drive_config", {"DEV": "robot", "WHAT": "straight_speed"}, {"VAL": 200},
          nxt=blk("pb_drive_config", {"DEV": "robot", "WHAT": "turn_rate"}, {"VAL": 90},
                  nxt=blk("pb_drive", {"DEV": "robot"}, {"SPEED": 100, "RATE": 0},
@@ -283,7 +302,7 @@ CASES = [
 
     ("drive base",
      [dev("motor", "left", "B"), dev("motor", "right", "C"),
-      dev("drive", "robot", LEFT="left", RIGHT="right", WHEEL=56, AXLE=114)],
+      dev("drive", "robot", LEFT="left", RIGHT="right")],
      blk("pb_straight", {"DEV": "robot", "THEN": "HOLD"}, {"DIST": 200},
          nxt=blk("pb_turn", {"DEV": "robot", "THEN": "BRAKE"}, {"ANGLE": -90},
                  nxt=blk("pb_drive_stop", {"DEV": "robot", "HOW": "brake"}))),
@@ -294,10 +313,10 @@ CASES = [
     # The drive base is written after its motors even when the block was
     # dragged out first. The motors keep the order they were set up in.
     ("drive above motors",
-     [dev("drive", "robot", LEFT="l", RIGHT="r", WHEEL=43, AXLE=120),
+     [dev("drive", "robot", LEFT="l", RIGHT="r"),
       dev("motor", "r", "C"), dev("motor", "l", "B")],
      blk("pb_drive", {"DEV": "robot"}, {"SPEED": 100, "RATE": 0}),
-     [["Motor", "C"], ["Motor", "B"], ["DriveBase", "B", "C", 43, 120],
+     [["Motor", "C"], ["Motor", "B"], ["DriveBase", "B", "C", 56, 114],
       ["drive", 100, 0]]),
 
     # ----------------------------------------------------------- Display
@@ -422,6 +441,16 @@ TEXT_CASES = [
      '<field name="TEXT">abc</field></shadow></value></block>',
      ['print("abc")'], ["EV3Brick", "screen"]),
 
+    ("speed shown as a name", [],
+     blk("pb_move_speed", values={"PCT": 80},
+         nxt=blk("pb_go_start", {"DIR": "FWD"}, nxt=blk("pb_go_start", {"DIR": "REV"}))),
+     ["move_speed = 50", "move_speed = 80", "robot.drive(move_speed * 5, 0)",
+      "robot.drive(-move_speed * 5, 0)", "wheel_diameter=56, axle_track=114"], []),
+
+    ("no speed block, no variable", [],
+     blk("pb_go_start", {"DIR": "FWD"}),
+     ["robot.drive(250, 0)"], ["move_speed"]),
+
     ("wait in seconds", [],
      blk("pb_wait_s", values={"SEC": 2}, nxt=blk("pb_wait_s", values={"SEC": 0.5})),
      ["wait(2000)", "wait(500)", "from pybricks.tools import wait"], ["wait(2)", "wait(0.5)"]),
@@ -514,14 +543,14 @@ TEXT_CASES = [
      ["# ERROR: car car needs two different motors."], []),
 
     ("drive base without motors",
-     [dev("drive", "robot", LEFT="l", RIGHT="r", WHEEL=56, AXLE=114)],
+     [dev("drive", "robot", LEFT="l", RIGHT="r")],
      blk("pb_straight", {"DEV": "robot", "THEN": "HOLD"}, {"DIST": 10}),
      ["# ERROR: drive base robot needs two motors that are in Set up."],
      ["DriveBase(l, r"]),
 
     ("drive base, same motor twice",
      [dev("motor", "m", "A"),
-      dev("drive", "robot", LEFT="m", RIGHT="m", WHEEL=56, AXLE=114)],
+      dev("drive", "robot", LEFT="m", RIGHT="m")],
      blk("pb_straight", {"DEV": "robot", "THEN": "HOLD"}, {"DIST": 10}),
      ["# ERROR: drive base robot needs two different motors."], []),
 

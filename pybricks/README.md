@@ -11,10 +11,14 @@ Sound, Events, Control, Sensors, Operators, Variables and My Blocks.
 
 The Motors and Movement blocks work like the NXT editor's. A motor block
 has a port (A, B, C or D) and the program declares that motor for you
-(`motor_a = Motor(Port.A)`); `set movement motors to B+C wheel 56 mm axle
-track 114 mm` says which two motors are the wheels, and the movement blocks
-write `robot = DriveBase(motor_b, motor_c, ...)`. Speeds are in per cent
-(100 % is 1000 °/s for a motor, 500 mm/s for a robot, 300 °/s for a turn).
+(`motor_a = Motor(Port.A)`); `set movement motors to B+C` says which two
+motors are the wheels, and the movement blocks write
+`robot = DriveBase(motor_b, motor_c, ...)` for the EV3 kit's 56 mm wheels,
+114 mm apart (the two numbers are in the Python if yours differ). A motor
+block has its own speed in per cent; the robot's speed is set once with
+`set movement speed to 50 %` and used by `move`, `turn` and `start moving`
+(50 % when the block is left out). 100 % is 1000 °/s for a motor, 500 mm/s
+for a robot and 300 °/s for a turn.
 A motor already in Set up on the same port keeps its own name, and a drive
 base in Set up is the robot the movement blocks drive. Set up is where to
 declare a motor turning the other way (`Direction.COUNTERCLOCKWISE`), a drive

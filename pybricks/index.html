@@ -395,15 +395,44 @@
 
     /* -------------------------------------------------------- Movement */
     { type: "pb_base_set",
-      message0: "set movement motors to %1 wheel %2 mm axle track %3 mm",
+      message0: "set movement motors to %1",
       args0: [{ type: "field_dropdown", name: "PAIR", options:
-                [["B+C", "BC"], ["A+D", "AD"], ["A+B", "AB"], ["C+D", "CD"]] },
-              { type: "field_number", name: "WHEEL", value: 56, min: 1 },
-              { type: "field_number", name: "AXLE", value: 114, min: 1 }],
+                [["B+C", "BC"], ["A+D", "AD"], ["A+B", "AB"], ["C+D", "CD"]] }],
       previousStatement: null, nextStatement: null, colour: C_MOVE,
-      tooltip: "The first letter is the left wheel. Measure the wheel across, and " +
-               "the distance between where the two wheels touch the ground. " +
-               "Without this block the robot uses B+C, 56 mm and 114 mm." },
+      tooltip: "The first letter is the left wheel. Without this block the " +
+               "robot uses B+C. The code assumes the wheels and axle of the EV3 " +
+               "kit (56 mm wheels, 114 mm apart); the two numbers are in the " +
+               "Python if yours differ." },
+    { type: "pb_move_speed", message0: "set movement speed to %1 %%",
+      args0: [{ type: "input_value", name: "PCT", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "The speed the move, turn and start moving blocks use from here " +
+               "on. 100 % is 500 mm/s going straight and 300 \u00B0/s turning. " +
+               "Without this block they use 50 %." },
+    { type: "pb_go_for", message0: "move %1 for %2 %3",
+      args0: [{ type: "field_dropdown", name: "DIR", options:
+                [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
+              { type: "input_value", name: "AMT", check: "Number" },
+              { type: "field_dropdown", name: "UNIT", options: [["seconds", "SEC"], ["degrees", "DEG"], ["rotations", "ROT"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Waits until it is done, at the speed set by set movement speed. " +
+               "Degrees and rotations are turns of the wheels." },
+    { type: "pb_go_start", message0: "start moving %1",
+      args0: [{ type: "field_dropdown", name: "DIR", options:
+                [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "Keeps going until you stop it. The program carries on." },
+    { type: "pb_spin_for", message0: "turn %1 for %2 %3",
+      args0: [{ type: "field_dropdown", name: "SIDE", options:
+                [["right \u21B7", "R"], ["left \u21B6", "L"]] },
+              { type: "input_value", name: "AMT", check: "Number" },
+              { type: "field_dropdown", name: "UNIT", options:
+                [["seconds", "SEC"], ["degrees", "DEG"]] }],
+      previousStatement: null, nextStatement: null, colour: C_MOVE,
+      tooltip: "One wheel forward and the other back, so it spins on the spot. " +
+               "Degrees are how far the whole robot turns." },
+    /* the blocks below with a speed of their own: still read from saved
+       programs, no longer in the palette */
     { type: "pb_move_for", message0: "move %1 for %2 %3 at %4 %% speed",
       args0: [{ type: "field_dropdown", name: "DIR", options:
                 [["forward \u2191", "FWD"], ["backward \u2193", "REV"]] },
@@ -807,7 +836,7 @@
    "elif else except finally for from global if import in is lambda " +
    "nonlocal not or pass raise return try while with yield " +
    "Port Stop Color Button Direction wait randint print range len int str " +
-   "float abs min max Motor DriveBase Car EV3Brick TouchSensor ColorSensor " +
+   "float abs min max move_speed Motor DriveBase Car EV3Brick TouchSensor ColorSensor " +
    "UltrasonicSensor GyroSensor InfraredSensor LightSensor SoundSensor " +
    "NXTTouchSensor NXTLightSensor NXTColorSensor NXTSoundSensor " +
    "NXTUltrasonicSensor").split(" ").forEach(function (w) { RESERVED[w] = true; });
@@ -915,17 +944,14 @@
   Blockly.Blocks["pb_dev_drive"] = {
     init: function () {
       this.jsonInit({
-        message0: "drive base named %1 left motor %2 right motor %3 %4 " +
-                  "wheel %5 mm axle track %6 mm",
+        message0: "drive base named %1 left motor %2 right motor %3",
         args0: [{ type: "field_input", name: "NAME", text: freshName("drive") },
                 { type: "field_device", name: "LEFT", kinds: ["motor"] },
-                { type: "field_device", name: "RIGHT", kinds: ["motor"] },
-                { type: "input_dummy" },
-                { type: "field_number", name: "WHEEL", value: 56, min: 1 },
-                { type: "field_number", name: "AXLE", value: 114, min: 1 }],
+                { type: "field_device", name: "RIGHT", kinds: ["motor"] }],
         colour: C_SETUP, previousStatement: "Device", nextStatement: "Device",
-        tooltip: "Two motors driving a robot. Measure the wheel across, and " +
-                 "the distance between where the two wheels touch the ground."
+        tooltip: "Two motors driving a robot. The code assumes the wheels and " +
+                 "axle of the EV3 kit (56 mm wheels, 114 mm apart); the two " +
+                 "numbers are in the Python if yours differ."
       });
       this.getField("NAME").setValidator(nameValidator(this));
       var m = deviceOptions(["motor"], null);
@@ -1030,7 +1056,7 @@
   });
 
   var devs, refs, needs, usesEv3, brickName, theWs, funcs;
-  var autoPorts, base, baseUsed, setupBase, picsDone;
+  var autoPorts, base, baseUsed, setupBase, picsDone, hasSpeed;
 
   /* The declarations are read straight off the blocks here, not as the
      program is walked: blocks are visited top to bottom on the page, and a
@@ -1039,7 +1065,7 @@
     theWs = w; funcs = []; refs = [];
     needs = { Port: true };
     usesEv3 = false; brickName = "ev3"; devs = [];
-    autoPorts = {}; baseUsed = false; picsDone = {};
+    autoPorts = {}; baseUsed = false; picsDone = {}; hasSpeed = false;
     base = { pair: "BC", wheel: 56, axle: 114, name: "robot" };
     var setBase = false;
     w.getAllBlocks(true).forEach(function (b) {
@@ -1048,9 +1074,8 @@
       if (b.type === "pb_base_set" && !setBase) {
         setBase = true;
         base.pair = b.getFieldValue("PAIR") || "BC";
-        base.wheel = Number(b.getFieldValue("WHEEL")) || 56;
-        base.axle = Number(b.getFieldValue("AXLE")) || 114;
       }
+      if (b.type === "pb_move_speed") hasSpeed = true;
       if (!isDev(b)) return;
       var d = { kind: kindOf(b), name: ident(devName(b)),
                 port: b.getFieldValue("PORT") || "" };
@@ -1061,8 +1086,7 @@
       if (d.kind === "drive") {
         d.left = ident(b.getFieldValue("LEFT") || "");
         d.right = ident(b.getFieldValue("RIGHT") || "");
-        d.wheel = Number(b.getFieldValue("WHEEL"));
-        d.axle = Number(b.getFieldValue("AXLE"));
+        d.wheel = 56; d.axle = 114;   // the EV3 kit's wheels, not asked for
       }
       if (d.kind === "car") {
         d.steer = ident(b.getFieldValue("STEER") || "");
@@ -1082,7 +1106,7 @@
     setupBase = null;
     for (var k = 0; k < devs.length; k++)
       if (devs[k].kind === "drive") { setupBase = devs[k]; break; }
-    if (setupBase) { base.name = setupBase.name; base.wheel = setupBase.wheel; }
+    if (setupBase) { base.name = setupBase.name; }
   };
 
   /* A block that names a motor by its port. If Set up already has a motor
@@ -1210,7 +1234,8 @@
         else if (kind === "drive") {
           if (driveOk[x.name])
             setup.push(x.name + " = DriveBase(" + x.left + ", " + x.right +
-                       ", wheel_diameter=" + x.wheel + ", axle_track=" + x.axle + ")");
+                       ", wheel_diameter=" + x.wheel + ", axle_track=" + x.axle + ")" +
+                       "   # EV3 kit: 56 mm wheels, 114 mm apart");
         } else if (kind === "car") {
           if (carOk[x.name])
             setup.push(x.name + " = Car(" + x.steer + ", " + x.drive + ")");
@@ -1229,6 +1254,10 @@
         ? Blockly.Variables.allUsedVarModels(theWs) : theWs.getAllVariables();
       for (i = 0; i < models.length; i++) names.push(ident(models[i].name));
     } catch (e) { names = []; }
+    if (hasSpeed) {
+      setup.push("");
+      setup.push("move_speed = 50   # the movement speed, in per cent");
+    }
     if (names.length) {
       setup.push("");
       for (i = 0; i < names.length; i++) setup.push(names[i] + " = 0");
@@ -1361,43 +1390,59 @@
   py.forBlock["pb_base_set"] = function () {
     /* read in init, so it counts wherever it sits; nothing is written here */
     return ""; };
-  py.forBlock["pb_move_start"] = function (b, g) {
-    var neg = b.getFieldValue("DIR") === "REV", pct = num(b, g, "PCT", 75), n = lit(pct);
-    var sp = n !== null ? String(Math.round(n * 5) * (neg ? -1 : 1))
-                        : (neg ? "-" : "") + "(" + pct + ") * 5";
-    return theBase() + ".drive(" + sp + ", 0)\n"; };
-  py.forBlock["pb_move_stop"] = function () { return theBase() + ".brake()\n"; };
-  py.forBlock["pb_move_for"] = function (b, g) {
+  /* what a speed in per cent becomes: a number is worked out here, a name
+     stays a name, anything else keeps its brackets */
+  function times(pct, k, neg) {
+    var n = lit(pct);
+    if (n !== null) return String(Math.round(n * k) * (neg ? -1 : 1));
+    var p = bare(pct);
+    return (neg ? "-" : "") + (/^\w+$/.test(p) ? p : "(" + p + ")") + " * " + k;
+  }
+  function absTimes(pct, k) {
+    var n = lit(pct);
+    return n !== null ? String(Math.max(1, Math.round(Math.abs(n) * k)))
+                      : "max(1, abs(" + bare(pct) + ") * " + k + ")";
+  }
+  function startMoving(b, pct) {
+    return theBase() + ".drive(" + times(pct, 5, b.getFieldValue("DIR") === "REV") + ", 0)\n";
+  }
+  function moveFor(b, g, pct) {
     var r = theBase(), neg = b.getFieldValue("DIR") === "REV", u = b.getFieldValue("UNIT");
-    var amt = num(b, g, "AMT", 1), pct = num(b, g, "PCT", 75), n = lit(pct), al = lit(amt);
+    var amt = num(b, g, "AMT", 1), al = lit(amt);
     if (u === "SEC") {
       need("wait");
-      var sp = n !== null ? String(Math.round(n * 5) * (neg ? -1 : 1))
-                          : (neg ? "-" : "") + "(" + bare(pct) + ") * 5";
-      return r + ".drive(" + sp + ", 0)\nwait(" + scaled(amt, 1000) + ")\n" +
+      return r + ".drive(" + times(pct, 5, neg) + ", 0)\nwait(" + scaled(amt, 1000) + ")\n" +
              r + ".brake()\n";
     }
     var k = rnd((u === "ROT" ? 360 : 1) * Math.PI * base.wheel / 360);
     var dist = al !== null ? String((neg ? -1 : 1) * Math.round(al * k))
              : (neg ? "-" : "") + "round((" + bare(amt) + ") * " + k + ")";
-    return r + ".settings(straight_speed=" + (n !== null ? String(Math.max(1, Math.round(Math.abs(n) * 5)))
-             : "max(1, abs(" + pct + ") * 5)") + ")\n" + r + ".straight(" + dist + ")\n";
-  };
-  py.forBlock["pb_turn_for"] = function (b, g) {
+    return r + ".settings(straight_speed=" + absTimes(pct, 5) + ")\n" +
+           r + ".straight(" + dist + ")\n";
+  }
+  function turnFor(b, g, pct) {
     var r = theBase(), left = b.getFieldValue("SIDE") === "L", u = b.getFieldValue("UNIT");
-    var amt = num(b, g, "AMT", 1), pct = num(b, g, "PCT", 75), n = lit(pct), al = lit(amt);
+    var amt = num(b, g, "AMT", 1), al = lit(amt);
     if (u === "SEC") {
       need("wait");
-      var rate = n !== null ? String(Math.round(n * 3) * (left ? -1 : 1))
-                            : (left ? "-" : "") + "(" + bare(pct) + ") * 3";
-      return r + ".drive(0, " + rate + ")\nwait(" + scaled(amt, 1000) + ")\n" +
+      return r + ".drive(0, " + times(pct, 3, left) + ")\nwait(" + scaled(amt, 1000) + ")\n" +
              r + ".brake()\n";
     }
     var ang = al !== null ? String((left ? -1 : 1) * Math.round(al))
             : (left ? "-" : "") + "(" + bare(amt) + ")";
-    return r + ".settings(turn_rate=" + (n !== null ? String(Math.max(1, Math.round(Math.abs(n) * 3)))
-             : "max(1, abs(" + pct + ") * 3)") + ")\n" + r + ".turn(" + ang + ")\n";
-  };
+    return r + ".settings(turn_rate=" + absTimes(pct, 3) + ")\n" + r + ".turn(" + ang + ")\n";
+  }
+  /* the speed the blocks without one of their own use */
+  function moveSpeed() { return hasSpeed ? "move_speed" : "50"; }
+  py.forBlock["pb_move_speed"] = function (b, g) {
+    return "move_speed = " + bare(num(b, g, "PCT", 50)) + "\n"; };
+  py.forBlock["pb_go_start"] = function (b) { return startMoving(b, moveSpeed()); };
+  py.forBlock["pb_go_for"] = function (b, g) { return moveFor(b, g, moveSpeed()); };
+  py.forBlock["pb_spin_for"] = function (b, g) { return turnFor(b, g, moveSpeed()); };
+  py.forBlock["pb_move_start"] = function (b, g) { return startMoving(b, num(b, g, "PCT", 75)); };
+  py.forBlock["pb_move_stop"] = function () { return theBase() + ".brake()\n"; };
+  py.forBlock["pb_move_for"] = function (b, g) { return moveFor(b, g, num(b, g, "PCT", 75)); };
+  py.forBlock["pb_turn_for"] = function (b, g) { return turnFor(b, g, num(b, g, "PCT", 75)); };
   py.forBlock["pb_tank"] = function (b, g) {
     /* the two wheel motors, run directly; no drive base is made for this */
     var l = setupBase ? setupBase.left : motorOn(base.pair.charAt(0));
@@ -1835,14 +1880,17 @@
     ]},
     { kind: "category", name: "Movement", colour: C_MOVE, contents: [
       { kind: "label", text: "the first motor is the left wheel" },
-      { kind: "block", type: "pb_move_for", inputs: { AMT: sh(1), PCT: sh(75) } },
-      { kind: "block", type: "pb_turn_for", inputs: { AMT: sh(1), PCT: sh(75) } },
+      { kind: "block", type: "pb_go_for", inputs: { AMT: sh(1) } },
+      { kind: "block", type: "pb_spin_for", inputs: { AMT: sh(1) } },
       { kind: "sep", gap: 24 },
-      { kind: "block", type: "pb_move_start", inputs: { PCT: sh(75) } },
+      { kind: "block", type: "pb_go_start" },
       { kind: "block", type: "pb_move_stop" },
-      { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } },
       { kind: "sep", gap: 24 },
+      { kind: "block", type: "pb_move_speed", inputs: { PCT: sh(50) } },
       { kind: "block", type: "pb_base_set" },
+      { kind: "sep", gap: 24 },
+      { kind: "label", text: "Each wheel on its own" },
+      { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } },
       { kind: "label", text: "Car (set it up first)" },
       { kind: "block", type: "pb_car_drive", inputs: { VAL: sh(50) } },
       { kind: "block", type: "pb_car_steer", inputs: { PCT: sh(0) } }
@@ -1998,7 +2046,7 @@
     '</statement></block>' +
     '<block type="pb_program" x="40" y="260"><statement name="DO">' +
       '<block type="pb_base_set"><field name="PAIR">BC</field>' +
-        '<field name="WHEEL">56</field><field name="AXLE">114</field>' +
+      '<next><block type="pb_move_speed">' + numv("PCT", 50) +
       '<next><block type="pb_screen_print">' +
         '<value name="WHAT"><shadow type="pb_text"><field name="TEXT">Hello</field></shadow></value>' +
       '<next><block type="pb_forever"><statement name="DO">' +
@@ -2007,17 +2055,17 @@
           '<statement name="DO">' +
             '<block type="pb_move_stop">' +
             '<next><block type="pb_beep">' + numv("FREQ", 800) + numv("MS", 200) +
-            '<next><block type="pb_move_for"><field name="DIR">REV</field>' +
-              '<field name="UNIT">SEC</field>' + numv("AMT", 1) + numv("PCT", 50) +
-            '<next><block type="pb_turn_for"><field name="SIDE">R</field>' +
-              '<field name="UNIT">DEG</field>' + numv("AMT", 90) + numv("PCT", 50) +
+            '<next><block type="pb_go_for"><field name="DIR">REV</field>' +
+              '<field name="UNIT">SEC</field>' + numv("AMT", 1) +
+            '<next><block type="pb_spin_for"><field name="SIDE">R</field>' +
+              '<field name="UNIT">DEG</field>' + numv("AMT", 90) +
             '</block></next></block></next></block></next></block>' +
           '</statement>' +
           '<statement name="ELSE">' +
-            '<block type="pb_move_start"><field name="DIR">FWD</field>' + numv("PCT", 50) + '</block>' +
+            '<block type="pb_go_start"><field name="DIR">FWD</field></block>' +
           '</statement>' +
         '</block>' +
-      '</statement></block></next></block></next></block>' +
+      '</statement></block></next></block></next></block></next></block>' +
     '</statement></block></xml>';
 
   /* Loading is not editing: names read from a file are taken as they are,
