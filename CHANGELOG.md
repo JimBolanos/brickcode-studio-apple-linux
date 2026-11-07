@@ -132,7 +132,16 @@ All notable changes to BrickCode Studio. Dates are release dates.
     them still load and run.
 
 ### Fixed
-- **The NXT's Blocks button opened the RCX editor on macOS.** The app told
+-- **About screen cut off on a short window.** The three columns now sit in
+  a scrolled window, so the author card (the "JB" one) is reachable however
+  small the window is. The documentation rows wrap their text so the middle
+  column can narrow.
+- **BLOCKS in the bottom bar asks which editor.** It used to open the editor
+  for the current mode, so the EV3 one was out of reach from there. It now
+  opens a text bubble, the same style as the File menu, above the button: RCX /
+  Scout (NQC blocks), NXT (NXC blocks), EV3 (Pybricks blocks). The File menu
+  and the sidebar button still open the editor for the current mode.
+ **The NXT's Blocks button opened the RCX editor on macOS.** The app told
   the page which language to start in with a `#nxc` after the file name, and
   macOS `open` throws that away. The editor now ships one page per brick
   family, `brickcode-blocks-rcx.html` and `brickcode-blocks-nxt.html`, each

@@ -807,16 +807,14 @@ static void open_editor(AppState *st, const char *file, const char *fragment,
     g_free(path);
 }
 
-static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
-    AppState *st = user_data;
-    (void) btn;
+static void open_blocks_for(AppState *st, Mode mode) {
     /* Its own file for each brick, picked by name: an opener such as macOS
      * `open` can drop a #fragment, and the NXT then opened the RCX editor.
      * An install that lacks the per-brick pages falls back to the shared one
      * and the fragment. */
-    const char *own = st->mode == MODE_NQC ? BLOCKS_RCX_HTML : BLOCKS_NXT_HTML;
+    const char *own = mode == MODE_NQC ? BLOCKS_RCX_HTML : BLOCKS_NXT_HTML;
     char *found = blocks_html_path(own);
-    const char *msg = st->mode == MODE_NQC
+    const char *msg = mode == MODE_NQC
         ? "RCX / Scout block editor opened in your browser. Build the program "
           "there, press Save, then open the file here."
         : "NXT block editor opened in your browser. Build the program "
@@ -825,8 +823,25 @@ static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
         g_free(found);
         open_editor(st, own, NULL, msg);
     } else {
-        open_editor(st, BLOCKS_HTML, st->mode == MODE_NQC ? "#nqc" : "#nxc", msg);
+        open_editor(st, BLOCKS_HTML, mode == MODE_NQC ? "#nqc" : "#nxc", msg);
     }
+}
+
+/* Where the brick is not asked (File menu, sidebar): the current mode decides. */
+static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
+    AppState *st = user_data;
+    (void) btn;
+    open_blocks_for(st, st->mode);
+}
+
+static void open_blocks_rcx_cb(GtkButton *btn, gpointer user_data) {
+    (void) btn;
+    open_blocks_for(user_data, MODE_NQC);
+}
+
+static void open_blocks_nxt_cb(GtkButton *btn, gpointer user_data) {
+    (void) btn;
+    open_blocks_for(user_data, MODE_NXC);
 }
 
 /* The EV3 editor only writes Python. Getting it onto the brick is done in
@@ -4153,9 +4168,13 @@ static void show_screen(AppState *st, const char *id) {
 static void nav_clicked_cb(GtkButton *b, gpointer user_data) {
     AppState *st = user_data;
     const char *id = g_object_get_data(G_OBJECT(b), "screen");
-    /* BLOCKS is a door, not a room: it opens the editor in the browser and
-     * leaves you on the screen you were already on. */
-    if (g_strcmp0(id, "blocks") == 0) { open_blocks_cb(b, st); return; }
+    /* BLOCKS is a door, not a room: it asks which editor, in a bubble above
+     * the button, and leaves you on the screen you were already on. */
+    if (g_strcmp0(id, "blocks") == 0) {
+        GtkWidget *pop = g_object_get_data(G_OBJECT(b), "blocks-pop");
+        if (pop) gtk_popover_popup(GTK_POPOVER(pop));
+        return;
+    }
     show_screen(st, id);
 }
 
@@ -4327,6 +4346,9 @@ static GtkWidget *doc_row(AppState *st, const char *colour, const char *title,
     GtkWidget *d = gtk_label_new(desc);
     gtk_widget_add_css_class(d, "doc-desc");
     gtk_label_set_xalign(GTK_LABEL(d), 0.0);
+    /* Wraps, so the middle column can narrow on a small window. */
+    gtk_label_set_wrap(GTK_LABEL(d), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(d), 12);
     gtk_box_append(GTK_BOX(col), t);
     gtk_box_append(GTK_BOX(col), d);
     gtk_box_append(GTK_BOX(r), col);
@@ -4431,7 +4453,6 @@ static GtkWidget *about_screen(AppState *st) {
 
     GtkWidget *cols = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
     gtk_widget_add_css_class(cols, "ab-cols");
-    gtk_widget_set_vexpand(cols, TRUE);
 
     /* ---- left: what it is, and what it runs on ---- */
     GtkWidget *left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
@@ -4567,7 +4588,13 @@ static GtkWidget *about_screen(AppState *st) {
     gtk_box_append(GTK_BOX(right), legal);
     gtk_box_append(GTK_BOX(cols), right);
 
-    gtk_box_append(GTK_BOX(page), cols);
+    /* Scrolls, so a short window never cuts the author card (the JB one) off. */
+    GtkWidget *scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), cols);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_append(GTK_BOX(page), scroll);
     return page;
 }
 
@@ -4584,6 +4611,23 @@ static GtkWidget *bottom_nav(AppState *st) {
         g_signal_connect(b, "clicked", G_CALLBACK(nav_clicked_cb), st);
         st->nav_btn[i] = b;
         gtk_box_append(GTK_BOX(nav), b);
+        if (g_strcmp0(SCREENS[i].id, "blocks") == 0) {
+            /* The same bubble as the File menu, in text: one line per brick
+             * and the language its blocks write. */
+            GtkWidget *pop = gtk_popover_new();
+            gtk_widget_add_css_class(pop, "snippet-pop");
+            gtk_widget_set_parent(pop, b);
+            gtk_popover_set_position(GTK_POPOVER(pop), GTK_POS_TOP);
+            GtkWidget *list = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+            gtk_box_append(GTK_BOX(list), menu_item("RCX / Scout  \u00b7  NQC blocks",
+                                                    G_CALLBACK(open_blocks_rcx_cb), st, pop));
+            gtk_box_append(GTK_BOX(list), menu_item("NXT  \u00b7  NXC blocks",
+                                                    G_CALLBACK(open_blocks_nxt_cb), st, pop));
+            gtk_box_append(GTK_BOX(list), menu_item("EV3  \u00b7  Pybricks (Python) blocks",
+                                                    G_CALLBACK(open_pybricks_cb), st, pop));
+            gtk_popover_set_child(GTK_POPOVER(pop), list);
+            g_object_set_data(G_OBJECT(b), "blocks-pop", pop);
+        }
     }
     return nav;
 }
