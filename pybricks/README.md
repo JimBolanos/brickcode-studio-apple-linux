@@ -22,7 +22,7 @@ for a robot and 300 °/s for a turn.
 A motor already in Set up on the same port keeps its own name, and a drive
 base in Set up is the robot the movement blocks drive. Set up is where to
 declare a motor turning the other way (`Direction.COUNTERCLOCKWISE`), a drive
-base or a car.
+or a drive base.
 
 ## Set up
 
@@ -41,7 +41,7 @@ Every other block then picks a device from a list of those names, so
 `arm1.run_angle(...)` reads as what it does and two motors of the same kind
 cannot be mixed up. The Setup category has the EV3 sensors (touch, colour,
 gyro, ultrasonic, infrared) and the NXT ones (touch, light, colour, sound,
-ultrasonic), a motor, a drive base, a car and the brick.
+ultrasonic), a motor, a drive base and the brick.
 
 - Rename a device and every block that picked it follows.
 - Names are unique and cannot be a Python or Pybricks word; the field

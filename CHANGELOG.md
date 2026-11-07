@@ -86,13 +86,21 @@ All notable changes to BrickCode Studio. Dates are release dates.
     programs, it is just not in the palette any more.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
-    ↺), `drive base named … left motor … right motor …` and `car named … steering motor … drive motor …`. A motor block
+    ↺), `drive base named … left motor … right motor …`. A motor block
     on a port Set up already has uses that motor; the movement blocks drive
     the drive base declared in Set up when there is one, and otherwise the
-    robot from `set movement motors`. The car has its own `drive at power` and
-    `steer by` blocks at the bottom of Movement.
+    robot from `set movement motors`. The car blocks (`car named …`,
+    `drive at power`, `steer by`) are not in the palette: programs saved with
+    them still load and run.
 
 ### Fixed
+- **The NXT's Blocks button opened the RCX editor on macOS.** The app told
+  the page which language to start in with a `#nxc` after the file name, and
+  macOS `open` throws that away. The editor now ships one page per brick
+  family, `brickcode-blocks-rcx.html` and `brickcode-blocks-nxt.html`, each
+  pinned to its language with the switch hidden, and the app opens the one
+  that matches by file name. `build.py` writes both; an install without them
+  falls back to the shared page and the fragment.
 - **Run from the source tree, the app could not open the block editor.** It
   found the page by a relative path, and a `file://` address has to be
   absolute, so the click only logged an error. Installed copies were never

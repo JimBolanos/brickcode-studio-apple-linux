@@ -1859,7 +1859,7 @@
   function blk(t) { return { kind: "block", type: t }; }
   var toolbox = { kind: "categoryToolbox", contents: [
     { kind: "category", name: "Setup", colour: C_SETUP, contents: [
-      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"), blk("pb_dev_car"),
+      blk("pb_setup"), blk("pb_dev_brick"), blk("pb_dev_motor"), blk("pb_dev_drive"),
       { kind: "label", text: "Set up EV3 sensors" },
       blk("pb_dev_touch"), blk("pb_dev_color"), blk("pb_dev_gyro"),
       blk("pb_dev_ultra"), blk("pb_dev_infra"),
@@ -1890,10 +1890,7 @@
       { kind: "block", type: "pb_base_set" },
       { kind: "sep", gap: 24 },
       { kind: "label", text: "Each wheel on its own" },
-      { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } },
-      { kind: "label", text: "Car (set it up first)" },
-      { kind: "block", type: "pb_car_drive", inputs: { VAL: sh(50) } },
-      { kind: "block", type: "pb_car_steer", inputs: { PCT: sh(0) } }
+      { kind: "block", type: "pb_tank", inputs: { L: sh(50), R: sh(50) } }
     ]},
     { kind: "category", name: "Display", colour: C_DISP, contents: [
       { kind: "label", text: "Built-in pictures" },
