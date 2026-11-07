@@ -28,6 +28,11 @@ path before the browser sees it and loses everything after the `#`. A
 fragment cannot override a pin, so the Windows copy cannot be talked into
 offering NXC, which that package has no `nbc` to compile.
 
+`build.py` also writes `brickcode-blocks-rcx.html` and
+`brickcode-blocks-nxt.html`, the same page pinned (`nqc-only`, `nxc-only`) to
+one language. The desktop app opens the one for the brick it is on, by file
+name, so it never depends on a `#fragment` surviving: macOS `open` drops it.
+
 Edit `index.html` here, never a built `brickcode-blocks.html`: those are
 generated and the next build overwrites them.
 

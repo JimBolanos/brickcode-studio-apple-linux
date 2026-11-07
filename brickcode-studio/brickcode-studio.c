@@ -43,6 +43,10 @@
 #define APP_NAME     "BrickCode Studio"
 #define APP_VERSION  "2.4.0"
 #define BLOCKS_HTML  "brickcode-blocks.html"
+/* One copy per brick family, each pinned to its language, so the button for
+ * the NXT can never land on the RCX editor. */
+#define BLOCKS_RCX_HTML  "brickcode-blocks-rcx.html"
+#define BLOCKS_NXT_HTML  "brickcode-blocks-nxt.html"
 #define PYBRICKS_HTML "pybricks-blocks.html"
 #define APP_FONT_FILE "Orbitron-ExtraBold.ttf"
 /* fontconfig exposes the typographic family, not the file name: the
@@ -806,9 +810,23 @@ static void open_editor(AppState *st, const char *file, const char *fragment,
 static void open_blocks_cb(GtkButton *btn, gpointer user_data) {
     AppState *st = user_data;
     (void) btn;
-    open_editor(st, BLOCKS_HTML, st->mode == MODE_NQC ? "#nqc" : "#nxc",
-                "Block editor opened in your browser. Build the program "
-                "there, press Save, then open the file here.");
+    /* Its own file for each brick, picked by name: an opener such as macOS
+     * `open` can drop a #fragment, and the NXT then opened the RCX editor.
+     * An install that lacks the per-brick pages falls back to the shared one
+     * and the fragment. */
+    const char *own = st->mode == MODE_NQC ? BLOCKS_RCX_HTML : BLOCKS_NXT_HTML;
+    char *found = blocks_html_path(own);
+    const char *msg = st->mode == MODE_NQC
+        ? "RCX / Scout block editor opened in your browser. Build the program "
+          "there, press Save, then open the file here."
+        : "NXT block editor opened in your browser. Build the program "
+          "there, press Save, then open the file here.";
+    if (found) {
+        g_free(found);
+        open_editor(st, own, NULL, msg);
+    } else {
+        open_editor(st, BLOCKS_HTML, st->mode == MODE_NQC ? "#nqc" : "#nxc", msg);
+    }
 }
 
 /* The EV3 editor only writes Python. Getting it onto the brick is done in

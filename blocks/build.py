@@ -39,3 +39,17 @@ with io.open(OUT, "w", encoding="utf-8") as fh:
     fh.write(html)
 
 print("escrito", OUT, "-", round(os.path.getsize(OUT) / 1024), "KB")
+
+# 3. one page per brick family, pinned to its language with the switch gone.
+# The app opens the one that matches, by file name instead of a #fragment:
+# macOS `open` drops everything after the "#", so the NXT button used to land
+# on the RCX editor. Same pin as pin.py (the Windows edition uses that one).
+for pin, name in (("nqc-only", "brickcode-blocks-rcx.html"),
+                  ("nxc-only", "brickcode-blocks-nxt.html")):
+    tag = '<html lang="en">'
+    if tag not in html:
+        raise SystemExit("no encuentro " + tag)
+    dest = os.path.join(HERE, name)
+    with io.open(dest, "w", encoding="utf-8") as fh:
+        fh.write(html.replace(tag, '<html lang="en" data-pin="%s">' % pin, 1))
+    print("escrito", dest, "-", pin)

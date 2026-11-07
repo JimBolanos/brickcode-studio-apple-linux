@@ -143,6 +143,21 @@ with sync_playwright() as pw:
     check("tras hashchange bloqueado", page.evaluate("window.__locked()"), True)
     check("tras hashchange oculto", page.is_hidden("#seg"), True)
 
+    # the pages the app opens, one per brick family, with a bare path: this
+    # is the NXT button landing on the NXT editor even when `open` drops the "#"
+    print("--- las paginas que abre la app, sin fragmento ---")
+    for fname, mode, tag in (("brickcode-blocks-rcx.html", "nqc", "for the RCX / Scout"),
+                             ("brickcode-blocks-nxt.html", "nxc", "for the NXT")):
+        page.goto("about:blank")
+        page.goto("file://" + os.path.join(paths.BLOCKS, fname))
+        page.wait_for_function("window.__ready === true")
+        page.wait_for_timeout(250)
+        check(fname + " modo", page.evaluate("window.__mode()"), mode)
+        check(fname + " bloqueado", page.evaluate("window.__locked()"), True)
+        check(fname + " etiqueta", page.inner_text("#tag"), tag)
+        other = "#mNxc" if mode == "nqc" else "#mNqc"
+        check(fname + " otro idioma oculto", page.is_visible(other), False)
+
     br.close()
 
 print("\nFALLOS: %d" % bad)
