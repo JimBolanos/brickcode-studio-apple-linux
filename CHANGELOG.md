@@ -55,6 +55,11 @@ All notable changes to BrickCode Studio. Dates are release dates.
     fangs, with plain `draw_*` calls in a small
     function written above the program. A program that only draws needs a
     final **wait**, because the screen goes back to normal when it ends.
+  - **Save as… and Open.** Save as… writes the blocks to a `.pybricks`
+    project, or the Python to a `.py` file; Open reads a project back, so a
+    program can be kept and edited later. Ctrl/Cmd+S and Ctrl/Cmd+O work too.
+    Chrome and Edge show their own Save dialog with a folder; Safari and
+    Firefox get a small dialog for the name and kind, and download the file.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
     ↺), `drive base named … left motor … right motor … wheel 56 mm axle track

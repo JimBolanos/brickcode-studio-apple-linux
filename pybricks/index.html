@@ -120,6 +120,27 @@
   }
   .toast[hidden] { display: none; }
 
+  .modal {
+    position: fixed; inset: 0; z-index: 60; display: flex;
+    align-items: center; justify-content: center; background: rgba(0,0,0,.45);
+  }
+  .modal[hidden] { display: none; }
+  .modal .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 20px; width: min(420px, 92vw); box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  }
+  .modal h3 { margin: 0 0 12px; font-size: 15px; }
+  .modal label.f { display: block; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .modal input[type=text] {
+    display: block; width: 100%; margin-top: 4px; font: inherit; font-size: 13.5px;
+    color: var(--fg); background: var(--field); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .modal .opt { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; cursor: pointer; }
+  .modal .opt b { font-weight: 600; }
+  .modal .opt small { display: block; color: var(--muted); font-size: 12px; }
+  .modal .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
   @media (max-width: 900px) {
     main { flex-direction: column; }
     .side { flex: 0 0 45%; border-left: 0; border-top: 1px solid var(--border); }
@@ -135,6 +156,8 @@
   <div class="spacer"></div>
   <button id="btnExample">Example</button>
   <button id="btnClear">Clear</button>
+  <button id="btnOpen" title="Open a saved project (Ctrl/Cmd+O)">Open</button>
+  <button id="btnSave" title="Save as (Ctrl/Cmd+S)">Save as…</button>
   <button id="btnTheme">Light</button>
   <button id="btnCopy" class="go">Copy Python</button>
 </header>
@@ -160,6 +183,22 @@
 </footer>
 
 <div class="toast" id="toast" hidden></div>
+<input type="file" id="openFile" accept=".pybricks,.xml,.py" hidden>
+<div class="modal" id="saveDlg" hidden>
+  <div class="card" role="dialog" aria-labelledby="saveTitle">
+    <h3 id="saveTitle">Save as</h3>
+    <label class="f">File name
+      <input type="text" id="saveName" spellcheck="false" autocomplete="off"></label>
+    <label class="opt"><input type="radio" name="saveFmt" value="blocks" checked>
+      <span><b>Blocks project</b> (.pybricks)
+        <small>Open it here again to keep editing the blocks.</small></span></label>
+    <label class="opt"><input type="radio" name="saveFmt" value="py">
+      <span><b>Python program</b> (.py)
+        <small>The code for the EV3. It cannot be turned back into blocks.</small></span></label>
+    <div class="row"><button id="saveCancel">Cancel</button>
+      <button id="saveGo" class="go">Save</button></div>
+  </div>
+</div>
 
 <script src="blockly.min.js"></script>
 <script>
@@ -2004,6 +2043,91 @@
       navigator.clipboard.writeText(lastCode).then(done, fallback);
     else fallback();
   };
+
+
+  /* Save as and Open.  A project is the blocks written as XML in a
+     .pybricks file; the Python is saved as a .py. Chrome and Edge show their
+     own Save dialog with a folder; Safari and Firefox get a small dialog for
+     the name and the kind, and the browser downloads the file. */
+  var lastName = "my-program";
+  function projectText() { return Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws)); }
+  function cleanName(n) {
+    n = String(n || "").replace(/[\\\/:*?"<>|\u0000-\u001f]/g, "").replace(/^\.+/, "")
+          .replace(/\.(pybricks|py|xml)$/i, "").trim();
+    return n || "my-program";
+  }
+  function textFor(fileName) { return /\.py$/i.test(fileName) ? lastCode : projectText(); }
+  function download(fileName, text) {
+    var a = document.createElement("a"), url;
+    try {
+      url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      toast("Saved " + fileName);
+    } catch (e) { toast("Could not save the file."); }
+  }
+  var dlg = document.getElementById("saveDlg"), dlgName = document.getElementById("saveName");
+  function openDialog() {
+    dlgName.value = lastName; dlg.hidden = false;
+    setTimeout(function () { dlgName.focus(); dlgName.select(); }, 0);
+  }
+  function closeDialog() { dlg.hidden = true; }
+  function dialogSave() {
+    var py = document.querySelector('input[name="saveFmt"]:checked').value === "py";
+    lastName = cleanName(dlgName.value);
+    closeDialog();
+    var fileName = lastName + (py ? ".py" : ".pybricks");
+    download(fileName, textFor(fileName));
+  }
+  function saveAs() {
+    if (!window.showSaveFilePicker) { openDialog(); return; }
+    var p;
+    try {
+      p = window.showSaveFilePicker({
+        suggestedName: lastName + ".pybricks",
+        types: [{ description: "Pybricks Blocks project", accept: { "application/xml": [".pybricks"] } },
+                { description: "Python program", accept: { "text/x-python": [".py"] } }] });
+    } catch (e) { openDialog(); return; }
+    p.then(function (h) {
+      return h.createWritable().then(function (w) {
+        return w.write(textFor(h.name)).then(function () { return w.close(); });
+      }).then(function () { lastName = cleanName(h.name); toast("Saved " + h.name); });
+    }).catch(function (e) { if (!e || e.name !== "AbortError") openDialog(); });
+  }
+  function openProject(file) {
+    if (!file) return;
+    if (/\.py$/i.test(file.name)) {
+      toast("A .py file cannot be turned back into blocks. Open a .pybricks project."); return; }
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var dom = Blockly.utils.xml.textToDom(String(r.result));
+        if (!dom || dom.nodeName.toLowerCase() !== "xml") throw new Error("not a project");
+        loadXml(String(r.result));
+        lastName = cleanName(file.name); toast("Opened " + file.name);
+      } catch (e) { toast("That file is not a Pybricks Blocks project."); }
+    };
+    r.readAsText(file);
+  }
+  document.getElementById("btnSave").onclick = saveAs;
+  document.getElementById("saveGo").onclick = dialogSave;
+  document.getElementById("saveCancel").onclick = closeDialog;
+  dlg.addEventListener("mousedown", function (e) { if (e.target === dlg) closeDialog(); });
+  dlg.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeDialog();
+    else if (e.key === "Enter" && e.target === dlgName) dialogSave();
+  });
+  var openInput = document.getElementById("openFile");
+  document.getElementById("btnOpen").onclick = function () { openInput.click(); };
+  openInput.onchange = function () { openProject(openInput.files[0]); openInput.value = ""; };
+  document.addEventListener("keydown", function (e) {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    var k = e.key.toLowerCase();
+    if (k === "s") { e.preventDefault(); saveAs(); }
+    else if (k === "o") { e.preventDefault(); openInput.click(); }
+  });
+  window.__projectText = projectText;
 
   /* Light is the same switch the other editor has, and it repaints the
      workspace as well as the page. */

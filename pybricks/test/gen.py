@@ -677,6 +677,17 @@ def main():
             else:
                 fail("image " + nm.lower(), "%s\n%s" % (r, src))
 
+        # Save as / Open: the project text brings back the same blocks
+        before = page.evaluate("window.__code()")
+        txt = page.evaluate("window.__projectText()")
+        page.evaluate("x => window.__load('<xml xmlns=\"https://developers.google.com/blockly/xml\"></xml>')")
+        empty = page.evaluate("window.__code()")
+        after = page.evaluate("x => window.__load(x)", txt)
+        if txt.startswith("<xml") and empty != before and after == before:
+            print("%-26s OK     guardar y abrir devuelve los mismos bloques" % "save and open")
+        else:
+            fail("save and open", "antes:\n%s\ndespues:\n%s" % (before, after))
+
         # ---- renaming a device carries every block that picks it ----
         two = xml(chain(blk("pb_run", {"DEV": "arm"}, {"SPEED": 100}),
                         blk("pb_run", {"DEV": "elbow"}, {"SPEED": 50}),
