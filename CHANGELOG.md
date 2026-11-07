@@ -41,6 +41,17 @@ All notable changes to BrickCode Studio. Dates are release dates.
     the brick light, beep, play notes and volume. Display gains **dot at x y** (`draw_pixel()`) and, under
     "Terminal", **print in the terminal** (`print()`, which goes to the
     computer's terminal and not to the EV3 screen).
+  - **Pictures on the EV3 screen.** Display starts with **show image**, a
+    dropdown of the EV3's built-in pictures (eyes neutral, angry, sleepy,
+    evil, dizzy, crazy, winking, looking up/down/left/right; thumbs up/down,
+    warning, question mark, stop, arrows…), written as
+    `ev3.screen.load_image(ImageFile.ANGRY)` with
+    `from pybricks.media.ev3dev import ImageFile`. Names taken from
+    pybricks.com/ev3-micropython/media.html. Below it, **show … on the
+    screen** draws a happy, sad or serious face, eyes open or closed, or an
+    arrow in the four directions, with plain `draw_*` calls in a small
+    function written above the program. A program that only draws needs a
+    final **wait**, because the screen goes back to normal when it ends.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
     ↺), `drive base named … left motor … right motor … wheel 56 mm axle track

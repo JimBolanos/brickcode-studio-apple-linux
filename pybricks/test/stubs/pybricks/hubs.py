@@ -1,4 +1,4 @@
-from . import LOG
+from . import LOG, DRAW
 from .ev3devices import _num
 from .parameters import Color, _Enum
 
@@ -40,6 +40,14 @@ class _Screen:
 
     def clear(self):
         LOG.append(("screen_clear",))
+        DRAW.append(("clear",))
+
+    def load_image(self, source):
+        from .media.ev3dev import ImageFile
+        if not (isinstance(source, _Enum) and repr(source).startswith("ImageFile.")):
+            raise TypeError("expected an ImageFile, got %r" % (source,))
+        LOG.append(("load_image", repr(source)))
+        DRAW.append(("clear",))
 
     def print(self, *args, **kw):
         LOG.append(("screen_print",) + tuple(str(a) for a in args))
@@ -52,15 +60,18 @@ class _Screen:
         for n, v in (("x1", x1), ("y1", y1), ("x2", x2), ("y2", y2)):
             _num(n, v)
         LOG.append(("draw_box", x1, y1, x2, y2, bool(fill)))
+        DRAW.append(("box", x1, y1, x2, y2, bool(fill), repr(color)))
 
     def draw_circle(self, x, y, r, fill=False, color=Color.BLACK):
         _num("x", x); _num("y", y); _num("r", r, 0)
         LOG.append(("draw_circle", x, y, r, bool(fill)))
+        DRAW.append(("circle", x, y, r, bool(fill), repr(color)))
 
     def draw_line(self, x1, y1, x2, y2, width=1, color=Color.BLACK):
         for n, v in (("x1", x1), ("y1", y1), ("x2", x2), ("y2", y2)):
             _num(n, v)
         LOG.append(("draw_line", x1, y1, x2, y2))
+        DRAW.append(("line", x1, y1, x2, y2, width, repr(color)))
 
     def draw_pixel(self, x, y, color=Color.BLACK):
         LOG.append(("draw_pixel", x, y))

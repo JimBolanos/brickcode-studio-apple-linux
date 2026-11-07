@@ -3403,6 +3403,59 @@ return $.__chunk_javascript;
               { type: "input_value", name: "X2", check: "Number" },
               { type: "input_value", name: "Y2", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_image", message0: "show image %1",
+      args0: [{ type: "field_dropdown", name: "IMG", options: [
+                ["eyes neutral", "NEUTRAL"],
+                ["eyes awake", "AWAKE"],
+                ["eyes angry", "ANGRY"],
+                ["eyes evil", "EVIL"],
+                ["eyes sleeping", "SLEEPING"],
+                ["eyes tired left", "TIRED_LEFT"],
+                ["eyes tired middle", "TIRED_MIDDLE"],
+                ["eyes tired right", "TIRED_RIGHT"],
+                ["eyes pinched left", "PINCHED_LEFT"],
+                ["eyes pinched middle", "PINCHED_MIDDLE"],
+                ["eyes pinched right", "PINCHED_RIGHT"],
+                ["eyes crazy 1", "CRAZY_1"],
+                ["eyes crazy 2", "CRAZY_2"],
+                ["eyes dizzy", "DIZZY"],
+                ["eyes knocked out", "KNOCKED_OUT"],
+                ["eyes winking", "WINKING"],
+                ["eyes up", "UP"],
+                ["eyes down", "DOWN"],
+                ["eyes middle left", "MIDDLE_LEFT"],
+                ["eyes middle right", "MIDDLE_RIGHT"],
+                ["eyes bottom left", "BOTTOM_LEFT"],
+                ["eyes bottom right", "BOTTOM_RIGHT"],
+                ["accept", "ACCEPT"],
+                ["decline", "DECLINE"],
+                ["thumbs up", "THUMBS_UP"],
+                ["thumbs down", "THUMBS_DOWN"],
+                ["warning", "WARNING"],
+                ["question mark", "QUESTION_MARK"],
+                ["no go", "NO_GO"],
+                ["stop 1", "STOP_1"],
+                ["stop 2", "STOP_2"],
+                ["forward", "FORWARD"],
+                ["backward", "BACKWARD"],
+                ["left", "LEFT"],
+                ["right", "RIGHT"],
+                ["target", "TARGET"],
+                ["ev3", "EV3"],
+                ["ev3 icon", "EV3_ICON"]] }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "One of the pictures built into the EV3 (eyes, signs and arrows). " +
+               "Clears the screen first. It stays only while the program runs, so " +
+               "finish with a wait block." },
+    { type: "pb_picture", message0: "show %1 on the screen",
+      args0: [{ type: "field_dropdown", name: "PIC", options: [
+                ["happy face", "happy"], ["sad face", "sad"], ["serious face", "serious"],
+                ["eyes open", "open"], ["eyes closed", "closed"],
+                ["arrow up \u2191", "up"], ["arrow down \u2193", "down"],
+                ["arrow left \u2190", "left"], ["arrow right \u2192", "right"]] }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "Clears the screen and draws it. The picture stays only while " +
+               "the program runs, so finish with a wait block." },
     { type: "pb_screen_pixel", message0: "dot at x %1 y %2",
       args0: [{ type: "input_value", name: "X", check: "Number" },
               { type: "input_value", name: "Y", check: "Number" }],
@@ -3830,7 +3883,7 @@ return $.__chunk_javascript;
   });
 
   var devs, refs, needs, usesEv3, brickName, theWs, funcs;
-  var autoPorts, base, baseUsed, setupBase;
+  var autoPorts, base, baseUsed, setupBase, picsDone;
 
   /* The declarations are read straight off the blocks here, not as the
      program is walked: blocks are visited top to bottom on the page, and a
@@ -3839,7 +3892,7 @@ return $.__chunk_javascript;
     theWs = w; funcs = []; refs = [];
     needs = { Port: true };
     usesEv3 = false; brickName = "ev3"; devs = [];
-    autoPorts = {}; baseUsed = false;
+    autoPorts = {}; baseUsed = false; picsDone = {};
     base = { pair: "BC", wheel: 56, axle: 114, name: "robot" };
     var setBase = false;
     w.getAllBlocks(true).forEach(function (b) {
@@ -3993,6 +4046,7 @@ return $.__chunk_javascript;
       if (needs[k]) par.push(k);
     });
     head += "from pybricks.parameters import " + par.join(", ") + "\n";
+    if (needs.ImageFile) head += "from pybricks.media.ev3dev import ImageFile\n";
     if (needs.wait) head += "from pybricks.tools import wait\n";
     if (imp.robotics) head += "from pybricks.robotics import " +
                               Object.keys(imp.robotics).sort().join(", ") + "\n";
@@ -4270,6 +4324,80 @@ return $.__chunk_javascript;
     return ev3() + ".screen.draw_line(" + num(b, g, "X1", 0) + ", " +
            num(b, g, "Y1", 0) + ", " + num(b, g, "X2", 100) + ", " +
            num(b, g, "Y2", 100) + ")\n"; };
+  /* The pictures. Each is a small function written above the program, made
+     of the same screen calls the blocks below it write, so the Python can be
+     read and changed. The screen is 178 wide by 128 tall. A round shape with
+     a hole is a black circle with a white one on top; half of it is hidden
+     with a white box. */
+  var PICS = {
+    happy: ["happy_face", [
+      "S.draw_circle(89, 80, 25, fill=True)",
+      "S.draw_circle(89, 80, 21, fill=True, color=Color.WHITE)",
+      "S.draw_box(60, 50, 118, 79, fill=True, color=Color.WHITE)",
+      "S.draw_line(65, 80, 113, 80, width=4)",
+      "for x in (66, 112):",
+      "    S.draw_line(x - 8, 50, x - 3, 46, width=2)",
+      "    S.draw_line(x - 3, 46, x + 3, 46, width=2)",
+      "    S.draw_line(x + 3, 46, x + 8, 50, width=2)"]],
+    sad: ["sad_face", [
+      "S.draw_circle(89, 112, 26, fill=True)",
+      "S.draw_circle(89, 112, 22, fill=True, color=Color.WHITE)",
+      "S.draw_box(55, 112, 123, 127, fill=True, color=Color.WHITE)",
+      "S.draw_circle(66, 52, 6, fill=True)",
+      "S.draw_circle(112, 52, 6, fill=True)",
+      "S.draw_line(54, 38, 76, 44, width=3)",
+      "S.draw_line(124, 38, 102, 44, width=3)"]],
+    serious: ["serious_face", [
+      "S.draw_circle(66, 50, 6, fill=True)",
+      "S.draw_circle(112, 50, 6, fill=True)",
+      "S.draw_line(66, 92, 112, 92, width=4)"]],
+    open: ["eyes_open", [
+      "for x in (55, 123):",
+      "    S.draw_circle(x, 64, 24, fill=True)",
+      "    S.draw_circle(x, 64, 20, fill=True, color=Color.WHITE)",
+      "    S.draw_circle(x, 64, 9, fill=True)"]],
+    closed: ["eyes_closed", [
+      "for x in (55, 123):",
+      "    S.draw_circle(x, 56, 24, fill=True)",
+      "    S.draw_circle(x, 56, 20, fill=True, color=Color.WHITE)",
+      "    S.draw_box(x - 26, 30, x + 26, 55, fill=True, color=Color.WHITE)"]],
+    up: ["arrow_up", [
+      "S.draw_box(77, 64, 101, 120, fill=True)",
+      "for y in range(8, 65, 2):",
+      "    w = (y - 8) * 4 // 5",
+      "    S.draw_line(89 - w, y, 89 + w, y, width=2)"]],
+    down: ["arrow_down", [
+      "S.draw_box(77, 8, 101, 64, fill=True)",
+      "for y in range(64, 121, 2):",
+      "    w = (120 - y) * 4 // 5",
+      "    S.draw_line(89 - w, y, 89 + w, y, width=2)"]],
+    left: ["arrow_left", [
+      "S.draw_box(64, 52, 170, 76, fill=True)",
+      "for x in range(8, 65, 2):",
+      "    h = (x - 8) * 4 // 5",
+      "    S.draw_line(x, 64 - h, x, 64 + h, width=2)"]],
+    right: ["arrow_right", [
+      "S.draw_box(8, 52, 114, 76, fill=True)",
+      "for x in range(114, 171, 2):",
+      "    h = (170 - x) * 4 // 5",
+      "    S.draw_line(x, 64 - h, x, 64 + h, width=2)"]]
+  };
+  py.forBlock["pb_image"] = function (b) {
+    need("ImageFile");
+    return ev3() + ".screen.load_image(ImageFile." + b.getFieldValue("IMG") + ")\n";
+  };
+  py.forBlock["pb_picture"] = function (b) {
+    var k = b.getFieldValue("PIC"), P = PICS[k] || PICS.happy;
+    var fn = "draw_" + P[0], scr = ev3() + ".screen";
+    need("Color");
+    if (!picsDone[fn]) {
+      picsDone[fn] = true;
+      funcs.push("def " + fn + "():\n" + py.INDENT + scr + ".clear()\n" +
+                 P[1].map(function (l) {
+                   return py.INDENT + l.replace(/\bS\./g, scr + ".") + "\n"; }).join(""));
+    }
+    return fn + "()\n";
+  };
   py.forBlock["pb_screen_pixel"] = function (b, g) {
     return ev3() + ".screen.draw_pixel(" + num(b, g, "X", 0) + ", " +
            num(b, g, "Y", 0) + ")\n"; };
@@ -4454,6 +4582,11 @@ return $.__chunk_javascript;
       { kind: "block", type: "pb_car_steer", inputs: { PCT: sh(0) } }
     ]},
     { kind: "category", name: "Display", colour: C_DISP, contents: [
+      { kind: "label", text: "Built-in pictures" },
+      { kind: "block", type: "pb_image" },
+      { kind: "label", text: "Faces and arrows" },
+      { kind: "block", type: "pb_picture" },
+      { kind: "label", text: "Draw your own" },
       { kind: "block", type: "pb_screen_print", inputs: { WHAT: st("Hello") } },
       { kind: "block", type: "pb_screen_text",
         inputs: { WHAT: st("Hello"), X: sh(10), Y: sh(50) } },

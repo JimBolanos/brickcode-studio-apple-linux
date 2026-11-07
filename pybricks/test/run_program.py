@@ -36,4 +36,5 @@ except Exception as e:                      # noqa: BLE001 - any failure is a re
                       "log": [list(x) for x in pybricks.LOG]}))
     raise SystemExit(0)
 
-print(json.dumps({"ok": True, "log": [list(x) for x in pybricks.LOG]}))
+print(json.dumps({"ok": True, "log": [list(x) for x in pybricks.LOG],
+                  "draw": [list(x) for x in pybricks.DRAW]}))

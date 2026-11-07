@@ -1,0 +1,16 @@
+"""The names listed on pybricks.com/ev3-micropython/media.html (images only)."""
+from ..parameters import _Enum
+
+_NAMES = """ACCEPT BACKWARD DECLINE FORWARD LEFT NO_GO QUESTION_MARK RIGHT STOP_1
+STOP_2 THUMBS_DOWN THUMBS_UP WARNING EV3 EV3_ICON TARGET ANGRY AWAKE
+BOTTOM_LEFT BOTTOM_RIGHT CRAZY_1 CRAZY_2 DIZZY DOWN EVIL KNOCKED_OUT
+MIDDLE_LEFT MIDDLE_RIGHT NEUTRAL PINCHED_LEFT PINCHED_MIDDLE PINCHED_RIGHT
+SLEEPING TIRED_LEFT TIRED_MIDDLE TIRED_RIGHT UP WINKING""".split()
+
+
+class ImageFile:
+    pass
+
+
+for _n in _NAMES:
+    setattr(ImageFile, _n, _Enum("ImageFile." + _n, _n))

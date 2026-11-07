@@ -603,6 +603,64 @@ def main():
             else:
                 print("%-26s OK     revisado por texto" % name)
 
+        # ---- the pictures: each one is run, rasterised and checked by pixel
+        sys.path.insert(0, HERE)
+        from raster import raster
+        # (picture, [(x, y, black?)])  one point inside the shape, one outside
+        PIX = {
+            "happy":   [(89, 104, 1), (89, 90, 0), (66, 46, 1), (89, 40, 0)],
+            "sad":     [(89, 88, 1), (89, 100, 0), (66, 52, 1), (89, 40, 0)],
+            "serious": [(89, 92, 1), (89, 70, 0), (66, 50, 1), (112, 50, 1)],
+            "open":    [(55, 64, 1), (55, 50, 0), (123, 64, 1), (89, 64, 0)],
+            "closed":  [(55, 78, 1), (55, 64, 0), (123, 78, 1), (89, 70, 0)],
+            "up":      [(89, 20, 1), (60, 20, 0), (89, 110, 1), (60, 110, 0)],
+            "down":    [(89, 108, 1), (60, 108, 0), (89, 20, 1), (60, 20, 0)],
+            "left":    [(20, 64, 1), (20, 20, 0), (150, 64, 1), (150, 20, 0)],
+            "right":   [(158, 64, 1), (158, 20, 0), (30, 64, 1), (30, 20, 0)],
+        }
+        os.makedirs(os.path.join(HERE, "out"), exist_ok=True)
+        for pic, pts in PIX.items():
+            body = blk("pb_picture", {"PIC": pic})
+            src = load(xml(body, [dev("brick", "ev3")]))
+            r = run(src)
+            nm = "picture " + pic
+            if not r["ok"]:
+                fail(nm, "%s: %s" % (r["where"], r["error"]))
+                print("".join("    " + l + "\n" for l in src.split("\n")))
+                continue
+            if "def draw_" not in src or src.count("draw_") < 2:
+                fail(nm, "no escribio la funcion")
+                continue
+            im = raster(r["draw"])
+            im.convert("L").resize((178 * 3, 128 * 3)).save(
+                os.path.join(HERE, "out", "pic_%s.png" % pic))
+            bad_pts = [(x, y, want) for x, y, want in pts
+                       if (im.getpixel((x, y)) == 0) != bool(want)]
+            if bad_pts:
+                fail(nm, "pixeles que no son lo esperado: %s" % bad_pts)
+            else:
+                print("%-26s OK     %d llamadas, forma comprobada" % (nm, len(r["draw"])))
+        # the same picture twice in one program: one function, two calls
+        src = load(xml(blk("pb_picture", {"PIC": "happy"},
+                           nxt=blk("pb_picture", {"PIC": "happy"})),
+                       [dev("brick", "ev3")]))
+        if src.count("def draw_happy_face") == 1 and src.count("draw_happy_face()\n") == 2 \
+                and "from pybricks.parameters import Port, Color" in src:
+            print("%-26s OK     una funcion, dos llamadas, Color importado" % "picture twice")
+        else:
+            fail("picture twice", src)
+
+        # the EV3's own pictures: the real names, the right import
+        for nm in ("ANGRY", "SLEEPING", "DIZZY", "WINKING", "NEUTRAL", "THUMBS_UP",
+                   "QUESTION_MARK", "TIRED_LEFT", "CRAZY_1", "KNOCKED_OUT"):
+            src = load(xml(blk("pb_image", {"IMG": nm}), [dev("brick", "ev3")]))
+            r = run(src)
+            if (r["ok"] and ["load_image", "ImageFile." + nm] in r["log"]
+                    and "from pybricks.media.ev3dev import ImageFile\n" in src):
+                print("%-26s OK     load_image(ImageFile.%s)" % ("image " + nm.lower(), nm))
+            else:
+                fail("image " + nm.lower(), "%s\n%s" % (r, src))
+
         # ---- renaming a device carries every block that picks it ----
         two = xml(chain(blk("pb_run", {"DEV": "arm"}, {"SPEED": 100}),
                         blk("pb_run", {"DEV": "elbow"}, {"SPEED": 50}),

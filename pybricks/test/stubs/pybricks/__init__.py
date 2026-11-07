@@ -8,7 +8,9 @@ raises here, the way the compiler would have complained there.
 """
 
 LOG = []
+DRAW = []      # every screen drawing call, with colour, fill and width
 
 
 def reset_log():
     del LOG[:]
+    del DRAW[:]
