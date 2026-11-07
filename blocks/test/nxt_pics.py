@@ -87,7 +87,9 @@ def paint(code):
         if not m:
             continue
         name, args = m.group(1), [a.strip() for a in m.group(2).split(",")]
-        white = bool(args) and args[-1] == "DRAW_OPT_CLEAR_PIXELS"
+        # A real NXT ignores DRAW_OPT_CLEAR_PIXELS (seen on the screen), so
+        # everything is painted black here, as it would come out on the brick.
+        white = False
         nums = [int(a) for a in args if re.fullmatch(r"-?\d+", a)]
         if name == "ClearScreen":
             im.paste(255, (0, 0, W, H))
@@ -157,6 +159,9 @@ def main():
             code, ok, info = run("pic_" + pic, [("nxt_picture", {"PIC": pic})])
             if not ok:
                 print("%-18s FAIL compile: %s" % (pic, info)); bad += 1
+                continue
+            if "DRAW_OPT" in code:
+                print("%-18s FAIL uses a drawing option the NXT ignores" % pic); bad += 1
                 continue
             im, off = paint(code)
             im.resize((W * 4, H * 4), Image.NEAREST).save(os.path.join(OUT, "nxt_%s.png" % pic))
