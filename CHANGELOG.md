@@ -145,6 +145,9 @@ All notable changes to BrickCode Studio. Dates are release dates.
 ### Changed
 - The dashboard screenshot in the README was stale; it is regenerated, with the
   current RCX and the new card.
+- **EV3: the brick button block now reads "is the [centre] button pressed?"
+  and sits at the top of Sensors,** like the NXT one. Same block underneath,
+  so saved projects keep working.
 
 ## 2.3.3 — 2026-11-02
 

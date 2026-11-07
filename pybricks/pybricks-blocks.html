@@ -3180,9 +3180,9 @@ return $.__chunk_javascript;
       args0: [{ type: "input_dummy" }, { type: "input_statement", name: "DO", check: "Action" }],
       colour: C_EVENT,
       tooltip: "Everything inside runs when you start the program." },
-    { type: "pb_button", message0: "brick button %1 pressed?",
+    { type: "pb_button", message0: "is the %1 button pressed?",
       args0: [{ type: "field_dropdown", name: "BTN", options: BUTTONS }],
-      output: "Boolean", colour: C_EVENT,
+      output: "Boolean", colour: C_SENSE,
       tooltip: "True while that button on the brick is held down." },
     { type: "pb_wait_until", message0: "wait until %1",
       args0: [{ type: "input_value", name: "COND", check: "Boolean" }],
@@ -4834,7 +4834,6 @@ return $.__chunk_javascript;
     ]},
     { kind: "category", name: "Events", colour: C_EVENT, contents: [
       { kind: "block", type: "pb_program" },
-      { kind: "block", type: "pb_button" },
       { kind: "block", type: "pb_wait_until" }
     ]},
     { kind: "category", name: "Control", colour: C_CTRL, contents: [
@@ -4848,6 +4847,8 @@ return $.__chunk_javascript;
       { kind: "block", type: "pb_exit" }
     ]},
     { kind: "category", name: "Sensors", colour: C_SENSE, contents: [
+      { kind: "block", type: "pb_button" },
+      { kind: "sep", gap: 24 },
       { kind: "block", type: "pb_touch" },
       { kind: "block", type: "pb_color" },
       { kind: "block", type: "pb_reflection" },
