@@ -3403,11 +3403,21 @@ return $.__chunk_javascript;
               { type: "input_value", name: "X2", check: "Number" },
               { type: "input_value", name: "Y2", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_DISP },
+    { type: "pb_screen_pixel", message0: "dot at x %1 y %2",
+      args0: [{ type: "input_value", name: "X", check: "Number" },
+              { type: "input_value", name: "Y", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "One black dot. The screen is 178 wide by 128 tall." },
+    { type: "pb_print_term", message0: "print %1 in the terminal",
+      args0: [{ type: "input_value", name: "WHAT" }],
+      previousStatement: null, nextStatement: null, colour: C_DISP,
+      tooltip: "Writes to the terminal of the computer the program is running " +
+               "from, not to the EV3's screen. print()." },
     { type: "pb_light", message0: "brick light %1",
       args0: [{ type: "field_dropdown", name: "COLOR", options:
                 [["green", "GREEN"], ["orange", "ORANGE"], ["red", "RED"],
                  ["off", "OFF"]] }],
-      previousStatement: null, nextStatement: null, colour: C_DISP },
+      previousStatement: null, nextStatement: null, colour: C_SOUND },
 
     /* ----------------------------------------------------------- Sound */
     { type: "pb_beep", message0: "beep at %1 Hz for %2 ms",
@@ -3419,6 +3429,11 @@ return $.__chunk_javascript;
               { type: "input_value", name: "TEMPO", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_SOUND,
       tooltip: "Note then length, like C4/4. R is a rest." },
+    { type: "pb_say", message0: "say %1",
+      args0: [{ type: "input_value", name: "WHAT" }],
+      previousStatement: null, nextStatement: null, colour: C_SOUND,
+      tooltip: "The brick speaks the text. Waits until it has finished. " +
+               "speaker.say()." },
     { type: "pb_volume", message0: "set volume to %1 %%",
       args0: [{ type: "input_value", name: "VOL", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_SOUND },
@@ -4260,6 +4275,13 @@ return $.__chunk_javascript;
     return ev3() + ".screen.draw_line(" + num(b, g, "X1", 0) + ", " +
            num(b, g, "Y1", 0) + ", " + num(b, g, "X2", 100) + ", " +
            num(b, g, "Y2", 100) + ")\n"; };
+  py.forBlock["pb_screen_pixel"] = function (b, g) {
+    return ev3() + ".screen.draw_pixel(" + num(b, g, "X", 0) + ", " +
+           num(b, g, "Y", 0) + ")\n"; };
+  py.forBlock["pb_print_term"] = function (b, g) {
+    return "print(" + val(b, g, "WHAT", '""') + ")\n"; };
+  py.forBlock["pb_say"] = function (b, g) {
+    return ev3() + ".speaker.say(" + val(b, g, "WHAT", '""') + ")\n"; };
   py.forBlock["pb_light"] = function (b) {
     var c = b.getFieldValue("COLOR");
     if (c === "OFF") return ev3() + ".light.off()\n";
@@ -4449,11 +4471,15 @@ return $.__chunk_javascript;
         inputs: { X: sh(89), Y: sh(64), R: sh(30) } },
       { kind: "block", type: "pb_screen_line",
         inputs: { X1: sh(0), Y1: sh(0), X2: sh(177), Y2: sh(127) } },
-      { kind: "block", type: "pb_light" }
+      { kind: "block", type: "pb_screen_pixel", inputs: { X: sh(89), Y: sh(64) } },
+      { kind: "label", text: "Terminal" },
+      { kind: "block", type: "pb_print_term", inputs: { WHAT: st("abc") } }
     ]},
-    { kind: "category", name: "Sound", colour: C_SOUND, contents: [
+    { kind: "category", name: "Light & Sound", colour: C_SOUND, contents: [
+      { kind: "block", type: "pb_light" },
       { kind: "block", type: "pb_beep", inputs: { FREQ: sh(500), MS: sh(100) } },
       { kind: "block", type: "pb_notes", inputs: { TEMPO: sh(120) } },
+      { kind: "block", type: "pb_say", inputs: { WHAT: st("Hello") } },
       { kind: "block", type: "pb_volume", inputs: { VOL: sh(70) } }
     ]},
     { kind: "category", name: "Events", colour: C_EVENT, contents: [
@@ -4519,7 +4545,7 @@ return $.__chunk_javascript;
   }
 
   var KEYWORDS = /\b(import|from|def|return|if|elif|else|while|for|in|not|and|or|True|False|None|raise|pass|break|continue)\b/g;
-  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|track_target|control|limits|settings|steer|drive_power|drive_speed|Car|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|on|off|SystemExit)\b/g;
+  var BUILTINS = /\b(Motor|DriveBase|EV3Brick|TouchSensor|ColorSensor|UltrasonicSensor|GyroSensor|InfraredSensor|LightSensor|SoundSensor|NXTTouchSensor|NXTLightSensor|NXTColorSensor|NXTSoundSensor|NXTUltrasonicSensor|intensity|wait|randint|range|print|run|run_time|run_angle|run_target|run_until_stalled|track_target|control|limits|settings|steer|drive_power|drive_speed|Car|dc|stop|brake|hold|reset_angle|angle|speed|straight|turn|drive|reset|distance|pressed|color|reflection|ambient|beep|play_notes|volume|clear|draw_text|draw_box|draw_circle|draw_line|draw_pixel|say|on|off|SystemExit)\b/g;
   var CONSTS = /\b(Port|Stop|Color|Button|Direction)\.[A-Z_0-9]+|\b(Port|Stop|Color|Button|Direction)\b/g;
 
   function esc(s) {

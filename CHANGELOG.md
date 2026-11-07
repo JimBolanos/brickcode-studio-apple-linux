@@ -37,6 +37,11 @@ All notable changes to BrickCode Studio. Dates are release dates.
     robot and 300 °/s for a turn. Degrees and rotations of the robot come
     from the wheel size. A number typed in is calculated in the Python
     (`run_time(750, 1000)`); a variable stays an expression.
+  - **Display and Light & Sound** are separate categories. Light & Sound has
+    the brick light, beep, play notes, the new **say** (`speaker.say()`) and
+    volume. Display gains **dot at x y** (`draw_pixel()`) and, under
+    "Terminal", **print in the terminal** (`print()`, which goes to the
+    computer's terminal and not to the EV3 screen).
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
     ↺), `drive base named … left motor … right motor … wheel 56 mm axle track

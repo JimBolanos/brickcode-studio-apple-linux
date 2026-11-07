@@ -27,6 +27,9 @@ class _Speaker:
         _num("tempo", tempo, 1)
         LOG.append(("play_notes", notes, tempo))
 
+    def say(self, text):
+        LOG.append(("say", str(text)))
+
     def volume(self, *args):
         if args:
             _num("volume", args[0], 0, 100)

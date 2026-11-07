@@ -333,6 +333,10 @@ CASES = [
      [["EV3Brick"], ["volume", 60], ["beep", 800, 200],
       ["play_notes", ["C4/4", "E4/4", "G4/2"], 120]]),
 
+    ("say, dot", [dev("brick", "ev3")],
+     blk("pb_say", nxt=blk("pb_screen_pixel", values={"X": 20, "Y": 30})),
+     [["EV3Brick"], ["say", ""], ["draw_pixel", 20, 30]]),
+
     # ----------------------------------------------------------- Sensors
     ("sensors read", [dev("brick", "ev3"), dev("gyro", "spin", "S2")],
      blk("pb_gyro_reset", {"DEV": "spin"}, {"ANGLE": 0},
@@ -412,6 +416,11 @@ TEXT_CASES = [
      blk("pb_motor_on", {"PORT": "A"}, {"PCT": 50}),
      ["arm = Motor(Port.A, Direction.COUNTERCLOCKWISE)", "leg = Motor(Port.B)",
       "import Port, Direction", "arm.run(500)"], ["motor_a"]),
+
+    ("print in the terminal", [],
+     '<block type="pb_print_term"><value name="WHAT"><shadow type="pb_text">'
+     '<field name="TEXT">abc</field></shadow></value></block>',
+     ['print("abc")'], ["EV3Brick", "screen"]),
 
     ("forever", [],
      '<block type="pb_forever"><statement name="DO">%s</statement></block>'
