@@ -50,8 +50,9 @@ All notable changes to BrickCode Studio. Dates are release dates.
     pybricks.com/ev3-micropython/media.html. Below it, **show … on the
     screen** draws a happy, sad or serious face, eyes open or closed, or an
     arrow in the four directions, a smiling, winking or unsure face, a big
-    or small heart, sleeping ZZZ, a speech bubble, an explosion and mouths with
-    teeth or fangs, with plain `draw_*` calls in a small
+    or small heart, sleeping ZZZ, a speech bubble, thumbs up and down, a cross,
+    a check mark, a question mark, a stop sign and mouths with teeth or
+    fangs, with plain `draw_*` calls in a small
     function written above the program. A program that only draws needs a
     final **wait**, because the screen goes back to normal when it ends.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
