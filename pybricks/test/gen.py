@@ -422,6 +422,16 @@ TEXT_CASES = [
      '<field name="TEXT">abc</field></shadow></value></block>',
      ['print("abc")'], ["EV3Brick", "screen"]),
 
+    ("wait in seconds", [],
+     blk("pb_wait_s", values={"SEC": 2}, nxt=blk("pb_wait_s", values={"SEC": 0.5})),
+     ["wait(2000)", "wait(500)", "from pybricks.tools import wait"], ["wait(2)", "wait(0.5)"]),
+
+    ("wait from a variable", [],
+     '<block type="pb_wait_s"><value name="SEC"><block type="pb_arith">'
+     '<field name="OP">+</field><value name="A">%s</value><value name="B">%s</value>'
+     '</block></value></block>' % (n(1), n(2)),
+     ["wait((1 + 2) * 1000)"], ["wait(1 + 2 * 1000)"]),
+
     ("forever", [],
      '<block type="pb_forever"><statement name="DO">%s</statement></block>'
      % blk("pb_wait", values={"MS": 100}),

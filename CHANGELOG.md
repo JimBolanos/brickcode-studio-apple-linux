@@ -77,6 +77,10 @@ All notable changes to BrickCode Studio. Dates are release dates.
     program can be kept and edited later. Ctrl/Cmd+S and Ctrl/Cmd+O work too.
     Chrome and Edge show their own Save dialog with a folder; Safari and
     Firefox get a small dialog for the name and kind, and download the file.
+  - **wait is in seconds.** The Control block reads `wait 1 seconds` (a
+    decimal like 0.5 works) and writes `wait(1000)`, since Pybricks counts in
+    milliseconds. The old `wait … ms` block is still read from saved
+    programs, it is just not in the palette any more.
   - **Set up can still declare the devices, as in Pybricks' own editor**:
     `motor named … on port A with forward clockwise ↻` (or counterclockwise
     ↺), `drive base named … left motor … right motor … wheel 56 mm axle track

@@ -665,6 +665,12 @@
       tooltip: "0 is closest, 100 is farthest. Not millimetres." },
 
     /* --------------------------------------------------------- Control */
+    { type: "pb_wait_s", message0: "wait %1 seconds",
+      args0: [{ type: "input_value", name: "SEC", check: "Number" }],
+      previousStatement: null, nextStatement: null, colour: C_CTRL,
+      tooltip: "Pybricks counts in milliseconds; this block does the sum for you." },
+    /* the old one, in milliseconds: still read from saved programs, no longer
+       in the palette */
     { type: "pb_wait", message0: "wait %1 ms",
       args0: [{ type: "input_value", name: "MS", check: "Number" }],
       previousStatement: null, nextStatement: null, colour: C_CTRL },
@@ -1705,6 +1711,9 @@
     return [ref(b) + ".intensity()", py.ORDER_ATOMIC]; };
 
   /* ---- Control ---- */
+  py.forBlock["pb_wait_s"] = function (b, g) {
+    need("wait");
+    return "wait(" + scaled(num(b, g, "SEC", 1), 1000) + ")\n"; };
   py.forBlock["pb_wait"] = function (b, g) {
     need("wait");
     return "wait(" + num(b, g, "MS", 1000) + ")\n"; };
@@ -1870,7 +1879,7 @@
       { kind: "block", type: "pb_wait_until" }
     ]},
     { kind: "category", name: "Control", colour: C_CTRL, contents: [
-      { kind: "block", type: "pb_wait", inputs: { MS: sh(1000) } },
+      { kind: "block", type: "pb_wait_s", inputs: { SEC: sh(1) } },
       { kind: "block", type: "pb_repeat", inputs: { TIMES: sh(4) } },
       { kind: "block", type: "pb_forever" },
       { kind: "block", type: "pb_if" },
